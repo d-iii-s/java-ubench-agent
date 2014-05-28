@@ -23,7 +23,7 @@ JNI_CLASS_DIR = ../java/$(subst .,/,$(JNI_CLASSNAME_BASE))
 JNI_C_HEADER_BASE = cz_cuni_mff_d3s_perf
 
 CC = gcc
-CFLAGS = -Wall -Wextra -Werror -I$(OUTPUT_DIRECTORY)
+CFLAGS = -std=c99 -Wall -Wextra -Werror -I$(OUTPUT_DIRECTORY)
 CFLAGS_JNI = -I$(JAVA_HOME)/include -I$(JAVA_HOME)/include/linux -fPIC
 
 AGENT_SOURCES = counter.c agentmain.c jnifunc.c benchmark.c

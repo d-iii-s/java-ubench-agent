@@ -24,9 +24,19 @@ public class BenchmarkTest {
 		
 		
 		for (int i = 0; i < LOOPS; i++) {
+			long before = System.nanoTime();
 			Benchmark.start();
-			System.out.printf("This is loop %d.\n", i);
+			long start = System.nanoTime();
+			System.out.printf("This is loop %d", i);
+			long end = System.nanoTime();
 			Benchmark.stop();
+			long after = System.nanoTime();
+			long duration = end - start;
+			long start_measurement_duration = start - before;
+			long end_measurement_duration = after - end;
+			System.out.printf(" [took %dus, measurement %dns and %dns].\n",
+					duration / 1000, start_measurement_duration,
+					end_measurement_duration);
 		}
 		
 		Benchmark.dump("-");
