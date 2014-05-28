@@ -18,17 +18,17 @@
 OUTPUT_DIRECTORY = ./
 
 JAVAH = javah
-JNI_CLASS = cz.cuni.mff.d3s.perf.CompilationCounter
-JNI_CLASS_JAVA_FILE = ../java/$(subst .,/,$(JNI_CLASS)).java
-JNI_CLASS_C_HEADER = cz_cuni_mff_d3s_perf_CompilationCounter.h
+JNI_CLASSNAME_BASE = cz.cuni.mff.d3s.perf
+JNI_CLASS_DIR = ../java/$(subst .,/,$(JNI_CLASSNAME_BASE))
+JNI_C_HEADER_BASE = cz_cuni_mff_d3s_perf
 
 CC = gcc
 CFLAGS = -Wall -Wextra -Werror -I$(OUTPUT_DIRECTORY)
 CFLAGS_JNI = -I$(JAVA_HOME)/include -I$(JAVA_HOME)/include/linux -fPIC
 
-AGENT_SOURCES = counter.c agentmain.c jnifunc.c
-
+AGENT_SOURCES = counter.c agentmain.c jnifunc.c benchmark.c
 AGENT_OBJECTS = $(addprefix $(OUTPUT_DIRECTORY), $(addsuffix .o, $(basename $(AGENT_SOURCES))))
+
 AGENT_FILE = ubench-agent.so
 
 all: $(OUTPUT_DIRECTORY)$(AGENT_FILE)
@@ -39,11 +39,12 @@ $(OUTPUT_DIRECTORY)$(AGENT_FILE): $(AGENT_OBJECTS)
 $(OUTPUT_DIRECTORY)%.o: %.c
 	$(CC) $(CFLAGS) -c -o $@ $(CFLAGS_JNI) $<
 
-$(AGENT_OBJECTS): $(OUTPUT_DIRECTORY)$(JNI_CLASS_C_HEADER)
+$(AGENT_SOURCES): $(OUTPUT_DIRECTORY)$(JNI_C_HEADER_BASE)_CompilationCounter.h
+$(AGENT_SOURCES): $(OUTPUT_DIRECTORY)$(JNI_C_HEADER_BASE)_Benchmark.h
 
-$(OUTPUT_DIRECTORY)$(JNI_CLASS_C_HEADER): $(JNI_CLASS_JAVA_FILE)
-	$(JAVAH) -cp ../java -d $(OUTPUT_DIRECTORY) $(JNI_CLASS)
+$(OUTPUT_DIRECTORY)$(JNI_C_HEADER_BASE)_%.h: $(JNI_CLASS_DIR)/%.java
+	$(JAVAH) -cp ../java -d $(OUTPUT_DIRECTORY) $(JNI_CLASSNAME_BASE).$*
 
 clean:
-	rm -rf $(OUTPUT_DIRECTORY)*.so $(OUTPUT_DIRECTORY)*.o $(OUTPUT_DIRECTORY)$(JNI_CLASS_C_HEADER)
+	rm -rf $(OUTPUT_DIRECTORY)*.so $(OUTPUT_DIRECTORY)*.o $(OUTPUT_DIRECTORY)$(JNI_C_HEADER_BASE)*.h
 

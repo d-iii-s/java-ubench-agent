@@ -65,11 +65,13 @@
 	</target>
 
 	<macrodef name="self-test">
+		<attribute name="classname" default="mixed" />
 		<attribute name="jvmarg" default="-Xmixed" />
 		<attribute name="progarg" default="mixed" />
+			
 		<sequential>
 			<java
-					classname="cz.cuni.mff.d3s.perf.CompilationCounterTest"
+					classname="@{classname}"
 					fork="true"
 					failonerror="true">
 				<classpath>
@@ -84,9 +86,18 @@
 	</macrodef>
 
 	<target name="test" depends="compile,compile-test">
-		<self-test jvmarg="-Xmixed" progarg="mixed" />
-		<self-test jvmarg="-Xint" progarg="int" />
-	
+		<self-test
+			classname="cz.cuni.mff.d3s.perf.CompilationCounterTest"
+			jvmarg="-Xmixed"
+			progarg="mixed" />
+		<self-test
+			classname="cz.cuni.mff.d3s.perf.CompilationCounterTest"
+			jvmarg="-Xint"
+			progarg="int" />
+		<self-test
+			classname="cz.cuni.mff.d3s.perf.BenchmarkTest"
+			/>
+				
 		<echo level="info" message="All tests passed." />
 	</target>
 
