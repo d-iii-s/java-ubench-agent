@@ -1,0 +1,97 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  - Copyright 2014 Charles University in Prague
+  - Copyright 2014 Vojtech Horky
+  - 
+  - Licensed under the Apache License, Version 2.0 (the "License");
+  - you may not use this file except in compliance with the License.
+  - You may obtain a copy of the License at
+  -
+  -     http://www.apache.org/licenses/LICENSE-2.0
+  -
+  - Unless required by applicable law or agreed to in writing, software
+  - distributed under the License is distributed on an "AS IS" BASIS,
+  - WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  - See the License for the specific language governing permissions and
+  - limitations under the License.
+  -->
+<project basedir="." name="Microbenchmarking agent" default="compile">
+	<property file="local-settings.ini" />
+
+	<property name="java.src.dir" value="src/java" />
+	<property name="agent.src.dir" value="src/c" />
+	<property name="java.test.src.dir" value="src/test-java" />
+
+	<property name="build.dir" location="out" />
+	<property name="classes.build.dir" location="${build.dir}/classes" />
+	<property name="test.classes.build.dir" location="${build.dir}/test-classes" />
+	<property name="agent.build.dir" location="${build.dir}/agent/" />
+
+	<target name="compile" depends="compile-java,compile-agent">
+	</target>
+
+	<target name="compile-java">
+		<mkdir dir="${classes.build.dir}" />
+		<javac 
+				destdir="${classes.build.dir}"
+				debug="true"
+				includeantruntime="false">
+			<src path="${java.src.dir}" />
+			<compilerarg value="-Xlint:all"/>
+		</javac>
+	</target>
+
+	<target name="compile-agent">
+		<mkdir dir="${agent.build.dir}" />
+		<exec executable="make" failonerror="true">
+			<arg value="-C" />
+			<arg file="${agent.src.dir}"/>
+			<arg value="OUTPUT_DIRECTORY=${agent.build.dir}/" />
+		</exec>
+	</target>
+
+	<target name="compile-test">
+		<mkdir dir="${test.classes.build.dir}" />
+		<javac 
+				destdir="${test.classes.build.dir}"
+				debug="true"
+				includeantruntime="false">
+			<src path="${java.test.src.dir}" />
+			<classpath>
+				<pathelement path="${classes.build.dir}" />
+			</classpath>
+			<compilerarg value="-Xlint:all"/>
+		</javac>
+	</target>
+
+	<macrodef name="self-test">
+		<attribute name="jvmarg" default="-Xmixed" />
+		<attribute name="progarg" default="mixed" />
+		<sequential>
+			<java
+					classname="cz.cuni.mff.d3s.perf.CompilationCounterTest"
+					fork="true"
+					failonerror="true">
+				<classpath>
+					<pathelement path="${classes.build.dir}" />
+					<pathelement path="${test.classes.build.dir}" />
+				</classpath>
+				<jvmarg value="-agentpath:${agent.build.dir}/ubench-agent.so" />
+				<jvmarg value="@{jvmarg}" />
+				<arg value="@{progarg}" />
+			</java>
+		</sequential>
+	</macrodef>
+
+	<target name="test" depends="compile,compile-test">
+		<self-test jvmarg="-Xmixed" progarg="mixed" />
+		<self-test jvmarg="-Xint" progarg="int" />
+	
+		<echo level="info" message="All tests passed." />
+	</target>
+
+	<target name="clean">
+		<delete dir="${classes.build.dir}" />
+		<delete dir="${build.dir}" />
+	</target>
+</project>
