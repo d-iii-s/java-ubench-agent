@@ -40,6 +40,7 @@ public class BenchmarkTest {
 		}
 		
 		Benchmark.dump("-");
+		Benchmark.dumpFormatted("-", "voluntarycontextswitch-diff,involuntarycontextswitch-diff");
 		
 		System.exit(0);
 	}

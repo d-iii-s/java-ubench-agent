@@ -21,5 +21,8 @@ public final class Benchmark {
 	public static native void init(final int measurements);
 	public static native void start();
 	public static native void stop();
-	public static native void dump(final String filename);
+	public static native void dumpFormatted(final String filename, final String format);
+	public static void dump(final String filename) {
+		dumpFormatted(filename, "timestamp-diff");
+	}
 }
