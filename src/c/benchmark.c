@@ -62,7 +62,15 @@ typedef struct {
 	metric_dump_func_t func;
 } metric_dump_func_name_t;
 
-
+#ifdef USE_GETRUSAGE
+#define DUMP_RUSAGE_DIFF(output_file, benchmark_run, field) \
+	fprintf(output_file, "%5ld", \
+		benchmark_run->end.resource_usage.field \
+		- benchmark_run->start.resource_usage.field)
+#else
+#define DUMP_RUSAGE_DIFF(output_file, benchmark_run, field) \
+	fprintf(output_file, "%5ld", NOTSUP_LONG)
+#endif
 
 static void dump_timestamp_diff(FILE *output, const benchmark_run_t *bench) {
 	fprintf(output, "%15lld", timestamp_diff_ns(&bench->start.timestamp, &bench->end.timestamp));
@@ -77,23 +85,11 @@ static void dump_timestamp_stop(FILE *output, const benchmark_run_t *bench) {
 }
 
 static void dump_voluntary_contextswitch_diff(FILE *output, const benchmark_run_t *bench) {
-	fprintf(output, "%5ld",
-#ifdef USE_GETRUSAGE
-		bench->end.resource_usage.ru_nvcsw - bench->start.resource_usage.ru_nvcsw
-#else
-		NOTSUP_LONG
-#endif
-	);
+	DUMP_RUSAGE_DIFF(output, bench, ru_nvcsw);
 }
 
 static void dump_involuntary_contextswitch_diff(FILE *output, const benchmark_run_t *bench) {
-	fprintf(output, "%5ld",
-#ifdef USE_GETRUSAGE
-		bench->end.resource_usage.ru_nivcsw - bench->start.resource_usage.ru_nivcsw
-#else
-		NOTSUP_LONG
-#endif
-	);
+	DUMP_RUSAGE_DIFF(output, bench, ru_nivcsw);
 }
 
 static void dump_compilation_diff(FILE *output, const benchmark_run_t *bench) {
