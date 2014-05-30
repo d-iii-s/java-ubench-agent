@@ -26,7 +26,7 @@ CC = gcc
 CFLAGS = -std=c99 -Wall -Wextra -Wno-unused-parameter -Werror -I$(OUTPUT_DIRECTORY)
 CFLAGS_JNI = -I$(JAVA_HOME)/include -I$(JAVA_HOME)/include/linux -fPIC
 
-AGENT_SOURCES = counter.c agentmain.c jnifunc.c benchmark.c
+AGENT_SOURCES = counter.c agentmain.c jnifunc.c benchmark.c estimations.c
 AGENT_OBJECTS = $(addprefix $(OUTPUT_DIRECTORY), $(addsuffix .o, $(basename $(AGENT_SOURCES))))
 
 AGENT_FILE = ubench-agent.so
@@ -41,6 +41,7 @@ $(OUTPUT_DIRECTORY)%.o: %.c
 
 $(AGENT_SOURCES): $(OUTPUT_DIRECTORY)$(JNI_C_HEADER_BASE)_CompilationCounter.h
 $(AGENT_SOURCES): $(OUTPUT_DIRECTORY)$(JNI_C_HEADER_BASE)_Benchmark.h
+$(AGENT_SOURCES): $(OUTPUT_DIRECTORY)$(JNI_C_HEADER_BASE)_OverheadEstimations.h
 
 $(OUTPUT_DIRECTORY)$(JNI_C_HEADER_BASE)_%.h: $(JNI_CLASS_DIR)/%.java
 	$(JAVAH) -cp ../java -d $(OUTPUT_DIRECTORY) $(JNI_CLASSNAME_BASE).$*
