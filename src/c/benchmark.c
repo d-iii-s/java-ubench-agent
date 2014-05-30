@@ -48,6 +48,7 @@ typedef struct {
 #ifdef USE_GETRUSAGE
 	struct rusage resource_usage;
 #endif
+	long compilations;
 } metric_snapshot_t;
 
 typedef struct {
@@ -95,12 +96,17 @@ static void dump_involuntary_contextswitch_diff(FILE *output, const benchmark_ru
 	);
 }
 
+static void dump_compilation_diff(FILE *output, const benchmark_run_t *bench) {
+	fprintf(output, "%10ld", bench->end.compilations - bench->start.compilations);
+}
+
 static metric_dump_func_name_t dump_functions[] = {
 	{ .name = "timestamp-diff", .func = dump_timestamp_diff },
 	{ .name = "timestamp-start", .func = dump_timestamp_start },
 	{ .name = "timestamp-stop", .func = dump_timestamp_stop },
 	{ .name = "voluntarycontextswitch-diff", .func = dump_voluntary_contextswitch_diff },
 	{ .name = "involuntarycontextswitch-diff", .func = dump_involuntary_contextswitch_diff },
+	{ .name = "compilation-diff", .func = dump_compilation_diff },
 	// { .name = "", .func = dump_ },
 	{ .name = NULL, .func = NULL }
 };
@@ -137,12 +143,14 @@ void JNICALL Java_cz_cuni_mff_d3s_perf_Benchmark_start(
 #ifdef USE_GETRUSAGE
 	getrusage(RUSAGE_SELF, &benchmark_runs[benchmark_runs_index].start.resource_usage);
 #endif
+	benchmark_runs[benchmark_runs_index].start.compilations = compilation_counter_get_compile_count();
 	store_current_timestamp(&benchmark_runs[benchmark_runs_index].start.timestamp);
 }
 
 void JNICALL Java_cz_cuni_mff_d3s_perf_Benchmark_stop(
 		JNIEnv *UNUSED_PARAMETER(env), jclass UNUSED_PARAMETER(klass)) {
 	store_current_timestamp(&benchmark_runs[benchmark_runs_index].end.timestamp);
+	benchmark_runs[benchmark_runs_index].end.compilations = compilation_counter_get_compile_count();
 #ifdef USE_GETRUSAGE
 	getrusage(RUSAGE_SELF, &benchmark_runs[benchmark_runs_index].end.resource_usage);
 #endif

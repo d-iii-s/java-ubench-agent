@@ -34,6 +34,7 @@
 
 extern jint compilation_counter_init();
 extern jint compilation_counter_get_compile_count_and_reset();
+extern long compilation_counter_get_compile_count();
 
 extern void JNICALL compilation_counter_on_compiled_method_load(jvmtiEnv *,
 		jmethodID, jint, const void*, jint, const jvmtiAddrLocationMap*,

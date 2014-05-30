@@ -79,7 +79,8 @@ static jint register_and_enable_callback() {
 
 
 static jrawMonitorID compile_event_counter_lock;
-static jint compile_event_counter;
+static jint compile_event_counter = 0;
+static long compile_event_counter_total = 0;
 
 static jint prepare_counters() {
 	jvmtiError err = (*agent_env)->CreateRawMonitor(agent_env, "JIT agent counter lock", &compile_event_counter_lock);
@@ -112,6 +113,26 @@ jint compilation_counter_get_compile_count_and_reset() {
 	return result;
 }
 
+long compilation_counter_get_compile_count() {
+	jvmtiError err;
+
+	err = (*agent_env)->RawMonitorEnter(agent_env, compile_event_counter_lock);
+	if (err != JVMTI_ERROR_NONE) {
+		REPORT_ERROR(err, "entering counter monitor");
+		return -1;
+	}
+
+	long result = compile_event_counter_total;
+
+	err = (*agent_env)->RawMonitorExit(agent_env, compile_event_counter_lock);
+	if (err != JVMTI_ERROR_NONE) {
+		REPORT_ERROR(err, "leaving counter monitor");
+		return -1;
+	}
+
+	return result;
+}
+
 static jint increment_compilation_counter() {
 	jvmtiError err;
 
@@ -122,6 +143,7 @@ static jint increment_compilation_counter() {
 	}
 
 	compile_event_counter++;
+	compile_event_counter_total++;
 
 	err = (*agent_env)->RawMonitorExit(agent_env, compile_event_counter_lock);
 	if (err != JVMTI_ERROR_NONE) {
