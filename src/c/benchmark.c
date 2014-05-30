@@ -17,19 +17,34 @@
 
 #define  _POSIX_C_SOURCE 199309L
 
+// TODO: replace later with some real check
+#define USE_GETRUSAGE
+
+#define NOTSUP_LONG ((long)-1)
+
 #include "cz_cuni_mff_d3s_perf_CompilationCounter.h"
 #include "microbench.h"
 #include <stdlib.h>
 #include <time.h>
 #include <string.h>
+#ifdef USE_GETRUSAGE
+#include <sys/resource.h>
+#endif
 
 typedef struct timespec timestamp_t;
 #define PRI_TIMESTAMP_FMT "%6ld.%09ld"
 #define PRI_TIMESTAMP(x) (x).tv_sec, (x).tv_nsec
 
 typedef struct {
-	timestamp_t start_time;
-	timestamp_t end_time;
+	timestamp_t timestamp;
+#ifdef USE_GETRUSAGE
+	struct rusage resource_usage;
+#endif
+} metric_snapshot_t;
+
+typedef struct {
+	metric_snapshot_t start;
+	metric_snapshot_t end;
 } benchmark_run_t;
 
 static benchmark_run_t *benchmark_runs = NULL;
@@ -65,12 +80,18 @@ void JNICALL Java_cz_cuni_mff_d3s_perf_Benchmark_start(
 		benchmark_runs_index = benchmark_runs_size - 1;
 	}
 
-	store_current_timestamp(&benchmark_runs[benchmark_runs_index].start_time);
+#ifdef USE_GETRUSAGE
+	getrusage(RUSAGE_SELF, &benchmark_runs[benchmark_runs_index].start.resource_usage);
+#endif
+	store_current_timestamp(&benchmark_runs[benchmark_runs_index].start.timestamp);
 }
 
 void JNICALL Java_cz_cuni_mff_d3s_perf_Benchmark_stop(
 		JNIEnv *UNUSED_PARAMETER(env), jclass UNUSED_PARAMETER(klass)) {
-	store_current_timestamp(&benchmark_runs[benchmark_runs_index].end_time);
+	store_current_timestamp(&benchmark_runs[benchmark_runs_index].end.timestamp);
+#ifdef USE_GETRUSAGE
+	getrusage(RUSAGE_SELF, &benchmark_runs[benchmark_runs_index].end.resource_usage);
+#endif
 
 	benchmark_runs_index++;
 }
@@ -92,14 +113,23 @@ void JNICALL Java_cz_cuni_mff_d3s_perf_Benchmark_dump(
 
 	for (size_t i = 0; i < benchmark_runs_index; i++) {
 		benchmark_run_t *this_run = &benchmark_runs[i];
-		timestamp_t *start = &this_run->start_time;
-		timestamp_t *end = &this_run->end_time;
+		timestamp_t *start = &this_run->start.timestamp;
+		timestamp_t *end = &this_run->end.timestamp;
 		long long diff_ns = timestamp_diff_ns(start, end);
 
 		fprintf(file, PRI_TIMESTAMP_FMT "  " PRI_TIMESTAMP_FMT \
-			"  (%10lldus)\n",
+			"  %15lld %10ld %10ld  %10ld %10ld\n",
 			PRI_TIMESTAMP(*start), PRI_TIMESTAMP(*end),
-			diff_ns / 1000);
+			diff_ns,
+#ifdef USE_GETRUSAGE
+			this_run->start.resource_usage.ru_nvcsw,
+			this_run->end.resource_usage.ru_nvcsw,
+			this_run->start.resource_usage.ru_nivcsw,
+			this_run->end.resource_usage.ru_nivcsw
+#else
+			NOTSUP_LONG, NOTSUP_LONG, NOTSUP_LONG, NOTSUP_LONG
+#endif
+		);
 	}
 
 	fclose(file);
