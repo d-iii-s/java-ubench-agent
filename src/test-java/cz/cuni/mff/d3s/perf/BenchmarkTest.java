@@ -19,6 +19,10 @@ package cz.cuni.mff.d3s.perf;
 public class BenchmarkTest {
 	private static final int LOOPS = 10;
 	
+	private static final String COLUMNS = "timestamp-diff,compilation-diff,"
+			+ "voluntarycontextswitch-diff,involuntarycontextswitch-diff,"
+			+ "pagereclaim-diff,pagefault-diff";
+	
 	public static void main(String[] args) {
 		Benchmark.init(LOOPS);
 		
@@ -40,7 +44,7 @@ public class BenchmarkTest {
 		}
 		
 		Benchmark.dump("-");
-		Benchmark.dumpFormatted("-", "timestamp-diff,compilation-diff,voluntarycontextswitch-diff,involuntarycontextswitch-diff");
+		Benchmark.dumpFormatted("-", COLUMNS);
 		
 		System.exit(0);
 	}

@@ -92,6 +92,14 @@ static void dump_involuntary_contextswitch_diff(FILE *output, const benchmark_ru
 	DUMP_RUSAGE_DIFF(output, bench, ru_nivcsw);
 }
 
+static void dump_pagereclaim_diff(FILE *output, const benchmark_run_t *bench) {
+	DUMP_RUSAGE_DIFF(output, bench, ru_minflt);
+}
+
+static void dump_pagefault_diff(FILE *output, const benchmark_run_t *bench) {
+	DUMP_RUSAGE_DIFF(output, bench, ru_majflt);
+}
+
 static void dump_compilation_diff(FILE *output, const benchmark_run_t *bench) {
 	fprintf(output, "%10ld", bench->end.compilations - bench->start.compilations);
 }
@@ -102,6 +110,8 @@ static metric_dump_func_name_t dump_functions[] = {
 	{ .name = "timestamp-stop", .func = dump_timestamp_stop },
 	{ .name = "voluntarycontextswitch-diff", .func = dump_voluntary_contextswitch_diff },
 	{ .name = "involuntarycontextswitch-diff", .func = dump_involuntary_contextswitch_diff },
+	{ .name = "pagereclaim-diff", .func = dump_pagereclaim_diff },
+	{ .name = "pagefault-diff", .func = dump_pagefault_diff },
 	{ .name = "compilation-diff", .func = dump_compilation_diff },
 	// { .name = "", .func = dump_ },
 	{ .name = NULL, .func = NULL }
