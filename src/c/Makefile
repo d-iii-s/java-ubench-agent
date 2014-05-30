@@ -34,7 +34,7 @@ AGENT_FILE = ubench-agent.so
 all: $(OUTPUT_DIRECTORY)$(AGENT_FILE)
 
 $(OUTPUT_DIRECTORY)$(AGENT_FILE): $(AGENT_OBJECTS)
-	$(CC) $(CFLAGS) -o $@ -shared $(CFLAGS_JNI) $(AGENT_OBJECTS)
+	$(CC) $(CFLAGS) -o $@ -shared -lrt $(CFLAGS_JNI) $(AGENT_OBJECTS)
 
 $(OUTPUT_DIRECTORY)%.o: %.c
 	$(CC) $(CFLAGS) -c -o $@ $(CFLAGS_JNI) $<
