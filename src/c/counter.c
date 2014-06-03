@@ -41,8 +41,7 @@ static void report_error(const char *line_prefix,
 #define REPORT_ERROR(error_number, operation_description) \
 	report_error("[" __FILE__ ":" QUOTE(__LINE__) "]: ", (error_number), (operation_description))
 
-static void JNICALL
-compilation_counter_on_compiled_method_load(jvmtiEnv* UNUSED_PARAMETER(jvmti),
+static void JNICALL on_compiled_method_load(jvmtiEnv* UNUSED_PARAMETER(jvmti),
 		jmethodID UNUSED_PARAMETER(method),
 		jint UNUSED_PARAMETER(code_size),
 		const void* UNUSED_PARAMETER(code_addr),
@@ -79,7 +78,7 @@ static jint register_and_enable_callback() {
 
 	jvmtiEventCallbacks callbacks;
 	FILL_WITH_ZEROS(callbacks);
-	callbacks.CompiledMethodLoad = &compilation_counter_on_compiled_method_load;
+	callbacks.CompiledMethodLoad = &on_compiled_method_load;
 	err = (*agent_env)->SetEventCallbacks(agent_env, &callbacks, sizeof(callbacks));
 	if (err != JVMTI_ERROR_NONE) {
 		REPORT_ERROR(err, "adding callback for JVMTI_EVENT_COMPILED_METHOD_LOAD");
