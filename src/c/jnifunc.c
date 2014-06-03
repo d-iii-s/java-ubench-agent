@@ -22,5 +22,5 @@ jint JNICALL
 Java_cz_cuni_mff_d3s_perf_CompilationCounter_getCompilationCountAndReset(
 		JNIEnv *UNUSED_PARAMETER(env),
 		jclass UNUSED_PARAMETER(unused)) {
-	return compilation_counter_get_compile_count_and_reset();
+	return ubench_atomic_get_and_set(&counter_compilation, 0);
 }

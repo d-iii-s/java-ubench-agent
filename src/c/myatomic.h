@@ -18,21 +18,29 @@
 #include <jvmti.h>
 #include <jni.h>
 #include <jvmticmlr.h>
-#include "myatomic.h"
 
-#ifdef __GNUC__
-#define UNUSED_PARAMETER(name) name __attribute__((unused))
-#else
-#define UNUSED_PARAMETER(name) name
-#endif
+/*
+ * FIXME: properly implement
+ */
 
-#ifdef JITCOUNTER_DEBUG
-#define DEBUG_PRINTF(fmt, ...) printf("[ubench-agent]: " fmt "\n", ##__VA_ARGS__)
-#else
-#define DEBUG_PRINTF(fmt, ...) (void)0
-#endif
+typedef struct ubench_atomic {
+	int atomic_value;
+} ubench_atomic_t;
 
-extern jint ubench_counters_init(jvmtiEnv *);
+static inline void ubench_atomic_init(ubench_atomic_t *atomic, int new_value) {
+	atomic->atomic_value = new_value;
+}
 
-extern ubench_atomic_t counter_compilation;
-extern ubench_atomic_t counter_compilation_total;
+static inline int ubench_atomic_get(ubench_atomic_t *atomic) {
+	return atomic->atomic_value;
+}
+
+static inline void ubench_atomic_add(ubench_atomic_t *atomic, int how_much_to_add) {
+	atomic->atomic_value += how_much_to_add;
+}
+
+static inline int ubench_atomic_get_and_set(ubench_atomic_t *atomic, int new_value) {
+	int result = atomic->atomic_value;
+	atomic->atomic_value = new_value;
+	return result;
+}

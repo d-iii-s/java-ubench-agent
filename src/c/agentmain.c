@@ -33,7 +33,7 @@ Agent_OnLoad(JavaVM *vm, char *UNUSED_PARAMETER(options), void *UNUSED_PARAMETER
 		return JNI_ERR;
 	}
 
-	rc = compilation_counter_init(env);
+	rc = ubench_counters_init(env);
 
 	if (rc != JNI_OK) {
 		return JNI_ERR;

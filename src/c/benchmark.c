@@ -149,14 +149,14 @@ void JNICALL Java_cz_cuni_mff_d3s_perf_Benchmark_start(
 #ifdef USE_GETRUSAGE
 	getrusage(RUSAGE_SELF, &benchmark_runs[benchmark_runs_index].start.resource_usage);
 #endif
-	benchmark_runs[benchmark_runs_index].start.compilations = compilation_counter_get_compile_count();
+	benchmark_runs[benchmark_runs_index].start.compilations = ubench_atomic_get(&counter_compilation_total);
 	store_current_timestamp(&benchmark_runs[benchmark_runs_index].start.timestamp);
 }
 
 void JNICALL Java_cz_cuni_mff_d3s_perf_Benchmark_stop(
 		JNIEnv *UNUSED_PARAMETER(env), jclass UNUSED_PARAMETER(klass)) {
 	store_current_timestamp(&benchmark_runs[benchmark_runs_index].end.timestamp);
-	benchmark_runs[benchmark_runs_index].end.compilations = compilation_counter_get_compile_count();
+	benchmark_runs[benchmark_runs_index].end.compilations = ubench_atomic_get(&counter_compilation_total);
 #ifdef USE_GETRUSAGE
 	getrusage(RUSAGE_SELF, &benchmark_runs[benchmark_runs_index].end.resource_usage);
 #endif

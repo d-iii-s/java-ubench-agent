@@ -41,6 +41,25 @@ static void report_error(const char *line_prefix,
 #define REPORT_ERROR(error_number, operation_description) \
 	report_error("[" __FILE__ ":" QUOTE(__LINE__) "]: ", (error_number), (operation_description))
 
+static void JNICALL
+compilation_counter_on_compiled_method_load(jvmtiEnv* UNUSED_PARAMETER(jvmti),
+		jmethodID UNUSED_PARAMETER(method),
+		jint UNUSED_PARAMETER(code_size),
+		const void* UNUSED_PARAMETER(code_addr),
+		jint UNUSED_PARAMETER(map_length),
+		const jvmtiAddrLocationMap* UNUSED_PARAMETER(map),
+		const void* UNUSED_PARAMETER(compile_info)) {
+
+	/*
+	 * Currently, we do not record any information about the
+	 * method that was just compiled.
+	 *
+	 * We increment the counter only.
+	 */
+	ubench_atomic_add(&counter_compilation, 1);
+	ubench_atomic_add(&counter_compilation_total, 1);
+}
+
 /*
  * Register event handler for JVMTI_EVENT_COMPILED_METHOD_LOAD.
  * We need to enable the capability, set the callback and enable the
@@ -77,86 +96,17 @@ static jint register_and_enable_callback() {
 	return JNI_OK;
 }
 
+ubench_atomic_t counter_compilation;
+ubench_atomic_t counter_compilation_total;
 
-static jrawMonitorID compile_event_counter_lock;
-static jint compile_event_counter = 0;
-static long compile_event_counter_total = 0;
-
-static jint prepare_counters() {
-	jvmtiError err = (*agent_env)->CreateRawMonitor(agent_env, "JIT agent counter lock", &compile_event_counter_lock);
-	if (err != JVMTI_ERROR_NONE) {
-		REPORT_ERROR(err, "creating monitor for compile-event counter");
-		return JNI_ERR;
-	}
-
-	return JNI_OK;
-}
-
-jint compilation_counter_get_compile_count_and_reset() {
-	jvmtiError err;
-
-	err = (*agent_env)->RawMonitorEnter(agent_env, compile_event_counter_lock);
-	if (err != JVMTI_ERROR_NONE) {
-		REPORT_ERROR(err, "entering counter monitor");
-		return -1;
-	}
-
-	jint result = compile_event_counter;
-	compile_event_counter = 0;
-
-	err = (*agent_env)->RawMonitorExit(agent_env, compile_event_counter_lock);
-	if (err != JVMTI_ERROR_NONE) {
-		REPORT_ERROR(err, "leaving counter monitor");
-		return -1;
-	}
-
-	return result;
-}
-
-long compilation_counter_get_compile_count() {
-	jvmtiError err;
-
-	err = (*agent_env)->RawMonitorEnter(agent_env, compile_event_counter_lock);
-	if (err != JVMTI_ERROR_NONE) {
-		REPORT_ERROR(err, "entering counter monitor");
-		return -1;
-	}
-
-	long result = compile_event_counter_total;
-
-	err = (*agent_env)->RawMonitorExit(agent_env, compile_event_counter_lock);
-	if (err != JVMTI_ERROR_NONE) {
-		REPORT_ERROR(err, "leaving counter monitor");
-		return -1;
-	}
-
-	return result;
-}
-
-static jint increment_compilation_counter() {
-	jvmtiError err;
-
-	err = (*agent_env)->RawMonitorEnter(agent_env, compile_event_counter_lock);
-	if (err != JVMTI_ERROR_NONE) {
-		REPORT_ERROR(err, "entering counter monitor");
-		return JNI_ERR;
-	}
-
-	compile_event_counter++;
-	compile_event_counter_total++;
-
-	err = (*agent_env)->RawMonitorExit(agent_env, compile_event_counter_lock);
-	if (err != JVMTI_ERROR_NONE) {
-		REPORT_ERROR(err, "leaving counter monitor");
-		return JNI_ERR;
-	}
-
-	return JNI_OK;
+static void prepare_counters() {
+	ubench_atomic_init(&counter_compilation, 0);
+	ubench_atomic_init(&counter_compilation_total, 0);
 }
 
 
-jint compilation_counter_init(jvmtiEnv *jvmti) {
-	DEBUG_PRINTF("initializing compilation counter");
+jint ubench_counters_init(jvmtiEnv *jvmti) {
+	DEBUG_PRINTF("initializing counters");
 
 	agent_env = jvmti;
 
@@ -167,28 +117,8 @@ jint compilation_counter_init(jvmtiEnv *jvmti) {
 		return rc;
 	}
 
-	rc = prepare_counters();
-	if (rc != JNI_OK) {
-		return rc;
-	}
+	prepare_counters();
 
 	return JNI_OK;
 }
 
-void JNICALL
-compilation_counter_on_compiled_method_load(jvmtiEnv* UNUSED_PARAMETER(jvmti),
-		jmethodID UNUSED_PARAMETER(method),
-		jint UNUSED_PARAMETER(code_size),
-		const void* UNUSED_PARAMETER(code_addr),
-		jint UNUSED_PARAMETER(map_length),
-		const jvmtiAddrLocationMap* UNUSED_PARAMETER(map),
-		const void* UNUSED_PARAMETER(compile_info)) {
-
-	/*
-	 * Currently, we do not record any information about the
-	 * method that was just compiled.
-	 *
-	 * We increment the counter only.
-	 */
-	increment_compilation_counter();
-}
