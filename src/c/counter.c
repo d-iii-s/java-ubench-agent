@@ -109,7 +109,7 @@ static jint register_and_enable_callback() {
 	callbacks.GarbageCollectionFinish = &on_gc_finish;
 	err = (*agent_env)->SetEventCallbacks(agent_env, &callbacks, sizeof(callbacks));
 	if (err != JVMTI_ERROR_NONE) {
-		REPORT_ERROR(err, "adding callback for JVMTI_EVENT_COMPILED_METHOD_LOAD");
+		REPORT_ERROR(err, "adding callbacks for various JVMTI events");
 		return JNI_ERR;
 	}
 
