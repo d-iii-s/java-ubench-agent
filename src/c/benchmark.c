@@ -57,70 +57,59 @@ typedef struct {
 	metric_snapshot_t end;
 } benchmark_run_t;
 
-typedef void (*metric_dump_func_t)(FILE *, const benchmark_run_t *);
+typedef long long (*metric_value_func_t)(const benchmark_run_t *);
 typedef struct {
 	const char *name;
-	metric_dump_func_t func;
+	int width;
+	metric_value_func_t get;
 } metric_dump_func_name_t;
 
 #ifdef USE_GETRUSAGE
-#define DUMP_RUSAGE_DIFF(output_file, benchmark_run, field) \
-	fprintf(output_file, "%5ld", \
-		benchmark_run->end.resource_usage.field \
-		- benchmark_run->start.resource_usage.field)
+#define GET_RUSAGE_DIFF(benchmark_run, field) \
+	benchmark_run->end.resource_usage.field \
+	- benchmark_run->start.resource_usage.field
 #else
-#define DUMP_RUSAGE_DIFF(output_file, benchmark_run, field) \
-	fprintf(output_file, "%5ld", NOTSUP_LONG)
+#define GET_RUSAGE_DIFF(benchmark_run, field) (long long) -1
 #endif
 
-static void dump_timestamp_diff(FILE *output, const benchmark_run_t *bench) {
-	fprintf(output, "%15lld", timestamp_diff_ns(&bench->start.timestamp, &bench->end.timestamp));
+static long long get_timestamp_diff(const benchmark_run_t *bench) {
+	return timestamp_diff_ns(&bench->start.timestamp, &bench->end.timestamp);
 }
 
-static void dump_timestamp_start(FILE *output, const benchmark_run_t *bench) {
-	fprintf(output, PRI_TIMESTAMP_FMT, PRI_TIMESTAMP(bench->start.timestamp));
+static long long get_voluntary_contextswitch_diff(const benchmark_run_t *bench) {
+	return GET_RUSAGE_DIFF(bench, ru_nvcsw);
 }
 
-static void dump_timestamp_stop(FILE *output, const benchmark_run_t *bench) {
-	fprintf(output, PRI_TIMESTAMP_FMT, PRI_TIMESTAMP(bench->end.timestamp));
+static long long get_involuntary_contextswitch_diff(const benchmark_run_t *bench) {
+	return GET_RUSAGE_DIFF(bench, ru_nivcsw);
 }
 
-static void dump_voluntary_contextswitch_diff(FILE *output, const benchmark_run_t *bench) {
-	DUMP_RUSAGE_DIFF(output, bench, ru_nvcsw);
+static long long get_pagereclaim_diff(const benchmark_run_t *bench) {
+	return GET_RUSAGE_DIFF(bench, ru_minflt);
 }
 
-static void dump_involuntary_contextswitch_diff(FILE *output, const benchmark_run_t *bench) {
-	DUMP_RUSAGE_DIFF(output, bench, ru_nivcsw);
+static long long get_pagefault_diff(const benchmark_run_t *bench) {
+	return GET_RUSAGE_DIFF(bench, ru_majflt);
 }
 
-static void dump_pagereclaim_diff(FILE *output, const benchmark_run_t *bench) {
-	DUMP_RUSAGE_DIFF(output, bench, ru_minflt);
+static long long get_compilation_diff(const benchmark_run_t *bench) {
+	return bench->end.compilations - bench->start.compilations;
 }
 
-static void dump_pagefault_diff(FILE *output, const benchmark_run_t *bench) {
-	DUMP_RUSAGE_DIFF(output, bench, ru_majflt);
-}
-
-static void dump_compilation_diff(FILE *output, const benchmark_run_t *bench) {
-	fprintf(output, "%10ld", bench->end.compilations - bench->start.compilations);
-}
-
-static void dump_gc_diff(FILE *output, const benchmark_run_t *bench) {
-	fprintf(output, "%5d", bench->end.garbage_collections - bench->start.garbage_collections);
+static long long get_gc_diff(const benchmark_run_t *bench) {
+	return bench->end.garbage_collections - bench->start.garbage_collections;
 }
 
 static metric_dump_func_name_t dump_functions[] = {
-	{ .name = "timestamp-diff", .func = dump_timestamp_diff },
-	{ .name = "timestamp-start", .func = dump_timestamp_start },
-	{ .name = "timestamp-stop", .func = dump_timestamp_stop },
-	{ .name = "voluntarycontextswitch-diff", .func = dump_voluntary_contextswitch_diff },
-	{ .name = "involuntarycontextswitch-diff", .func = dump_involuntary_contextswitch_diff },
-	{ .name = "pagereclaim-diff", .func = dump_pagereclaim_diff },
-	{ .name = "pagefault-diff", .func = dump_pagefault_diff },
-	{ .name = "compilation-diff", .func = dump_compilation_diff },
-	{ .name = "gc-diff", .func = dump_gc_diff },
-	// { .name = "", .func = dump_ },
-	{ .name = NULL, .func = NULL }
+	{ .name = "timestamp-diff", .width = 10, .get = get_timestamp_diff },
+	{ .name = "voluntarycontextswitch-diff", .width = 3, .get = get_voluntary_contextswitch_diff },
+	{ .name = "involuntarycontextswitch-diff", .width = 3, .get = get_involuntary_contextswitch_diff },
+	{ .name = "pagereclaim-diff", .width = 5, .get = get_pagereclaim_diff },
+	{ .name = "pagefault-diff", .width = 3, .get = get_pagefault_diff },
+	{ .name = "compilation-diff", .width = 3, .get = get_compilation_diff },
+	{ .name = "gc-diff", .width = 3, .get = get_gc_diff },
+	// { .name = "", .width = 0, .get = get_ },
+	{ .name = NULL, .width = 0, .get = NULL }
 };
 
 
@@ -204,8 +193,8 @@ void JNICALL Java_cz_cuni_mff_d3s_perf_Benchmark_dumpFormatted(
 	}
 
 	/* Prepare callback functions. */
-	metric_dump_func_t *dump_funcs = malloc(sizeof(metric_dump_func_t) * format_count);
-	size_t dump_funcs_count = 0;
+	int *metrics_indices = malloc(sizeof(int) * format_count);
+	size_t metrics_indices_count = 0;
 
 	/* Parse the format. */
 	char *format_copy = strdup(format);
@@ -217,13 +206,15 @@ void JNICALL Java_cz_cuni_mff_d3s_perf_Benchmark_dumpFormatted(
 			break;
 		}
 
+		int index = 0;
 		metric_dump_func_name_t *func_it = dump_functions;
 		while (func_it->name != NULL) {
 			if (strcmp(token, func_it->name) == 0) {
-				dump_funcs[dump_funcs_count] = func_it->func;
-				dump_funcs_count++;
+				metrics_indices[metrics_indices_count] = index;
+				metrics_indices_count++;
 				break;
 			}
+			index++;
 			func_it++;
 		}
 	}
@@ -232,8 +223,10 @@ void JNICALL Java_cz_cuni_mff_d3s_perf_Benchmark_dumpFormatted(
 
 	/* Print the results. */
 	for (size_t bi = 0; bi < benchmark_runs_index; bi++) {
-		for (size_t fi = 0; fi < dump_funcs_count; fi++) {
-			dump_funcs[fi](file, &benchmark_runs[bi]);
+		for (size_t fi = 0; fi < metrics_indices_count; fi++) {
+			metric_dump_func_name_t *dumper = &dump_functions[ metrics_indices[fi] ];
+			long long value = dumper->get(&benchmark_runs[bi]);
+			fprintf(file, "%*lld", dumper->width, value);
 		}
 		fprintf(file, "\n");
 	}
@@ -243,7 +236,7 @@ void JNICALL Java_cz_cuni_mff_d3s_perf_Benchmark_dumpFormatted(
 	}
 
 leave:
-	free(dump_funcs);
+	free(metrics_indices);
 	(*env)->ReleaseStringUTFChars(env, jfilename, filename);
 	(*env)->ReleaseStringUTFChars(env, jformat, format);
 }
