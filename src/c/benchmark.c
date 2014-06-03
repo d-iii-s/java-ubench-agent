@@ -49,6 +49,7 @@ typedef struct {
 	struct rusage resource_usage;
 #endif
 	long compilations;
+	int garbage_collections;
 } metric_snapshot_t;
 
 typedef struct {
@@ -104,6 +105,10 @@ static void dump_compilation_diff(FILE *output, const benchmark_run_t *bench) {
 	fprintf(output, "%10ld", bench->end.compilations - bench->start.compilations);
 }
 
+static void dump_gc_diff(FILE *output, const benchmark_run_t *bench) {
+	fprintf(output, "%5d", bench->end.garbage_collections - bench->start.garbage_collections);
+}
+
 static metric_dump_func_name_t dump_functions[] = {
 	{ .name = "timestamp-diff", .func = dump_timestamp_diff },
 	{ .name = "timestamp-start", .func = dump_timestamp_start },
@@ -113,6 +118,7 @@ static metric_dump_func_name_t dump_functions[] = {
 	{ .name = "pagereclaim-diff", .func = dump_pagereclaim_diff },
 	{ .name = "pagefault-diff", .func = dump_pagefault_diff },
 	{ .name = "compilation-diff", .func = dump_compilation_diff },
+	{ .name = "gc-diff", .func = dump_gc_diff },
 	// { .name = "", .func = dump_ },
 	{ .name = NULL, .func = NULL }
 };
@@ -150,12 +156,14 @@ void JNICALL Java_cz_cuni_mff_d3s_perf_Benchmark_start(
 	getrusage(RUSAGE_SELF, &benchmark_runs[benchmark_runs_index].start.resource_usage);
 #endif
 	benchmark_runs[benchmark_runs_index].start.compilations = ubench_atomic_get(&counter_compilation_total);
+	benchmark_runs[benchmark_runs_index].start.garbage_collections = ubench_atomic_get(&counter_gc_total);
 	store_current_timestamp(&benchmark_runs[benchmark_runs_index].start.timestamp);
 }
 
 void JNICALL Java_cz_cuni_mff_d3s_perf_Benchmark_stop(
 		JNIEnv *UNUSED_PARAMETER(env), jclass UNUSED_PARAMETER(klass)) {
 	store_current_timestamp(&benchmark_runs[benchmark_runs_index].end.timestamp);
+	benchmark_runs[benchmark_runs_index].end.garbage_collections = ubench_atomic_get(&counter_gc_total);
 	benchmark_runs[benchmark_runs_index].end.compilations = ubench_atomic_get(&counter_compilation_total);
 #ifdef USE_GETRUSAGE
 	getrusage(RUSAGE_SELF, &benchmark_runs[benchmark_runs_index].end.resource_usage);

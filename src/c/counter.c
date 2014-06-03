@@ -23,6 +23,11 @@
 
 static jvmtiEnv *agent_env;
 
+
+ubench_atomic_t counter_compilation;
+ubench_atomic_t counter_compilation_total;
+ubench_atomic_t counter_gc_total;
+
 static void report_error(const char *line_prefix,
 		jvmtiError error, const char *operation_description) {
 	char *error_description = NULL;
@@ -40,6 +45,17 @@ static void report_error(const char *line_prefix,
 
 #define REPORT_ERROR(error_number, operation_description) \
 	report_error("[" __FILE__ ":" QUOTE(__LINE__) "]: ", (error_number), (operation_description))
+
+#define REGISTER_EVENT_OR_RETURN(agent_env_var, event) \
+	do { \
+		jvmtiError event_err = (*agent_env_var)->SetEventNotificationMode( \
+			agent_env_var, JVMTI_ENABLE, event, NULL); \
+		if (event_err != JVMTI_ERROR_NONE) { \
+			REPORT_ERROR(err, "enabling notification for " #event); \
+			return JNI_ERR; \
+		} \
+	} while (0)
+
 
 static void JNICALL on_compiled_method_load(jvmtiEnv* UNUSED_PARAMETER(jvmti),
 		jmethodID UNUSED_PARAMETER(method),
@@ -59,6 +75,15 @@ static void JNICALL on_compiled_method_load(jvmtiEnv* UNUSED_PARAMETER(jvmti),
 	ubench_atomic_add(&counter_compilation_total, 1);
 }
 
+// static void JNICALL on_gc_start(jvmtiEnv *UNUSED_PARAMETER(jvmti_env)) {
+// }
+
+static void JNICALL on_gc_finish(jvmtiEnv *UNUSED_PARAMETER(jvmti_env)) {
+	ubench_atomic_add(&counter_gc_total, 1);
+}
+
+
+
 /*
  * Register event handler for JVMTI_EVENT_COMPILED_METHOD_LOAD.
  * We need to enable the capability, set the callback and enable the
@@ -70,33 +95,31 @@ static jint register_and_enable_callback() {
 	jvmtiCapabilities capabilities;
 	FILL_WITH_ZEROS(capabilities);
 	capabilities.can_generate_compiled_method_load_events = 1;
+	capabilities.can_generate_garbage_collection_events = 1;
 	err = (*agent_env)->AddCapabilities(agent_env, &capabilities);
 	if (err != JVMTI_ERROR_NONE) {
-		REPORT_ERROR(err, "adding capability to intercept JVMTI_EVENT_COMPILED_METHOD_LOAD");
+		REPORT_ERROR(err, "adding capabilities to intercept various JVMTI events");
 		return JNI_ERR;
 	}
 
 	jvmtiEventCallbacks callbacks;
 	FILL_WITH_ZEROS(callbacks);
 	callbacks.CompiledMethodLoad = &on_compiled_method_load;
+	// callbacks.GarbageCollectionStart = &on_gc_start;
+	callbacks.GarbageCollectionFinish = &on_gc_finish;
 	err = (*agent_env)->SetEventCallbacks(agent_env, &callbacks, sizeof(callbacks));
 	if (err != JVMTI_ERROR_NONE) {
 		REPORT_ERROR(err, "adding callback for JVMTI_EVENT_COMPILED_METHOD_LOAD");
 		return JNI_ERR;
 	}
 
-	err = (*agent_env)->SetEventNotificationMode(agent_env, JVMTI_ENABLE,
-			JVMTI_EVENT_COMPILED_METHOD_LOAD, NULL);
-	if (err != JVMTI_ERROR_NONE) {
-		REPORT_ERROR(err, "enabling notification for JVMTI_EVENT_COMPILED_METHOD_LOAD");
-		return JNI_ERR;
-	}
+
+	REGISTER_EVENT_OR_RETURN(agent_env, JVMTI_EVENT_COMPILED_METHOD_LOAD);
+	// REGISTER_EVENT_OR_RETURN(agent_env, JVMTI_EVENT_GARBAGE_COLLECTION_START);
+	REGISTER_EVENT_OR_RETURN(agent_env, JVMTI_EVENT_GARBAGE_COLLECTION_FINISH);
 
 	return JNI_OK;
 }
-
-ubench_atomic_t counter_compilation;
-ubench_atomic_t counter_compilation_total;
 
 static void prepare_counters() {
 	ubench_atomic_init(&counter_compilation, 0);

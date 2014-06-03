@@ -20,6 +20,7 @@ public class BenchmarkTest {
 	private static final int LOOPS = 10;
 	
 	private static final String COLUMNS = "timestamp-diff,compilation-diff,"
+			+ "gc-diff,"
 			+ "voluntarycontextswitch-diff,involuntarycontextswitch-diff,"
 			+ "pagereclaim-diff,pagefault-diff";
 	
