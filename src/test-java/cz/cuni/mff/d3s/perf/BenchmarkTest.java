@@ -16,18 +16,19 @@
  */
 package cz.cuni.mff.d3s.perf;
 
+import java.util.Arrays;
+
 public class BenchmarkTest {
 	private static final int LOOPS = 10;
 	
-	private static final String COLUMNS = "timestamp-diff,compilation-diff,"
-			+ "gc-diff,"
-			+ "papi1-diff,papi2-diff,"
-			+ "voluntarycontextswitch-diff,involuntarycontextswitch-diff,"
-			+ "pagereclaim-diff,pagefault-diff";
+	private static final BenchmarkMetric[] columns = {
+		BenchmarkMetric.WALL_CLOCK_TIME,
+		BenchmarkMetric.CONTEXT_SWITCH_FORCED,
+		BenchmarkMetric.L2_DATA_READ
+	};
 	
 	public static void main(String[] args) {
-		Benchmark.init(LOOPS);
-		
+		Benchmark.init(LOOPS, Arrays.asList(columns));		
 		
 		for (int i = 0; i < LOOPS; i++) {
 			long before = System.nanoTime();
@@ -46,7 +47,6 @@ public class BenchmarkTest {
 		}
 		
 		Benchmark.dump("-");
-		Benchmark.dumpFormatted("-", COLUMNS);
 		
 		System.exit(0);
 	}

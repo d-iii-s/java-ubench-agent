@@ -16,12 +16,14 @@
  */
 package cz.cuni.mff.d3s.perf;
 
+import java.util.Arrays;
+
 public class OverheadEstimationsTest {
 	private static final int LOOPS = 10;
 	private static final int INNER_LOOPS = 1000000;
 	
 	public static void main(String[] args) {
-		Benchmark.init(LOOPS * 2);
+		Benchmark.init(LOOPS * 2, Arrays.asList(BenchmarkMetric.WALL_CLOCK_TIME));
 		
 		for (int loop = 0; loop < LOOPS; loop++) {
 			Benchmark.start();
@@ -37,7 +39,7 @@ public class OverheadEstimationsTest {
 			Benchmark.stop();
 		}
 		
-		Benchmark.dumpFormatted("-", "timestamp-diff,voluntarycontextswitch-diff,involuntarycontextswitch-diff");
+		Benchmark.dump("-");
 		
 		System.exit(0);
 	}

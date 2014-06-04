@@ -27,6 +27,7 @@
 
 #include "cz_cuni_mff_d3s_perf_CompilationCounter.h"
 #include "microbench.h"
+#include "metric.h"
 #include <stdlib.h>
 #include <time.h>
 #include <string.h>
@@ -70,90 +71,65 @@ typedef struct {
 	metric_snapshot_t end;
 } benchmark_run_t;
 
-typedef long long (*metric_value_func_t)(const benchmark_run_t *);
-typedef struct {
-	const char *name;
-	int width;
-	metric_value_func_t get;
-} metric_dump_func_name_t;
+#define METRIC_BACKEND_LINUX 1
+#define METRIC_BACKEND_RESOURCE_USAGE 2
+#define METRIC_BACKEND_PAPI 4
 
-#ifdef USE_GETRUSAGE
-#define GET_RUSAGE_DIFF(benchmark_run, field) \
-	benchmark_run->end.resource_usage.field \
-	- benchmark_run->start.resource_usage.field
-#else
-#define GET_RUSAGE_DIFF(benchmark_run, field) (long long) -1
-#endif
+#define METRIC_INFO_INIT(m_index, m_shortname, m_backend, m_getter, m_papi_event_id) \
+	do { \
+		metric_info[m_index].id = #m_index; \
+		metric_info[m_index].short_name = m_shortname; \
+		metric_info[m_index].backend = m_backend; \
+		metric_info[m_index].papi_event_id = m_papi_event_id; \
+		metric_info[m_index].op_get = m_getter; \
+	} while (0)
 
-static long long get_timestamp_diff(const benchmark_run_t *bench) {
-	return timestamp_diff_ns(&bench->start.timestamp, &bench->end.timestamp);
-}
-
-static long long get_voluntary_contextswitch_diff(const benchmark_run_t *bench) {
-	return GET_RUSAGE_DIFF(bench, ru_nvcsw);
-}
-
-static long long get_involuntary_contextswitch_diff(const benchmark_run_t *bench) {
-	return GET_RUSAGE_DIFF(bench, ru_nivcsw);
-}
-
-static long long get_pagereclaim_diff(const benchmark_run_t *bench) {
-	return GET_RUSAGE_DIFF(bench, ru_minflt);
-}
-
-static long long get_pagefault_diff(const benchmark_run_t *bench) {
-	return GET_RUSAGE_DIFF(bench, ru_majflt);
-}
-
-static long long get_compilation_diff(const benchmark_run_t *bench) {
-	return bench->end.compilations - bench->start.compilations;
-}
-
-static long long get_gc_diff(const benchmark_run_t *bench) {
-	return bench->end.garbage_collections - bench->start.garbage_collections;
-}
-
-static long long get_papi_diff(const benchmark_run_t *bench, int index) {
-#ifdef USE_PAPI
-	return bench->end.perf_counters[index] - bench->start.perf_counters[index];
-#else
-	return -1;
-#endif
-}
-
-static long long get_papi1_diff(const benchmark_run_t *bench) {
-	return get_papi_diff(bench, 0);
-}
-
-static long long get_papi2_diff(const benchmark_run_t *bench) {
-	return get_papi_diff(bench, 1);
-}
-
-static metric_dump_func_name_t dump_functions[] = {
-	{ .name = "timestamp-diff", .width = 10, .get = get_timestamp_diff },
-	{ .name = "voluntarycontextswitch-diff", .width = 3, .get = get_voluntary_contextswitch_diff },
-	{ .name = "involuntarycontextswitch-diff", .width = 3, .get = get_involuntary_contextswitch_diff },
-	{ .name = "pagereclaim-diff", .width = 5, .get = get_pagereclaim_diff },
-	{ .name = "pagefault-diff", .width = 3, .get = get_pagefault_diff },
-	{ .name = "compilation-diff", .width = 3, .get = get_compilation_diff },
-	{ .name = "gc-diff", .width = 3, .get = get_gc_diff },
-	{ .name = "papi1-diff", .width = 10, .get = get_papi1_diff },
-	{ .name = "papi2-diff", .width = 10, .get = get_papi2_diff },
-	// { .name = "", .width = 0, .get = get_ },
-	{ .name = NULL, .width = 0, .get = NULL }
+typedef struct metric_info metric_info_t;
+typedef long long (*metric_func_t)(const benchmark_run_t *, const metric_info_t *);
+struct metric_info {
+	const char *id;
+	const char *short_name;
+	unsigned int backend;
+	int papi_event_id;
+	metric_func_t op_get;
 };
 
+static metric_info_t metric_info[METRIC_COUNT];
+static unsigned int backends_used;
+static int papi_counters[METRIC_COUNT];
+static size_t papi_counters_count;
 
 static benchmark_run_t *benchmark_runs = NULL;
 static size_t benchmark_runs_size = 0;
 static size_t benchmark_runs_index = 0;
 
-#ifdef USE_PAPI
-static int perf_events[PERF_EVENTS_COUNT] = { PAPI_TOT_INS, PAPI_TOT_CYC };
-#endif
+static int *used_metrics_indices = NULL;
+static size_t used_metrics_count = 0;
 
 static inline void store_current_timestamp(timestamp_t *ts) {
 	clock_gettime(CLOCK_MONOTONIC, ts);
+}
+
+static long long getter_wall_clock_time(const benchmark_run_t *bench, const metric_info_t *info) {
+	return timestamp_diff_ns(&bench->start.timestamp, &bench->end.timestamp);
+}
+
+static long long getter_context_switch_forced(const benchmark_run_t *bench, const metric_info_t *info) {
+	return bench->end.resource_usage.ru_nivcsw - bench->start.resource_usage.ru_nivcsw;
+}
+
+static long long getter_papi(const benchmark_run_t *bench, const metric_info_t *info) {
+	int papi_event = info->papi_event_id;
+	size_t index = 0;
+	while (index < papi_counters_count) {
+		if (papi_counters[index] == papi_event) {
+			break;
+		}
+	}
+	if (index >= papi_counters_count) {
+		return -1;
+	}
+	return bench->end.perf_counters[index] - bench->start.perf_counters[index];
 }
 
 jint ubench_benchmark_init(void) {
@@ -162,16 +138,52 @@ jint ubench_benchmark_init(void) {
 	PAPI_library_init(PAPI_VER_CURRENT);
 #endif
 
+	METRIC_INFO_INIT(METRIC_WALL_CLOCK_TIME, "clock", METRIC_BACKEND_LINUX, getter_wall_clock_time, -1);
+	METRIC_INFO_INIT(METRIC_CONTEXT_SWITCH_FORCED, "ctxsw", METRIC_BACKEND_RESOURCE_USAGE, getter_context_switch_forced, -1);
+	METRIC_INFO_INIT(METRIC_L2_DATA_READ, "l2dr", METRIC_BACKEND_PAPI, getter_papi, PAPI_L2_DCR);
+
 	return JNI_OK;
 }
 
 void JNICALL Java_cz_cuni_mff_d3s_perf_Benchmark_init(
-		JNIEnv *UNUSED_PARAMETER(env), jclass UNUSED_PARAMETER(klass),
-		jint jmeasurements) {
+		JNIEnv *env, jclass UNUSED_PARAMETER(klass),
+		jint jmeasurements, jintArray jevents) {
 	size_t measurement_count = jmeasurements;
 	if (benchmark_runs != NULL) {
 		free(benchmark_runs);
 	}
+
+	int events_count = (*env)->GetArrayLength(env, jevents);
+	if (events_count == 0) {
+		return;
+	}
+
+	used_metrics_indices = malloc(sizeof(int) * events_count);
+
+	jint *events = (*env)->GetIntArrayElements(env, jevents, NULL);
+	backends_used = 0;
+
+	papi_counters_count = 0;
+	used_metrics_count = 0;
+	for (int i = 0; i < events_count; i++) {
+		used_metrics_indices[i] = events[i];
+		int metric_id = used_metrics_indices[i];
+		if ((metric_id < 0) || (metric_id >= METRIC_COUNT)) {
+			continue;
+		}
+		used_metrics_count++;
+		unsigned int backend = metric_info[metric_id].backend;
+		if (backend == METRIC_BACKEND_PAPI) {
+			if (papi_counters_count < METRIC_COUNT) {
+				/* Check that the event is not already registered. */
+				papi_counters[papi_counters_count] = metric_info[metric_id].papi_event_id;
+				papi_counters_count++;
+			}
+		}
+
+		backends_used |= backend;
+	}
+	(*env)->ReleaseIntArrayElements(env, jevents, events, JNI_ABORT);
 
 	benchmark_runs = malloc(sizeof(benchmark_run_t) * measurement_count);
 	benchmark_runs_size = measurement_count;
@@ -192,8 +204,8 @@ void JNICALL Java_cz_cuni_mff_d3s_perf_Benchmark_start(
 
 #ifdef USE_PAPI
 	// TODO: check for errors
-	PAPI_start_counters(perf_events, PERF_EVENTS_COUNT);
-	PAPI_read_counters(benchmark_runs[benchmark_runs_index].start.perf_counters, PERF_EVENTS_COUNT);
+	PAPI_start_counters(papi_counters, papi_counters_count);
+	PAPI_read_counters(benchmark_runs[benchmark_runs_index].start.perf_counters, papi_counters_count);
 #endif
 
 	store_current_timestamp(&benchmark_runs[benchmark_runs_index].start.timestamp);
@@ -204,7 +216,7 @@ void JNICALL Java_cz_cuni_mff_d3s_perf_Benchmark_stop(
 	store_current_timestamp(&benchmark_runs[benchmark_runs_index].end.timestamp);
 #ifdef USE_PAPI
 	// TODO: check for errors
-	PAPI_stop_counters(benchmark_runs[benchmark_runs_index].end.perf_counters, PERF_EVENTS_COUNT);
+	PAPI_stop_counters(benchmark_runs[benchmark_runs_index].end.perf_counters, papi_counters_count);
 #endif
 
 	benchmark_runs[benchmark_runs_index].end.garbage_collections = ubench_atomic_get(&counter_gc_total);
@@ -216,11 +228,10 @@ void JNICALL Java_cz_cuni_mff_d3s_perf_Benchmark_stop(
 	benchmark_runs_index++;
 }
 
-void JNICALL Java_cz_cuni_mff_d3s_perf_Benchmark_dumpFormatted(
+void JNICALL Java_cz_cuni_mff_d3s_perf_Benchmark_dump(
 		JNIEnv *env, jclass UNUSED_PARAMETER(klass),
-		jstring jfilename, jstring jformat) {
+		jstring jfilename) {
 	const char *filename = (*env)->GetStringUTFChars(env, jfilename, 0);
-	const char *format = (*env)->GetStringUTFChars(env, jformat, 0);
 
 	FILE *file = NULL;
 	if (strcmp(filename, "-") == 0) {
@@ -233,55 +244,12 @@ void JNICALL Java_cz_cuni_mff_d3s_perf_Benchmark_dumpFormatted(
 		goto leave;
 	}
 
-	/* Count length of the format. */
-	int format_count = 0;
-	{
-		const char *pos = format;
-		while (1) {
-			format_count++;
-			pos = strchr(pos, ',');
-			if (pos == NULL) {
-				break;
-			}
-			pos++;
-		}
-	}
-
-	/* Prepare callback functions. */
-	int *metrics_indices = malloc(sizeof(int) * format_count);
-	size_t metrics_indices_count = 0;
-
-	/* Parse the format. */
-	char *format_copy = strdup(format);
-	char *format_copy_or_null = format_copy;
-	while (1) {
-		char *token = strtok(format_copy_or_null, ",");
-		format_copy_or_null = NULL;
-		if (token == NULL) {
-			break;
-		}
-
-		int index = 0;
-		metric_dump_func_name_t *func_it = dump_functions;
-		while (func_it->name != NULL) {
-			if (strcmp(token, func_it->name) == 0) {
-				metrics_indices[metrics_indices_count] = index;
-				metrics_indices_count++;
-				break;
-			}
-			index++;
-			func_it++;
-		}
-	}
-
-	free(format_copy);
-
 	/* Print the results. */
 	for (size_t bi = 0; bi < benchmark_runs_index; bi++) {
-		for (size_t fi = 0; fi < metrics_indices_count; fi++) {
-			metric_dump_func_name_t *dumper = &dump_functions[ metrics_indices[fi] ];
-			long long value = dumper->get(&benchmark_runs[bi]);
-			fprintf(file, "%*lld", dumper->width, value);
+		for (size_t fi = 0; fi < used_metrics_count; fi++) {
+			metric_info_t *info = &metric_info[ used_metrics_indices[fi] ];
+			long long value = info->op_get(&benchmark_runs[bi], info);
+			fprintf(file, "%12lld", value);
 		}
 		fprintf(file, "\n");
 	}
@@ -291,7 +259,5 @@ void JNICALL Java_cz_cuni_mff_d3s_perf_Benchmark_dumpFormatted(
 	}
 
 leave:
-	free(metrics_indices);
 	(*env)->ReleaseStringUTFChars(env, jfilename, filename);
-	(*env)->ReleaseStringUTFChars(env, jformat, format);
 }

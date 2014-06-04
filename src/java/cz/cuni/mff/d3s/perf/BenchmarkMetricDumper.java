@@ -17,20 +17,15 @@
 
 package cz.cuni.mff.d3s.perf;
 
-import java.util.Collection;
-
-public final class Benchmark {
-	public static void init(final int measurements, Collection<BenchmarkMetric> metrics) {
-		int[] metricIds = new int[metrics.size()];
-		int index = 0;
-		for (BenchmarkMetric bm : metrics) {
-			metricIds[index] = bm.ordinal();
-			index++;
+public class BenchmarkMetricDumper {
+	public static void main(String[] args) {
+		System.out.printf("/*\n * Generated file. Do not edit.\n");
+		System.out.printf(" *\n * This file is generated from BenchmarkMetric class.\n");
+		System.out.printf(" */\n\n");
+		BenchmarkMetric[] allMetrics = BenchmarkMetric.values();
+		System.out.printf("#define METRIC_COUNT %d\n", allMetrics.length);
+		for (BenchmarkMetric bm : allMetrics) {
+			System.out.printf("#define METRIC_%s %d\n", bm, bm.ordinal());
 		}
-		init(measurements, metricIds);
 	}
-	private static native void init(final int measurements, int[] metrics);
-	public static native void start();
-	public static native void stop();
-	public static native void dump(final String filename);
 }

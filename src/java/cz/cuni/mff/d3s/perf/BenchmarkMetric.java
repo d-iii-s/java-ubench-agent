@@ -17,20 +17,8 @@
 
 package cz.cuni.mff.d3s.perf;
 
-import java.util.Collection;
-
-public final class Benchmark {
-	public static void init(final int measurements, Collection<BenchmarkMetric> metrics) {
-		int[] metricIds = new int[metrics.size()];
-		int index = 0;
-		for (BenchmarkMetric bm : metrics) {
-			metricIds[index] = bm.ordinal();
-			index++;
-		}
-		init(measurements, metricIds);
-	}
-	private static native void init(final int measurements, int[] metrics);
-	public static native void start();
-	public static native void stop();
-	public static native void dump(final String filename);
+public enum BenchmarkMetric {
+	WALL_CLOCK_TIME,
+	CONTEXT_SWITCH_FORCED,
+	L2_DATA_READ
 }
