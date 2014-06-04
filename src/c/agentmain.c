@@ -39,6 +39,11 @@ Agent_OnLoad(JavaVM *vm, char *UNUSED_PARAMETER(options), void *UNUSED_PARAMETER
 		return JNI_ERR;
 	}
 
+	rc = ubench_benchmark_init();
+	if (rc != JNI_OK) {
+		return JNI_ERR;
+	}
+
 	DEBUG_PRINTF("initialization completed successfully.");
 
 	return JNI_OK;

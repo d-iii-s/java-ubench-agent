@@ -21,6 +21,7 @@ public class BenchmarkTest {
 	
 	private static final String COLUMNS = "timestamp-diff,compilation-diff,"
 			+ "gc-diff,"
+			+ "papi1-diff,papi2-diff,"
 			+ "voluntarycontextswitch-diff,involuntarycontextswitch-diff,"
 			+ "pagereclaim-diff,pagefault-diff";
 	

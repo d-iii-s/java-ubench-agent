@@ -33,6 +33,7 @@
 #endif
 
 extern jint ubench_counters_init(jvmtiEnv *);
+extern jint ubench_benchmark_init(void);
 
 extern ubench_atomic_t counter_compilation;
 extern ubench_atomic_t counter_compilation_total;

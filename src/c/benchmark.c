@@ -19,6 +19,8 @@
 
 // TODO: replace later with some real check
 #define USE_GETRUSAGE
+// TODO: replace later with some real check (build-time option?)
+#define USE_PAPI
 
 #define NOTSUP_LONG ((long)-1)
 
@@ -30,6 +32,9 @@
 #include <string.h>
 #ifdef USE_GETRUSAGE
 #include <sys/resource.h>
+#endif
+#ifdef USE_PAPI
+#include <papi.h>
 #endif
 
 typedef struct timespec timestamp_t;
@@ -43,6 +48,11 @@ static inline long long timestamp_diff_ns(const timestamp_t *a, const timestamp_
 }
 
 
+#ifdef USE_PAPI
+#define PERF_EVENTS_COUNT 2
+#endif
+
+
 typedef struct {
 	timestamp_t timestamp;
 #ifdef USE_GETRUSAGE
@@ -50,6 +60,9 @@ typedef struct {
 #endif
 	long compilations;
 	int garbage_collections;
+#ifdef USE_PAPI
+	long long perf_counters[PERF_EVENTS_COUNT];
+#endif
 } metric_snapshot_t;
 
 typedef struct {
@@ -100,6 +113,22 @@ static long long get_gc_diff(const benchmark_run_t *bench) {
 	return bench->end.garbage_collections - bench->start.garbage_collections;
 }
 
+static long long get_papi_diff(const benchmark_run_t *bench, int index) {
+#ifdef USE_PAPI
+	return bench->end.perf_counters[index] - bench->start.perf_counters[index];
+#else
+	return -1;
+#endif
+}
+
+static long long get_papi1_diff(const benchmark_run_t *bench) {
+	return get_papi_diff(bench, 0);
+}
+
+static long long get_papi2_diff(const benchmark_run_t *bench) {
+	return get_papi_diff(bench, 1);
+}
+
 static metric_dump_func_name_t dump_functions[] = {
 	{ .name = "timestamp-diff", .width = 10, .get = get_timestamp_diff },
 	{ .name = "voluntarycontextswitch-diff", .width = 3, .get = get_voluntary_contextswitch_diff },
@@ -108,6 +137,8 @@ static metric_dump_func_name_t dump_functions[] = {
 	{ .name = "pagefault-diff", .width = 3, .get = get_pagefault_diff },
 	{ .name = "compilation-diff", .width = 3, .get = get_compilation_diff },
 	{ .name = "gc-diff", .width = 3, .get = get_gc_diff },
+	{ .name = "papi1-diff", .width = 10, .get = get_papi1_diff },
+	{ .name = "papi2-diff", .width = 10, .get = get_papi2_diff },
 	// { .name = "", .width = 0, .get = get_ },
 	{ .name = NULL, .width = 0, .get = NULL }
 };
@@ -117,10 +148,22 @@ static benchmark_run_t *benchmark_runs = NULL;
 static size_t benchmark_runs_size = 0;
 static size_t benchmark_runs_index = 0;
 
+#ifdef USE_PAPI
+static int perf_events[PERF_EVENTS_COUNT] = { PAPI_TOT_INS, PAPI_TOT_CYC };
+#endif
+
 static inline void store_current_timestamp(timestamp_t *ts) {
 	clock_gettime(CLOCK_MONOTONIC, ts);
 }
 
+jint ubench_benchmark_init(void) {
+	// TODO: check for errors
+#ifdef USE_PAPI
+	PAPI_library_init(PAPI_VER_CURRENT);
+#endif
+
+	return JNI_OK;
+}
 
 void JNICALL Java_cz_cuni_mff_d3s_perf_Benchmark_init(
 		JNIEnv *UNUSED_PARAMETER(env), jclass UNUSED_PARAMETER(klass),
@@ -146,12 +189,24 @@ void JNICALL Java_cz_cuni_mff_d3s_perf_Benchmark_start(
 #endif
 	benchmark_runs[benchmark_runs_index].start.compilations = ubench_atomic_get(&counter_compilation_total);
 	benchmark_runs[benchmark_runs_index].start.garbage_collections = ubench_atomic_get(&counter_gc_total);
+
+#ifdef USE_PAPI
+	// TODO: check for errors
+	PAPI_start_counters(perf_events, PERF_EVENTS_COUNT);
+	PAPI_read_counters(benchmark_runs[benchmark_runs_index].start.perf_counters, PERF_EVENTS_COUNT);
+#endif
+
 	store_current_timestamp(&benchmark_runs[benchmark_runs_index].start.timestamp);
 }
 
 void JNICALL Java_cz_cuni_mff_d3s_perf_Benchmark_stop(
 		JNIEnv *UNUSED_PARAMETER(env), jclass UNUSED_PARAMETER(klass)) {
 	store_current_timestamp(&benchmark_runs[benchmark_runs_index].end.timestamp);
+#ifdef USE_PAPI
+	// TODO: check for errors
+	PAPI_stop_counters(benchmark_runs[benchmark_runs_index].end.perf_counters, PERF_EVENTS_COUNT);
+#endif
+
 	benchmark_runs[benchmark_runs_index].end.garbage_collections = ubench_atomic_get(&counter_gc_total);
 	benchmark_runs[benchmark_runs_index].end.compilations = ubench_atomic_get(&counter_compilation_total);
 #ifdef USE_GETRUSAGE
