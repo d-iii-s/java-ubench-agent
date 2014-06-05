@@ -47,46 +47,46 @@ typedef struct {
 	struct rusage resource_usage;
 	long compilations;
 	int garbage_collections;
-	long long perf_counters[METRIC_COUNT];
-} metric_snapshot_t;
+	long long papi_events[UBENCH_EVENT_COUNT];
+} ubench_events_snapshot_t;
 
 
 typedef struct {
-	metric_snapshot_t start;
-	metric_snapshot_t end;
+	ubench_events_snapshot_t start;
+	ubench_events_snapshot_t end;
 } benchmark_run_t;
 
 
-#define METRIC_BACKEND_LINUX 1
-#define METRIC_BACKEND_RESOURCE_USAGE 2
-#define METRIC_BACKEND_PAPI 4
+#define UBENCH_EVENT_BACKEND_LINUX 1
+#define UBENCH_EVENT_BACKEND_RESOURCE_USAGE 2
+#define UBENCH_EVENT_BACKEND_PAPI 4
 
-#define METRIC_INFO_INIT(m_index, m_shortname, m_backend, m_getter, m_papi_event_id) \
+#define ubench_event_info_INIT(m_index, m_shortname, m_backend, m_getter, m_papi_event_id) \
 	do { \
-		metric_info[m_index].id = #m_index; \
-		metric_info[m_index].short_name = m_shortname; \
-		metric_info[m_index].backend = m_backend; \
-		metric_info[m_index].papi_event_id = m_papi_event_id; \
-		metric_info[m_index].op_get = m_getter; \
+		ubench_event_info[m_index].id = #m_index; \
+		ubench_event_info[m_index].short_name = m_shortname; \
+		ubench_event_info[m_index].backend = m_backend; \
+		ubench_event_info[m_index].papi_event_id = m_papi_event_id; \
+		ubench_event_info[m_index].op_get = m_getter; \
 	} while (0)
 
 
-typedef struct metric_info metric_info_t;
-typedef long long (*metric_func_t)(const benchmark_run_t *, const metric_info_t *);
-struct metric_info {
+typedef struct ubench_event_info ubench_event_info_t;
+typedef long long (*event_getter_func_t)(const benchmark_run_t *, const ubench_event_info_t *);
+struct ubench_event_info {
 	const char *id;
 	const char *short_name;
 	unsigned int backend;
 	int papi_event_id;
-	metric_func_t op_get;
+	event_getter_func_t op_get;
 };
 
-static metric_info_t metric_info[METRIC_COUNT];
+static ubench_event_info_t ubench_event_info[UBENCH_EVENT_COUNT];
 static unsigned int backends_used;
-static int papi_counters[METRIC_COUNT];
+static int papi_counters[UBENCH_EVENT_COUNT];
 static size_t papi_counters_count;
-static int *used_metrics_indices = NULL;
-static size_t used_metrics_count = 0;
+static int *used_events_indices = NULL;
+static size_t used_events_count = 0;
 
 
 static benchmark_run_t *benchmark_runs = NULL;
@@ -99,15 +99,15 @@ static inline void store_current_timestamp(timestamp_t *ts) {
 	clock_gettime(CLOCK_MONOTONIC, ts);
 }
 
-static long long getter_wall_clock_time(const benchmark_run_t *bench, const metric_info_t *info) {
+static long long getter_wall_clock_time(const benchmark_run_t *bench, const ubench_event_info_t *info) {
 	return timestamp_diff_ns(&bench->start.timestamp, &bench->end.timestamp);
 }
 
-static long long getter_context_switch_forced(const benchmark_run_t *bench, const metric_info_t *info) {
+static long long getter_context_switch_forced(const benchmark_run_t *bench, const ubench_event_info_t *info) {
 	return bench->end.resource_usage.ru_nivcsw - bench->start.resource_usage.ru_nivcsw;
 }
 
-static long long getter_papi(const benchmark_run_t *bench, const metric_info_t *info) {
+static long long getter_papi(const benchmark_run_t *bench, const ubench_event_info_t *info) {
 	int papi_event = info->papi_event_id;
 	size_t index = 0;
 	while (index < papi_counters_count) {
@@ -118,16 +118,16 @@ static long long getter_papi(const benchmark_run_t *bench, const metric_info_t *
 	if (index >= papi_counters_count) {
 		return -1;
 	}
-	return bench->end.perf_counters[index] - bench->start.perf_counters[index];
+	return bench->end.papi_events[index] - bench->start.papi_events[index];
 }
 
 jint ubench_benchmark_init(void) {
 	// TODO: check for errors
 	PAPI_library_init(PAPI_VER_CURRENT);
 
-	METRIC_INFO_INIT(METRIC_WALL_CLOCK_TIME, "clock", METRIC_BACKEND_LINUX, getter_wall_clock_time, -1);
-	METRIC_INFO_INIT(METRIC_CONTEXT_SWITCH_FORCED, "ctxsw", METRIC_BACKEND_RESOURCE_USAGE, getter_context_switch_forced, -1);
-	METRIC_INFO_INIT(METRIC_L2_DATA_READ, "l2dr", METRIC_BACKEND_PAPI, getter_papi, PAPI_L2_DCR);
+	ubench_event_info_INIT(UBENCH_EVENT_WALL_CLOCK_TIME, "clock", UBENCH_EVENT_BACKEND_LINUX, getter_wall_clock_time, -1);
+	ubench_event_info_INIT(UBENCH_EVENT_CONTEXT_SWITCH_FORCED, "ctxsw", UBENCH_EVENT_BACKEND_RESOURCE_USAGE, getter_context_switch_forced, -1);
+	ubench_event_info_INIT(UBENCH_EVENT_L2_DATA_READ, "l2dr", UBENCH_EVENT_BACKEND_PAPI, getter_papi, PAPI_L2_DCR);
 
 	return JNI_OK;
 }
@@ -135,35 +135,35 @@ jint ubench_benchmark_init(void) {
 void JNICALL Java_cz_cuni_mff_d3s_perf_Benchmark_init(
 		JNIEnv *env, jclass UNUSED_PARAMETER(klass),
 		jint jmeasurements, jintArray jevents) {
+	free(benchmark_runs);
+	free(used_events_indices);
+
 	size_t measurement_count = jmeasurements;
-	if (benchmark_runs != NULL) {
-		free(benchmark_runs);
-	}
 
 	int events_count = (*env)->GetArrayLength(env, jevents);
 	if (events_count == 0) {
 		return;
 	}
 
-	used_metrics_indices = malloc(sizeof(int) * events_count);
+	used_events_indices = malloc(sizeof(int) * events_count);
 
 	jint *events = (*env)->GetIntArrayElements(env, jevents, NULL);
 	backends_used = 0;
 
 	papi_counters_count = 0;
-	used_metrics_count = 0;
+	used_events_count = 0;
 	for (int i = 0; i < events_count; i++) {
-		used_metrics_indices[i] = events[i];
-		int metric_id = used_metrics_indices[i];
-		if ((metric_id < 0) || (metric_id >= METRIC_COUNT)) {
+		used_events_indices[i] = events[i];
+		int metric_id = used_events_indices[i];
+		if ((metric_id < 0) || (metric_id >= UBENCH_EVENT_COUNT)) {
 			continue;
 		}
-		used_metrics_count++;
-		unsigned int backend = metric_info[metric_id].backend;
-		if (backend == METRIC_BACKEND_PAPI) {
-			if (papi_counters_count < METRIC_COUNT) {
+		used_events_count++;
+		unsigned int backend = ubench_event_info[metric_id].backend;
+		if (backend == UBENCH_EVENT_BACKEND_PAPI) {
+			if (papi_counters_count < UBENCH_EVENT_COUNT) {
 				/* Check that the event is not already registered. */
-				papi_counters[papi_counters_count] = metric_info[metric_id].papi_event_id;
+				papi_counters[papi_counters_count] = ubench_event_info[metric_id].papi_event_id;
 				papi_counters_count++;
 			}
 		}
@@ -189,7 +189,7 @@ void JNICALL Java_cz_cuni_mff_d3s_perf_Benchmark_start(
 
 	// TODO: check for errors
 	PAPI_start_counters(papi_counters, papi_counters_count);
-	PAPI_read_counters(benchmark_runs[benchmark_runs_index].start.perf_counters, papi_counters_count);
+	PAPI_read_counters(benchmark_runs[benchmark_runs_index].start.papi_events, papi_counters_count);
 
 	store_current_timestamp(&benchmark_runs[benchmark_runs_index].start.timestamp);
 }
@@ -199,7 +199,7 @@ void JNICALL Java_cz_cuni_mff_d3s_perf_Benchmark_stop(
 	store_current_timestamp(&benchmark_runs[benchmark_runs_index].end.timestamp);
 
 	// TODO: check for errors
-	PAPI_stop_counters(benchmark_runs[benchmark_runs_index].end.perf_counters, papi_counters_count);
+	PAPI_stop_counters(benchmark_runs[benchmark_runs_index].end.papi_events, papi_counters_count);
 
 	benchmark_runs[benchmark_runs_index].end.garbage_collections = ubench_atomic_get(&counter_gc_total);
 	benchmark_runs[benchmark_runs_index].end.compilations = ubench_atomic_get(&counter_compilation_total);
@@ -227,8 +227,8 @@ void JNICALL Java_cz_cuni_mff_d3s_perf_Benchmark_dump(
 
 	/* Print the results. */
 	for (size_t bi = 0; bi < benchmark_runs_index; bi++) {
-		for (size_t fi = 0; fi < used_metrics_count; fi++) {
-			metric_info_t *info = &metric_info[ used_metrics_indices[fi] ];
+		for (size_t fi = 0; fi < used_events_count; fi++) {
+			ubench_event_info_t *info = &ubench_event_info[ used_events_indices[fi] ];
 			long long value = info->op_get(&benchmark_runs[bi], info);
 			fprintf(file, "%12lld", value);
 		}

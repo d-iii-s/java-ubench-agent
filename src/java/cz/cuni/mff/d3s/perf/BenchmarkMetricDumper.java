@@ -22,10 +22,10 @@ public class BenchmarkMetricDumper {
 		System.out.printf("/*\n * Generated file. Do not edit.\n");
 		System.out.printf(" *\n * This file is generated from BenchmarkMetric class.\n");
 		System.out.printf(" */\n\n");
-		BenchmarkMetric[] allMetrics = BenchmarkMetric.values();
-		System.out.printf("#define METRIC_COUNT %d\n", allMetrics.length);
-		for (BenchmarkMetric bm : allMetrics) {
-			System.out.printf("#define METRIC_%s %d\n", bm, bm.ordinal());
+		BenchmarkEvent[] allMetrics = BenchmarkEvent.values();
+		System.out.printf("#define UBENCH_EVENT_COUNT %d\n", allMetrics.length);
+		for (BenchmarkEvent bm : allMetrics) {
+			System.out.printf("#define UBENCH_EVENT_%s %d\n", bm, bm.ordinal());
 		}
 	}
 }

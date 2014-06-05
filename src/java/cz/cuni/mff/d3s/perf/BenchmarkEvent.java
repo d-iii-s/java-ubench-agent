@@ -17,7 +17,7 @@
 
 package cz.cuni.mff.d3s.perf;
 
-public enum BenchmarkMetric {
+public enum BenchmarkEvent {
 	WALL_CLOCK_TIME,
 	CONTEXT_SWITCH_FORCED,
 	L2_DATA_READ

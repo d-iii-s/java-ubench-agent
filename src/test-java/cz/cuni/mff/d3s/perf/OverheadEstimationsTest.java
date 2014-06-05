@@ -23,7 +23,7 @@ public class OverheadEstimationsTest {
 	private static final int INNER_LOOPS = 1000000;
 	
 	public static void main(String[] args) {
-		Benchmark.init(LOOPS * 2, Arrays.asList(BenchmarkMetric.WALL_CLOCK_TIME));
+		Benchmark.init(LOOPS * 2, Arrays.asList(BenchmarkEvent.WALL_CLOCK_TIME));
 		
 		for (int loop = 0; loop < LOOPS; loop++) {
 			Benchmark.start();

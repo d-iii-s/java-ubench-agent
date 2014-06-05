@@ -21,10 +21,10 @@ import java.util.Arrays;
 public class BenchmarkTest {
 	private static final int LOOPS = 5;
 	
-	private static final BenchmarkMetric[] columns = {
-		BenchmarkMetric.WALL_CLOCK_TIME,
-		BenchmarkMetric.CONTEXT_SWITCH_FORCED,
-		BenchmarkMetric.L2_DATA_READ
+	private static final BenchmarkEvent[] columns = {
+		BenchmarkEvent.WALL_CLOCK_TIME,
+		BenchmarkEvent.CONTEXT_SWITCH_FORCED,
+		BenchmarkEvent.L2_DATA_READ
 	};
 	
 	public static void main(String[] args) {

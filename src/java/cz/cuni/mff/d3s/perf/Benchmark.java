@@ -20,16 +20,16 @@ package cz.cuni.mff.d3s.perf;
 import java.util.Collection;
 
 public final class Benchmark {
-	public static void init(final int measurements, Collection<BenchmarkMetric> metrics) {
-		int[] metricIds = new int[metrics.size()];
+	public static void init(final int measurements, Collection<BenchmarkEvent> events) {
+		int[] eventIds = new int[events.size()];
 		int index = 0;
-		for (BenchmarkMetric bm : metrics) {
-			metricIds[index] = bm.ordinal();
+		for (BenchmarkEvent be : events) {
+			eventIds[index] = be.ordinal();
 			index++;
 		}
-		init(measurements, metricIds);
+		init(measurements, eventIds);
 	}
-	private static native void init(final int measurements, int[] metrics);
+	private static native void init(final int measurements, int[] events);
 	public static native void start();
 	public static native void stop();
 	public static native void dump(final String filename);
