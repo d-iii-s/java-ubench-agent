@@ -19,7 +19,7 @@ package cz.cuni.mff.d3s.perf;
 import java.util.Arrays;
 
 public class BenchmarkTest {
-	private static final int LOOPS = 10;
+	private static final int LOOPS = 5;
 	
 	private static final BenchmarkMetric[] columns = {
 		BenchmarkMetric.WALL_CLOCK_TIME,
@@ -28,7 +28,15 @@ public class BenchmarkTest {
 	};
 	
 	public static void main(String[] args) {
-		Benchmark.init(LOOPS, Arrays.asList(columns));		
+		Benchmark.init(LOOPS, Arrays.asList(columns));
+		for (int i = 0; i < LOOPS; i++) {
+			Benchmark.start();
+			Benchmark.stop();
+		}
+		
+		Benchmark.dump("-");
+		
+		Benchmark.init(LOOPS, Arrays.asList(columns));	
 		
 		for (int i = 0; i < LOOPS; i++) {
 			long before = System.nanoTime();
