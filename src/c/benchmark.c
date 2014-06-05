@@ -17,10 +17,8 @@
 
 #define  _POSIX_C_SOURCE 200809L
 
-// TODO: replace later with some real check
-#define USE_GETRUSAGE
-// TODO: replace later with some real check (build-time option?)
-#define USE_PAPI
+// TODO: reintroduce conditional compilation if getrusage or PAPI
+// is not available
 
 #define NOTSUP_LONG ((long)-1)
 
@@ -31,12 +29,8 @@
 #include <stdlib.h>
 #include <time.h>
 #include <string.h>
-#ifdef USE_GETRUSAGE
 #include <sys/resource.h>
-#endif
-#ifdef USE_PAPI
 #include <papi.h>
-#endif
 
 typedef struct timespec timestamp_t;
 #define PRI_TIMESTAMP_FMT "%6ld.%09ld"
@@ -48,28 +42,20 @@ static inline long long timestamp_diff_ns(const timestamp_t *a, const timestamp_
 	return sec_diff * 1000 * 1000 * 1000 + nanosec_diff;
 }
 
-
-#ifdef USE_PAPI
-#define PERF_EVENTS_COUNT 2
-#endif
-
-
 typedef struct {
 	timestamp_t timestamp;
-#ifdef USE_GETRUSAGE
 	struct rusage resource_usage;
-#endif
 	long compilations;
 	int garbage_collections;
-#ifdef USE_PAPI
-	long long perf_counters[PERF_EVENTS_COUNT];
-#endif
+	long long perf_counters[METRIC_COUNT];
 } metric_snapshot_t;
+
 
 typedef struct {
 	metric_snapshot_t start;
 	metric_snapshot_t end;
 } benchmark_run_t;
+
 
 #define METRIC_BACKEND_LINUX 1
 #define METRIC_BACKEND_RESOURCE_USAGE 2
@@ -83,6 +69,7 @@ typedef struct {
 		metric_info[m_index].papi_event_id = m_papi_event_id; \
 		metric_info[m_index].op_get = m_getter; \
 	} while (0)
+
 
 typedef struct metric_info metric_info_t;
 typedef long long (*metric_func_t)(const benchmark_run_t *, const metric_info_t *);
@@ -98,13 +85,15 @@ static metric_info_t metric_info[METRIC_COUNT];
 static unsigned int backends_used;
 static int papi_counters[METRIC_COUNT];
 static size_t papi_counters_count;
+static int *used_metrics_indices = NULL;
+static size_t used_metrics_count = 0;
+
 
 static benchmark_run_t *benchmark_runs = NULL;
 static size_t benchmark_runs_size = 0;
 static size_t benchmark_runs_index = 0;
 
-static int *used_metrics_indices = NULL;
-static size_t used_metrics_count = 0;
+
 
 static inline void store_current_timestamp(timestamp_t *ts) {
 	clock_gettime(CLOCK_MONOTONIC, ts);
@@ -134,9 +123,7 @@ static long long getter_papi(const benchmark_run_t *bench, const metric_info_t *
 
 jint ubench_benchmark_init(void) {
 	// TODO: check for errors
-#ifdef USE_PAPI
 	PAPI_library_init(PAPI_VER_CURRENT);
-#endif
 
 	METRIC_INFO_INIT(METRIC_WALL_CLOCK_TIME, "clock", METRIC_BACKEND_LINUX, getter_wall_clock_time, -1);
 	METRIC_INFO_INIT(METRIC_CONTEXT_SWITCH_FORCED, "ctxsw", METRIC_BACKEND_RESOURCE_USAGE, getter_context_switch_forced, -1);
@@ -196,17 +183,13 @@ void JNICALL Java_cz_cuni_mff_d3s_perf_Benchmark_start(
 		benchmark_runs_index = benchmark_runs_size - 1;
 	}
 
-#ifdef USE_GETRUSAGE
 	getrusage(RUSAGE_SELF, &benchmark_runs[benchmark_runs_index].start.resource_usage);
-#endif
 	benchmark_runs[benchmark_runs_index].start.compilations = ubench_atomic_get(&counter_compilation_total);
 	benchmark_runs[benchmark_runs_index].start.garbage_collections = ubench_atomic_get(&counter_gc_total);
 
-#ifdef USE_PAPI
 	// TODO: check for errors
 	PAPI_start_counters(papi_counters, papi_counters_count);
 	PAPI_read_counters(benchmark_runs[benchmark_runs_index].start.perf_counters, papi_counters_count);
-#endif
 
 	store_current_timestamp(&benchmark_runs[benchmark_runs_index].start.timestamp);
 }
@@ -214,16 +197,14 @@ void JNICALL Java_cz_cuni_mff_d3s_perf_Benchmark_start(
 void JNICALL Java_cz_cuni_mff_d3s_perf_Benchmark_stop(
 		JNIEnv *UNUSED_PARAMETER(env), jclass UNUSED_PARAMETER(klass)) {
 	store_current_timestamp(&benchmark_runs[benchmark_runs_index].end.timestamp);
-#ifdef USE_PAPI
+
 	// TODO: check for errors
 	PAPI_stop_counters(benchmark_runs[benchmark_runs_index].end.perf_counters, papi_counters_count);
-#endif
 
 	benchmark_runs[benchmark_runs_index].end.garbage_collections = ubench_atomic_get(&counter_gc_total);
 	benchmark_runs[benchmark_runs_index].end.compilations = ubench_atomic_get(&counter_compilation_total);
-#ifdef USE_GETRUSAGE
+
 	getrusage(RUSAGE_SELF, &benchmark_runs[benchmark_runs_index].end.resource_usage);
-#endif
 
 	benchmark_runs_index++;
 }
