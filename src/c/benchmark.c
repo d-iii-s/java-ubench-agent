@@ -49,6 +49,8 @@ typedef struct {
 	long compilations;
 	int garbage_collections;
 	long long papi_events[UBENCH_EVENT_COUNT];
+	int papi_rc1;
+	int papi_rc2;
 } ubench_events_snapshot_t;
 
 typedef struct {
@@ -115,6 +117,13 @@ static long long getter_context_switch_forced(const benchmark_run_t *bench, cons
 }
 
 static long long getter_papi(const benchmark_run_t *bench, const ubench_event_info_t *info) {
+	if (bench->start.papi_rc1 != PAPI_OK) {
+		return -1;
+	} else if (bench->start.papi_rc2 != PAPI_OK) {
+		return -1;
+	} else if (bench->end.papi_rc1 != PAPI_OK) {
+		return -1;
+	}
 	int papi_event = info->papi_event_id;
 
 	size_t index = 0;
@@ -237,8 +246,8 @@ void JNICALL Java_cz_cuni_mff_d3s_perf_Benchmark_start(
 	snapshot->garbage_collections = ubench_atomic_get(&counter_gc_total);
 
 	// TODO: check for errors
-	PAPI_start_counters(current_benchmark.used_papi_events, current_benchmark.used_papi_events_count);
-	PAPI_read_counters(snapshot->papi_events, current_benchmark.used_papi_events_count);
+	snapshot->papi_rc1 = PAPI_start_counters(current_benchmark.used_papi_events, current_benchmark.used_papi_events_count);
+	snapshot->papi_rc2 = PAPI_read_counters(snapshot->papi_events, current_benchmark.used_papi_events_count);
 
 	store_current_timestamp(&(snapshot->timestamp));
 }
@@ -250,7 +259,7 @@ void JNICALL Java_cz_cuni_mff_d3s_perf_Benchmark_stop(
 	store_current_timestamp(&(snapshot->timestamp));
 
 	// TODO: check for errors
-	PAPI_stop_counters(snapshot->papi_events, current_benchmark.used_papi_events_count);
+	snapshot->papi_rc1 = PAPI_stop_counters(snapshot->papi_events, current_benchmark.used_papi_events_count);
 
 	snapshot->compilations = ubench_atomic_get(&counter_compilation_total);
 	snapshot->garbage_collections = ubench_atomic_get(&counter_gc_total);
@@ -284,7 +293,17 @@ void JNICALL Java_cz_cuni_mff_d3s_perf_Benchmark_dump(
 			int event_id = current_benchmark.used_events[ei];
 			ubench_event_info_t *info = &all_known_events_info[event_id];
 			long long value = info->op_get(benchmark, info);
-			fprintf(file, "%20lld", value);
+			fprintf(file, "%12lld", value);
+		}
+
+		if (current_benchmark.used_backends & UBENCH_EVENT_BACKEND_PAPI) {
+			if (benchmark->start.papi_rc1 != PAPI_OK) {
+				fprintf(file, " start_counters=%s", PAPI_strerror(benchmark->start.papi_rc1));
+			} else if (benchmark->start.papi_rc2 != PAPI_OK) {
+				fprintf(file, " read_counters=%s", PAPI_strerror(benchmark->start.papi_rc2));
+			} else if (benchmark->end.papi_rc1 != PAPI_OK) {
+				fprintf(file, " stop_counters=%s", PAPI_strerror(benchmark->end.papi_rc1));
+			}
 		}
 
 		fprintf(file, "\n");
