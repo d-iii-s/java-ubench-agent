@@ -122,6 +122,7 @@ static long long getter_papi(const benchmark_run_t *bench, const ubench_event_in
 		if (current_benchmark.used_papi_events[index] == papi_event) {
 			break;
 		}
+		index++;
 	}
 	if (index >= current_benchmark.used_papi_events_count) {
 		return -1;
@@ -205,6 +206,13 @@ void JNICALL Java_cz_cuni_mff_d3s_perf_Benchmark_init(
 		}
 	}
 
+#if 0
+	for (size_t i = 0; i < current_benchmark.used_events_count; i++) {
+		int event_id = current_benchmark.used_events[i];
+		fprintf(stderr, "Event #%2zu: %s\n", i, all_known_events_info[event_id].id);
+	}
+#endif
+
 	(*env)->ReleaseIntArrayElements(env, jevents, events, JNI_ABORT);
 }
 
@@ -268,7 +276,8 @@ void JNICALL Java_cz_cuni_mff_d3s_perf_Benchmark_dump(
 		benchmark_run_t *benchmark = &current_benchmark.data[bi];
 
 		for (size_t ei = 0; ei < current_benchmark.used_events_count; ei++) {
-			ubench_event_info_t *info = &all_known_events_info[ei];
+			int event_id = current_benchmark.used_events[ei];
+			ubench_event_info_t *info = &all_known_events_info[event_id];
 			long long value = info->op_get(benchmark, info);
 			fprintf(file, "%20lld", value);
 		}
