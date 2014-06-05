@@ -24,7 +24,8 @@ public class BenchmarkTest {
 	private static final BenchmarkEvent[] columns = {
 		BenchmarkEvent.WALL_CLOCK_TIME,
 		BenchmarkEvent.CONTEXT_SWITCH_FORCED,
-		BenchmarkEvent.L2_DATA_READ
+		BenchmarkEvent.L1_CACHE_DATA_MISS,
+		BenchmarkEvent.L2_CACHE_DATA_MISS
 	};
 	
 	public static void main(String[] args) {
