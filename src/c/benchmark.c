@@ -27,6 +27,7 @@
 #include "microbench.h"
 #include "metric.h"
 #include <stdlib.h>
+#include <stddef.h>
 #include <time.h>
 #include <string.h>
 #include <sys/resource.h>
@@ -36,11 +37,11 @@ typedef struct timespec timestamp_t;
 #define PRI_TIMESTAMP_FMT "%6ld.%09ld"
 #define PRI_TIMESTAMP(x) (x).tv_sec, (x).tv_nsec
 
-static inline long long timestamp_diff_ns(const timestamp_t *a, const timestamp_t *b) {
-	long long sec_diff = b->tv_sec - a->tv_sec;
-	long long nanosec_diff = b->tv_nsec - a->tv_nsec;
-	return sec_diff * 1000 * 1000 * 1000 + nanosec_diff;
-}
+
+#define UBENCH_EVENT_BACKEND_LINUX 1
+#define UBENCH_EVENT_BACKEND_RESOURCE_USAGE 2
+#define UBENCH_EVENT_BACKEND_PAPI 4
+
 
 typedef struct {
 	timestamp_t timestamp;
@@ -50,25 +51,25 @@ typedef struct {
 	long long papi_events[UBENCH_EVENT_COUNT];
 } ubench_events_snapshot_t;
 
-
 typedef struct {
 	ubench_events_snapshot_t start;
 	ubench_events_snapshot_t end;
 } benchmark_run_t;
 
 
-#define UBENCH_EVENT_BACKEND_LINUX 1
-#define UBENCH_EVENT_BACKEND_RESOURCE_USAGE 2
-#define UBENCH_EVENT_BACKEND_PAPI 4
+typedef struct {
+	unsigned int used_backends;
 
-#define ubench_event_info_INIT(m_index, m_shortname, m_backend, m_getter, m_papi_event_id) \
-	do { \
-		ubench_event_info[m_index].id = #m_index; \
-		ubench_event_info[m_index].short_name = m_shortname; \
-		ubench_event_info[m_index].backend = m_backend; \
-		ubench_event_info[m_index].papi_event_id = m_papi_event_id; \
-		ubench_event_info[m_index].op_get = m_getter; \
-	} while (0)
+	int used_events[UBENCH_EVENT_COUNT];
+	size_t used_events_count;
+
+	int used_papi_events[UBENCH_EVENT_COUNT];
+	size_t used_papi_events_count;
+
+	benchmark_run_t *data;
+	size_t data_size;
+	size_t data_index;
+} benchmark_configuration_t;
 
 
 typedef struct ubench_event_info ubench_event_info_t;
@@ -81,19 +82,25 @@ struct ubench_event_info {
 	event_getter_func_t op_get;
 };
 
-static ubench_event_info_t ubench_event_info[UBENCH_EVENT_COUNT];
-static unsigned int backends_used;
-static int papi_counters[UBENCH_EVENT_COUNT];
-static size_t papi_counters_count;
-static int *used_events_indices = NULL;
-static size_t used_events_count = 0;
+#define UBENCH_EVENT_INFO_INIT(m_index, m_shortname, m_backend, m_getter, m_papi_event_id) \
+	do { \
+		all_known_events_info[m_index].id = #m_index; \
+		all_known_events_info[m_index].short_name = m_shortname; \
+		all_known_events_info[m_index].backend = m_backend; \
+		all_known_events_info[m_index].papi_event_id = m_papi_event_id; \
+		all_known_events_info[m_index].op_get = m_getter; \
+	} while (0)
+
+static ubench_event_info_t all_known_events_info[UBENCH_EVENT_COUNT];
+
+static benchmark_configuration_t current_benchmark;
 
 
-static benchmark_run_t *benchmark_runs = NULL;
-static size_t benchmark_runs_size = 0;
-static size_t benchmark_runs_index = 0;
-
-
+static inline long long timestamp_diff_ns(const timestamp_t *a, const timestamp_t *b) {
+	long long sec_diff = b->tv_sec - a->tv_sec;
+	long long nanosec_diff = b->tv_nsec - a->tv_nsec;
+	return sec_diff * 1000 * 1000 * 1000 + nanosec_diff;
+}
 
 static inline void store_current_timestamp(timestamp_t *ts) {
 	clock_gettime(CLOCK_MONOTONIC, ts);
@@ -109,15 +116,17 @@ static long long getter_context_switch_forced(const benchmark_run_t *bench, cons
 
 static long long getter_papi(const benchmark_run_t *bench, const ubench_event_info_t *info) {
 	int papi_event = info->papi_event_id;
+
 	size_t index = 0;
-	while (index < papi_counters_count) {
-		if (papi_counters[index] == papi_event) {
+	while (index < current_benchmark.used_papi_events_count) {
+		if (current_benchmark.used_papi_events[index] == papi_event) {
 			break;
 		}
 	}
-	if (index >= papi_counters_count) {
+	if (index >= current_benchmark.used_papi_events_count) {
 		return -1;
 	}
+
 	return bench->end.papi_events[index] - bench->start.papi_events[index];
 }
 
@@ -125,9 +134,17 @@ jint ubench_benchmark_init(void) {
 	// TODO: check for errors
 	PAPI_library_init(PAPI_VER_CURRENT);
 
-	ubench_event_info_INIT(UBENCH_EVENT_WALL_CLOCK_TIME, "clock", UBENCH_EVENT_BACKEND_LINUX, getter_wall_clock_time, -1);
-	ubench_event_info_INIT(UBENCH_EVENT_CONTEXT_SWITCH_FORCED, "ctxsw", UBENCH_EVENT_BACKEND_RESOURCE_USAGE, getter_context_switch_forced, -1);
-	ubench_event_info_INIT(UBENCH_EVENT_L2_DATA_READ, "l2dr", UBENCH_EVENT_BACKEND_PAPI, getter_papi, PAPI_L2_DCR);
+	UBENCH_EVENT_INFO_INIT(UBENCH_EVENT_WALL_CLOCK_TIME, "clock", UBENCH_EVENT_BACKEND_LINUX, getter_wall_clock_time, -1);
+	UBENCH_EVENT_INFO_INIT(UBENCH_EVENT_CONTEXT_SWITCH_FORCED, "ctxsw", UBENCH_EVENT_BACKEND_RESOURCE_USAGE, getter_context_switch_forced, -1);
+	UBENCH_EVENT_INFO_INIT(UBENCH_EVENT_L2_DATA_READ, "l2dr", UBENCH_EVENT_BACKEND_PAPI, getter_papi, PAPI_L2_DCR);
+
+	current_benchmark.used_backends = 0;
+	current_benchmark.used_events_count = 0;
+	current_benchmark.used_papi_events_count = 0;
+
+	current_benchmark.data = NULL;
+	current_benchmark.data_index = 0;
+	current_benchmark.data_size = 0;
 
 	return JNI_OK;
 }
@@ -135,78 +152,99 @@ jint ubench_benchmark_init(void) {
 void JNICALL Java_cz_cuni_mff_d3s_perf_Benchmark_init(
 		JNIEnv *env, jclass UNUSED_PARAMETER(klass),
 		jint jmeasurements, jintArray jevents) {
-	free(benchmark_runs);
-	free(used_events_indices);
+	free(current_benchmark.data);
+	current_benchmark.data = NULL;
+	current_benchmark.data_index = 0;
+	current_benchmark.data_size = 0;
 
-	size_t measurement_count = jmeasurements;
+	current_benchmark.used_backends = 0;
+	current_benchmark.used_events_count = 0;
+	current_benchmark.used_papi_events_count = 0;
 
-	int events_count = (*env)->GetArrayLength(env, jevents);
+	size_t events_count = (*env)->GetArrayLength(env, jevents);
 	if (events_count == 0) {
 		return;
 	}
 
-	used_events_indices = malloc(sizeof(int) * events_count);
+	if (jmeasurements <= 0) {
+		return;
+	}
+
+	current_benchmark.data = malloc(sizeof(benchmark_run_t) * jmeasurements);
+	current_benchmark.data_size = jmeasurements;
 
 	jint *events = (*env)->GetIntArrayElements(env, jevents, NULL);
-	backends_used = 0;
 
-	papi_counters_count = 0;
-	used_events_count = 0;
-	for (int i = 0; i < events_count; i++) {
-		used_events_indices[i] = events[i];
-		int metric_id = used_events_indices[i];
-		if ((metric_id < 0) || (metric_id >= UBENCH_EVENT_COUNT)) {
+	for (size_t i = 0; i < events_count; i++) {
+		int event_id = events[i];
+		if ((event_id < 0) || (event_id >= UBENCH_EVENT_COUNT)) {
 			continue;
 		}
-		used_events_count++;
-		unsigned int backend = ubench_event_info[metric_id].backend;
-		if (backend == UBENCH_EVENT_BACKEND_PAPI) {
-			if (papi_counters_count < UBENCH_EVENT_COUNT) {
-				/* Check that the event is not already registered. */
-				papi_counters[papi_counters_count] = ubench_event_info[metric_id].papi_event_id;
-				papi_counters_count++;
+		// Silently drop duplicates
+		int is_duplicate = 0;
+		for (size_t j = 0; j < current_benchmark.used_events_count; j++) {
+			if (current_benchmark.used_events[j] == event_id) {
+				is_duplicate = 1;
+				break;
 			}
 		}
+		if (is_duplicate) {
+			continue;
+		}
 
-		backends_used |= backend;
+		current_benchmark.used_events[current_benchmark.used_events_count] = event_id;
+		current_benchmark.used_events_count++;
+
+		ubench_event_info_t *event_info = &all_known_events_info[event_id];
+
+		current_benchmark.used_backends |= event_info->backend;
+
+		if (event_info->backend == UBENCH_EVENT_BACKEND_PAPI) {
+			current_benchmark.used_papi_events[current_benchmark.used_papi_events_count] = event_info->papi_event_id;
+			current_benchmark.used_papi_events_count++;
+		}
 	}
-	(*env)->ReleaseIntArrayElements(env, jevents, events, JNI_ABORT);
 
-	benchmark_runs = malloc(sizeof(benchmark_run_t) * measurement_count);
-	benchmark_runs_size = measurement_count;
-	benchmark_runs_index = 0;
+	(*env)->ReleaseIntArrayElements(env, jevents, events, JNI_ABORT);
 }
 
 void JNICALL Java_cz_cuni_mff_d3s_perf_Benchmark_start(
 		JNIEnv *UNUSED_PARAMETER(env), jclass UNUSED_PARAMETER(klass)) {
-	if (benchmark_runs_index >= benchmark_runs_size) {
-		benchmark_runs_index = benchmark_runs_size - 1;
+	if (current_benchmark.data_size == 0) {
+		return;
+	}
+	if (current_benchmark.data_index >= current_benchmark.data_size) {
+		current_benchmark.data_index--;
 	}
 
-	getrusage(RUSAGE_SELF, &benchmark_runs[benchmark_runs_index].start.resource_usage);
-	benchmark_runs[benchmark_runs_index].start.compilations = ubench_atomic_get(&counter_compilation_total);
-	benchmark_runs[benchmark_runs_index].start.garbage_collections = ubench_atomic_get(&counter_gc_total);
+	ubench_events_snapshot_t *snapshot = &current_benchmark.data[current_benchmark.data_index].start;
+
+	getrusage(RUSAGE_SELF, &(snapshot->resource_usage));
+	snapshot->compilations = ubench_atomic_get(&counter_compilation_total);
+	snapshot->garbage_collections = ubench_atomic_get(&counter_gc_total);
 
 	// TODO: check for errors
-	PAPI_start_counters(papi_counters, papi_counters_count);
-	PAPI_read_counters(benchmark_runs[benchmark_runs_index].start.papi_events, papi_counters_count);
+	PAPI_start_counters(current_benchmark.used_papi_events, current_benchmark.used_papi_events_count);
+	PAPI_read_counters(snapshot->papi_events, current_benchmark.used_papi_events_count);
 
-	store_current_timestamp(&benchmark_runs[benchmark_runs_index].start.timestamp);
+	store_current_timestamp(&(snapshot->timestamp));
 }
 
 void JNICALL Java_cz_cuni_mff_d3s_perf_Benchmark_stop(
 		JNIEnv *UNUSED_PARAMETER(env), jclass UNUSED_PARAMETER(klass)) {
-	store_current_timestamp(&benchmark_runs[benchmark_runs_index].end.timestamp);
+	ubench_events_snapshot_t *snapshot = &current_benchmark.data[current_benchmark.data_index].end;
+
+	store_current_timestamp(&(snapshot->timestamp));
 
 	// TODO: check for errors
-	PAPI_stop_counters(benchmark_runs[benchmark_runs_index].end.papi_events, papi_counters_count);
+	PAPI_stop_counters(snapshot->papi_events, current_benchmark.used_papi_events_count);
 
-	benchmark_runs[benchmark_runs_index].end.garbage_collections = ubench_atomic_get(&counter_gc_total);
-	benchmark_runs[benchmark_runs_index].end.compilations = ubench_atomic_get(&counter_compilation_total);
+	snapshot->compilations = ubench_atomic_get(&counter_compilation_total);
+	snapshot->garbage_collections = ubench_atomic_get(&counter_gc_total);
 
-	getrusage(RUSAGE_SELF, &benchmark_runs[benchmark_runs_index].end.resource_usage);
+	getrusage(RUSAGE_SELF, &(snapshot->resource_usage));
 
-	benchmark_runs_index++;
+	current_benchmark.data_index++;
 }
 
 void JNICALL Java_cz_cuni_mff_d3s_perf_Benchmark_dump(
@@ -226,12 +264,15 @@ void JNICALL Java_cz_cuni_mff_d3s_perf_Benchmark_dump(
 	}
 
 	/* Print the results. */
-	for (size_t bi = 0; bi < benchmark_runs_index; bi++) {
-		for (size_t fi = 0; fi < used_events_count; fi++) {
-			ubench_event_info_t *info = &ubench_event_info[ used_events_indices[fi] ];
-			long long value = info->op_get(&benchmark_runs[bi], info);
-			fprintf(file, "%12lld", value);
+	for (size_t bi = 0; bi < current_benchmark.data_index; bi++) {
+		benchmark_run_t *benchmark = &current_benchmark.data[bi];
+
+		for (size_t ei = 0; ei < current_benchmark.used_events_count; ei++) {
+			ubench_event_info_t *info = &all_known_events_info[ei];
+			long long value = info->op_get(benchmark, info);
+			fprintf(file, "%20lld", value);
 		}
+
 		fprintf(file, "\n");
 	}
 
