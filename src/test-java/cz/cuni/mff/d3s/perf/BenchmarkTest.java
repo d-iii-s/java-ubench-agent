@@ -16,20 +16,19 @@
  */
 package cz.cuni.mff.d3s.perf;
 
-import java.util.Arrays;
 
 public class BenchmarkTest {
 	private static final int LOOPS = 5;
 	
-	private static final BenchmarkEvent[] columns = {
-		BenchmarkEvent.WALL_CLOCK_TIME,
-		BenchmarkEvent.CONTEXT_SWITCH_FORCED,
-		BenchmarkEvent.L1_CACHE_DATA_MISS,
-		BenchmarkEvent.L2_CACHE_DATA_MISS
+	private static final String[] columns = {
+		"clock-monotonic",
+		"forced-context-switch",
+		"PAPI_L1_DCM",
+		"PAPI_L1_DCM",
 	};
 	
 	public static void main(String[] args) {
-		Benchmark.init(LOOPS, Arrays.asList(columns));
+		Benchmark.init(LOOPS, columns);
 		for (int i = 0; i < LOOPS; i++) {
 			Benchmark.start();
 			Benchmark.stop();
@@ -37,7 +36,7 @@ public class BenchmarkTest {
 		
 		Benchmark.dump("-");
 		
-		Benchmark.init(LOOPS, Arrays.asList(columns));	
+		Benchmark.init(LOOPS, columns);	
 		
 		for (int i = 0; i < LOOPS; i++) {
 			long before = System.nanoTime();

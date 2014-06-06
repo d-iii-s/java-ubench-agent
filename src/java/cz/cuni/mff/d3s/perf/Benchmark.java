@@ -17,19 +17,8 @@
 
 package cz.cuni.mff.d3s.perf;
 
-import java.util.Collection;
-
 public final class Benchmark {
-	public static void init(final int measurements, Collection<BenchmarkEvent> events) {
-		int[] eventIds = new int[events.size()];
-		int index = 0;
-		for (BenchmarkEvent be : events) {
-			eventIds[index] = be.ordinal();
-			index++;
-		}
-		init(measurements, eventIds);
-	}
-	private static native void init(final int measurements, int[] events);
+	public static native void init(final int measurements, final String[] events);
 	public static native void start();
 	public static native void stop();
 	public static native void dump(final String filename);

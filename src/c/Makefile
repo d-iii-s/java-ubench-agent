@@ -31,10 +31,6 @@ AGENT_OBJECTS = $(addprefix $(OUTPUT_DIRECTORY), $(addsuffix .o, $(basename $(AG
 
 AGENT_FILE = ubench-agent.so
 
-JAVA_METRIC_DUMPER_CP = ../../out/classes
-JAVA_METRIC_DUMPER_CLASS_FILE = ../../out/classes/cz/cuni/mff/d3s/perf/BenchmarkMetricDumper.class
-JAVA_METRIC_DUMPER_CLASS = cz.cuni.mff.d3s.perf.BenchmarkMetricDumper
-
 
 all: $(OUTPUT_DIRECTORY)$(AGENT_FILE)
 
@@ -43,11 +39,6 @@ $(OUTPUT_DIRECTORY)$(AGENT_FILE): $(AGENT_OBJECTS)
 
 $(OUTPUT_DIRECTORY)%.o: %.c
 	$(CC) $(CFLAGS) -c -o $@ $(CFLAGS_JNI) $<
-
-$(OUTPUT_DIRECTORY)benchmark.o: $(OUTPUT_DIRECTORY)metric.h
-
-$(OUTPUT_DIRECTORY)metric.h: $(JAVA_METRIC_DUMPER_CLASS_FILE)
-	java -cp $(JAVA_METRIC_DUMPER_CP) $(JAVA_METRIC_DUMPER_CLASS) >$@
 
 $(AGENT_SOURCES): $(OUTPUT_DIRECTORY)$(JNI_C_HEADER_BASE)_CompilationCounter.h
 $(AGENT_SOURCES): $(OUTPUT_DIRECTORY)$(JNI_C_HEADER_BASE)_Benchmark.h
