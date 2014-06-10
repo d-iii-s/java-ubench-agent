@@ -244,13 +244,18 @@ void JNICALL Java_cz_cuni_mff_d3s_perf_Benchmark_start(
 
 	ubench_events_snapshot_t *snapshot = &current_benchmark.data[current_benchmark.data_index].start;
 
-	getrusage(RUSAGE_SELF, &(snapshot->resource_usage));
+	if ((current_benchmark.used_backends & UBENCH_EVENT_BACKEND_RESOURCE_USAGE) > 0) {
+		getrusage(RUSAGE_SELF, &(snapshot->resource_usage));
+	}
+
 	snapshot->compilations = ubench_atomic_get(&counter_compilation_total);
 	snapshot->garbage_collections = ubench_atomic_get(&counter_gc_total);
 
-	// TODO: check for errors
-	snapshot->papi_rc1 = PAPI_start_counters(current_benchmark.used_papi_events, current_benchmark.used_papi_events_count);
-	snapshot->papi_rc2 = PAPI_read_counters(snapshot->papi_events, current_benchmark.used_papi_events_count);
+	if ((current_benchmark.used_backends & UBENCH_EVENT_BACKEND_PAPI) > 0) {
+		// TODO: check for errors
+		snapshot->papi_rc1 = PAPI_start_counters(current_benchmark.used_papi_events, current_benchmark.used_papi_events_count);
+		snapshot->papi_rc2 = PAPI_read_counters(snapshot->papi_events, current_benchmark.used_papi_events_count);
+	}
 
 	store_current_timestamp(&(snapshot->timestamp));
 }
@@ -262,12 +267,16 @@ void JNICALL Java_cz_cuni_mff_d3s_perf_Benchmark_stop(
 	store_current_timestamp(&(snapshot->timestamp));
 
 	// TODO: check for errors
-	snapshot->papi_rc1 = PAPI_stop_counters(snapshot->papi_events, current_benchmark.used_papi_events_count);
+	if ((current_benchmark.used_backends & UBENCH_EVENT_BACKEND_PAPI) > 0) {
+		snapshot->papi_rc1 = PAPI_stop_counters(snapshot->papi_events, current_benchmark.used_papi_events_count);
+	}
 
 	snapshot->compilations = ubench_atomic_get(&counter_compilation_total);
 	snapshot->garbage_collections = ubench_atomic_get(&counter_gc_total);
 
-	getrusage(RUSAGE_SELF, &(snapshot->resource_usage));
+	if ((current_benchmark.used_backends & UBENCH_EVENT_BACKEND_RESOURCE_USAGE) > 0) {
+		getrusage(RUSAGE_SELF, &(snapshot->resource_usage));
+	}
 
 	current_benchmark.data_index++;
 }
