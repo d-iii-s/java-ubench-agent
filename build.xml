@@ -29,16 +29,10 @@
 	<property name="test.classes.build.dir" location="${build.dir}/test-classes" />
 	<property name="agent.build.dir" location="${build.dir}/agent/" />
 	
-	<taskdef resource="cpptasks.tasks">
-		<classpath>
-			<pathelement location="lib/cpptasks-1.0b5.jar" />
-		</classpath>
-	</taskdef>
-	<typedef resource="cpptasks.types">
-		<classpath>
-			<pathelement location="lib/cpptasks-1.0b5.jar" />
-		</classpath>
-	</typedef>
+	<path id="cpptasks.classpath" location="lib/cpptasks-1.0b5.jar" />
+	
+	<taskdef resource="cpptasks.tasks" classpathref="cpptasks.classpath" />
+	<typedef resource="cpptasks.types" classpathref="cpptasks.classpath" />
 	
 	<!--
 		Determine features (capabilities) of the agent based
