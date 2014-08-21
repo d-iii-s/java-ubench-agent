@@ -55,6 +55,13 @@
 		<os name="Linux" />
 	</condition>
 	
+	<condition property="os.is.linux">
+		<os name="Linux" />
+	</condition>
+	<condition property="os.is.windows">
+		<os family="windows" />
+	</condition>
+	
 	<!--
 		Prepare compiler and linker settings.
 	-->
@@ -65,7 +72,8 @@
 			<define name="HAS_PAPI" if="agent.feature.has.papi" />
 		</defineset>
 		<includepath location="${env.JAVA_HOME}/include" />
-		<includepath location="${env.JAVA_HOME}/include/linux" />
+		<includepath location="${env.JAVA_HOME}/include/linux" if="os.is.linux"/>
+		<includepath location="${env.JAVA_HOME}/include/win32" if="os.is.windows"/>
 	</compiler>
 	<linker id="agent.c.linker">
 		<libset libs="papi" if="agent.feature.has.papi" />
