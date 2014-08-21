@@ -31,8 +31,14 @@
 	
 	<path id="cpptasks.classpath" location="lib/cpptasks-1.0b5.jar" />
 	
-	<taskdef resource="cpptasks.tasks" classpathref="cpptasks.classpath" />
-	<typedef resource="cpptasks.types" classpathref="cpptasks.classpath" />
+	<taskdef
+		resource="cpptasks.tasks"
+		classpathref="cpptasks.classpath"
+		loaderref="cpptasks.classloader" />
+	<typedef
+		resource="cpptasks.types"
+		classpathref="cpptasks.classpath"
+		loaderref="cpptasks.classloader" />
 	
 	<!--
 		Determine features (capabilities) of the agent based
@@ -109,7 +115,7 @@
 			<linker refid="agent.c.linker" />
 			<includepath location="${agent.build.dir}" />
 			<fileset dir="${agent.src.dir}" includes="*.c"/>
-	        </cc>
+		</cc>
 	</target>
 
 	<target name="compile-test">
