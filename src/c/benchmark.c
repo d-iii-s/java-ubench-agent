@@ -32,6 +32,12 @@
 #include <sys/resource.h>
 
 #ifdef HAS_PAPI
+/*
+ * Include <sys/types.h> and define __USE_BSD because of caddr_t.
+ * This is not needed if we would compile with GCC and -std=c99.
+ */
+#define __USE_BSD
+#include <sys/types.h>
 #include <papi.h>
 #endif
 
@@ -202,7 +208,8 @@ void JNICALL Java_cz_cuni_mff_d3s_perf_Benchmark_init(
 
 	current_benchmark.used_events = malloc(sizeof(ubench_event_info_t) * events_count);
 
-	for (size_t i = 0; i < events_count; i++) {
+	size_t i;
+	for (i = 0; i < events_count; i++) {
 		jstring jevent_name = (jstring) (*env)->GetObjectArrayElement(env, jeventNames, i);
 		const char *event_name = (*env)->GetStringUTFChars(env, jevent_name, 0);
 
@@ -222,7 +229,8 @@ void JNICALL Java_cz_cuni_mff_d3s_perf_Benchmark_init(
 		if (event_info->backend == UBENCH_EVENT_BACKEND_PAPI) {
 			/* Check that the id is not already there. */
 			int already_registered = 0;
-			for (size_t j = 0; j < current_benchmark.used_papi_events_count; j++) {
+			size_t j;
+			for (j = 0; j < current_benchmark.used_papi_events_count; j++) {
 				if (current_benchmark.used_papi_events[j] == event_info->id) {
 					already_registered = 1;
 					event_info->papi_index = j;
@@ -245,7 +253,7 @@ event_loop_end:
 	}
 
 #if 0
-	for (size_t i = 0; i < current_benchmark.used_events_count; i++) {
+	for (i = 0; i < current_benchmark.used_events_count; i++) {
 		int event_id = current_benchmark.used_events[i];
 		fprintf(stderr, "Event #%2zu: %s\n", i, all_known_events_info[event_id].id);
 	}
@@ -321,10 +329,12 @@ void JNICALL Java_cz_cuni_mff_d3s_perf_Benchmark_dump(
 	}
 
 	/* Print the results. */
-	for (size_t bi = 0; bi < current_benchmark.data_index; bi++) {
+	size_t bi;
+	for (bi = 0; bi < current_benchmark.data_index; bi++) {
 		benchmark_run_t *benchmark = &current_benchmark.data[bi];
 
-		for (size_t ei = 0; ei < current_benchmark.used_events_count; ei++) {
+		size_t ei;
+		for (ei = 0; ei < current_benchmark.used_events_count; ei++) {
 			ubench_event_info_t *event = &current_benchmark.used_events[ei];
 			long long value = event->op_get(benchmark, event);
 			fprintf(file, "%12lld", value);

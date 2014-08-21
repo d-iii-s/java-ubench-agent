@@ -58,8 +58,9 @@
 	<!--
 		Prepare compiler and linker settings.
 	-->
-	<compiler id="agent.c.compiler" warnings="diagnostic">
-		<compilerarg value="-std=c99" />
+	<compiler
+			id="agent.c.compiler"
+			warnings="severe">
 		<defineset>
 			<define name="HAS_PAPI" if="agent.feature.has.papi" />
 		</defineset>
