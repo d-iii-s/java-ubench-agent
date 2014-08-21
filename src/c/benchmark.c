@@ -30,7 +30,10 @@
 #include <time.h>
 #include <string.h>
 #include <sys/resource.h>
+
+#ifdef HAS_PAPI
 #include <papi.h>
+#endif
 
 typedef struct timespec timestamp_t;
 #define PRI_TIMESTAMP_FMT "%6ld.%09ld"
@@ -47,9 +50,11 @@ typedef struct {
 	struct rusage resource_usage;
 	long compilations;
 	int garbage_collections;
+#ifdef HAS_PAPI
 	long long papi_events[UBENCH_MAX_PAPI_EVENTS];
 	int papi_rc1;
 	int papi_rc2;
+#endif
 } ubench_events_snapshot_t;
 
 typedef struct {
@@ -73,8 +78,10 @@ typedef struct {
 	ubench_event_info_t *used_events;
 	size_t used_events_count;
 
+#ifdef HAS_PAPI
 	int used_papi_events[UBENCH_MAX_PAPI_EVENTS];
 	size_t used_papi_events_count;
+#endif
 
 	benchmark_run_t *data;
 	size_t data_size;
@@ -102,6 +109,7 @@ static long long getter_context_switch_forced(const benchmark_run_t *bench, cons
 	return bench->end.resource_usage.ru_nivcsw - bench->start.resource_usage.ru_nivcsw;
 }
 
+#ifdef HAS_PAPI
 static long long getter_papi(const benchmark_run_t *bench, const ubench_event_info_t *info) {
 	if (bench->start.papi_rc1 != PAPI_OK) {
 		return -1;
@@ -113,15 +121,20 @@ static long long getter_papi(const benchmark_run_t *bench, const ubench_event_in
 
 	return bench->end.papi_events[info->papi_index] - bench->start.papi_events[info->papi_index];
 }
+#endif
 
 jint ubench_benchmark_init(void) {
+#ifdef HAS_PAPI
 	// TODO: check for errors
 	PAPI_library_init(PAPI_VER_CURRENT);
+#endif
 
 	current_benchmark.used_backends = 0;
 	current_benchmark.used_events = NULL;
 	current_benchmark.used_events_count = 0;
+#ifdef HAS_PAPI
 	current_benchmark.used_papi_events_count = 0;
+#endif
 
 	current_benchmark.data = NULL;
 	current_benchmark.data_index = 0;
@@ -145,6 +158,7 @@ static int resolve_event(const char *event, ubench_event_info_t *info) {
 		return 1;
 	}
 
+#ifdef HAS_PAPI
 	/* Let's try PAPI */
 	int papi_event_id = 0;
 	int ok = PAPI_event_name_to_code((char *) event, &papi_event_id);
@@ -154,6 +168,7 @@ static int resolve_event(const char *event, ubench_event_info_t *info) {
 		info->op_get = getter_papi;
 		return 1;
 	}
+#endif
 
 	return 0;
 }
@@ -169,7 +184,9 @@ void JNICALL Java_cz_cuni_mff_d3s_perf_Benchmark_init(
 
 	current_benchmark.used_backends = 0;
 	current_benchmark.used_events_count = 0;
+#ifdef HAS_PAPI
 	current_benchmark.used_papi_events_count = 0;
+#endif
 
 	size_t events_count = (*env)->GetArrayLength(env, jeventNames);
 	if (events_count == 0) {
@@ -201,6 +218,7 @@ void JNICALL Java_cz_cuni_mff_d3s_perf_Benchmark_init(
 
 		current_benchmark.used_backends |= event_info->backend;
 
+#ifdef HAS_PAPI
 		if (event_info->backend == UBENCH_EVENT_BACKEND_PAPI) {
 			/* Check that the id is not already there. */
 			int already_registered = 0;
@@ -220,6 +238,7 @@ void JNICALL Java_cz_cuni_mff_d3s_perf_Benchmark_init(
 				// FIXME: inform user that there are way to many PAPI events
 			}
 		}
+#endif
 
 event_loop_end:
 		(*env)->ReleaseStringUTFChars(env, jevent_name, event_name);
@@ -251,11 +270,13 @@ void JNICALL Java_cz_cuni_mff_d3s_perf_Benchmark_start(
 	snapshot->compilations = ubench_atomic_get(&counter_compilation_total);
 	snapshot->garbage_collections = ubench_atomic_get(&counter_gc_total);
 
+#ifdef HAS_PAPI
 	if ((current_benchmark.used_backends & UBENCH_EVENT_BACKEND_PAPI) > 0) {
 		// TODO: check for errors
 		snapshot->papi_rc1 = PAPI_start_counters(current_benchmark.used_papi_events, current_benchmark.used_papi_events_count);
 		snapshot->papi_rc2 = PAPI_read_counters(snapshot->papi_events, current_benchmark.used_papi_events_count);
 	}
+#endif
 
 	store_current_timestamp(&(snapshot->timestamp));
 }
@@ -266,10 +287,12 @@ void JNICALL Java_cz_cuni_mff_d3s_perf_Benchmark_stop(
 
 	store_current_timestamp(&(snapshot->timestamp));
 
+#ifdef HAS_PAPI
 	// TODO: check for errors
 	if ((current_benchmark.used_backends & UBENCH_EVENT_BACKEND_PAPI) > 0) {
 		snapshot->papi_rc1 = PAPI_stop_counters(snapshot->papi_events, current_benchmark.used_papi_events_count);
 	}
+#endif
 
 	snapshot->compilations = ubench_atomic_get(&counter_compilation_total);
 	snapshot->garbage_collections = ubench_atomic_get(&counter_gc_total);
@@ -307,6 +330,7 @@ void JNICALL Java_cz_cuni_mff_d3s_perf_Benchmark_dump(
 			fprintf(file, "%12lld", value);
 		}
 
+#ifdef HAS_PAPI
 		if (current_benchmark.used_backends & UBENCH_EVENT_BACKEND_PAPI) {
 			if (benchmark->start.papi_rc1 != PAPI_OK) {
 				fprintf(file, " start_counters=%s", PAPI_strerror(benchmark->start.papi_rc1));
@@ -316,6 +340,7 @@ void JNICALL Java_cz_cuni_mff_d3s_perf_Benchmark_dump(
 				fprintf(file, " stop_counters=%s", PAPI_strerror(benchmark->end.papi_rc1));
 			}
 		}
+#endif
 
 		fprintf(file, "\n");
 	}

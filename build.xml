@@ -34,6 +34,45 @@
 			<pathelement location="lib/cpptasks-1.0b5.jar" />
 		</classpath>
 	</taskdef>
+	<typedef resource="cpptasks.types">
+		<classpath>
+			<pathelement location="lib/cpptasks-1.0b5.jar" />
+		</classpath>
+	</typedef>
+	
+	<!--
+		Determine features (capabilities) of the agent based
+		on available libraries or on which platform we are
+		operating.
+	-->
+	<condition property="agent.feature.has.papi">
+		<and>
+			<os family="unix" />
+			<available file="libpapi.so" filepath="/usr/lib" />
+		</and>
+	</condition>
+	<condition property="agent.feature.has.rusage">
+		<os name="Linux" />
+	</condition>
+	
+	<!--
+		Prepare compiler and linker settings.
+	-->
+	<compiler id="agent.c.compiler" warnings="diagnostic">
+		<compilerarg value="-std=c99" />
+		<defineset>
+			<define name="HAS_PAPI" if="agent.feature.has.papi" />
+		</defineset>
+		<includepath location="${env.JAVA_HOME}/include" />
+		<includepath location="${env.JAVA_HOME}/include/linux" />
+	</compiler>
+	<linker id="agent.c.linker">
+		<libset libs="papi" if="agent.feature.has.papi" />
+	</linker>
+			
+	<target name="print-properties">
+		<echoproperties format="text" />
+	</target>
 
 	<target name="compile" depends="compile-java,compile-agent">
 	</target>
@@ -62,14 +101,11 @@
 				outtype="shared"
 				subsystem="console"
 				outfile="${agent.build.dir}/ubench-agent"
-				warnings="diagnostic"
 				objdir="${agent.build.dir}">
-			<compilerarg value="-std=c99" />
-			<fileset dir="${agent.src.dir}" includes="*.c"/>
+			<compiler refid="agent.c.compiler" />
+			<linker refid="agent.c.linker" />
 			<includepath location="${agent.build.dir}" />
-			<includepath location="${env.JAVA_HOME}/include" />
-			<includepath location="${env.JAVA_HOME}/include/linux" />
-			<libset libs="papi" />
+			<fileset dir="${agent.src.dir}" includes="*.c"/>
 	        </cc>
 	</target>
 
