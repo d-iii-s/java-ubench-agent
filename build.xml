@@ -17,6 +17,8 @@
   -->
 <project basedir="." name="Microbenchmarking agent" default="compile">
 	<property file="local-settings.ini" />
+	
+	<property environment="env" />
 
 	<property name="java.src.dir" value="src/java" />
 	<property name="agent.src.dir" value="src/c" />
@@ -26,6 +28,12 @@
 	<property name="classes.build.dir" location="${build.dir}/classes" />
 	<property name="test.classes.build.dir" location="${build.dir}/test-classes" />
 	<property name="agent.build.dir" location="${build.dir}/agent/" />
+	
+	<taskdef resource="cpptasks.tasks">
+		<classpath>
+			<pathelement location="lib/cpptasks-1.0b5.jar" />
+		</classpath>
+	</taskdef>
 
 	<target name="compile" depends="compile-java,compile-agent">
 	</target>
@@ -41,13 +49,28 @@
 		</javac>
 	</target>
 
-	<target name="compile-agent">
+	<target name="compile-agent" depends="compile-java">
 		<mkdir dir="${agent.build.dir}" />
-		<exec executable="make" failonerror="true">
-			<arg value="-C" />
-			<arg file="${agent.src.dir}"/>
-			<arg value="OUTPUT_DIRECTORY=${agent.build.dir}/" />
-		</exec>
+		<javah
+				destdir="${agent.build.dir}"
+				classpath="${classes.build.dir}">
+			<class name="cz.cuni.mff.d3s.perf.CompilationCounter" />
+			<class name="cz.cuni.mff.d3s.perf.Benchmark" />
+			<class name="cz.cuni.mff.d3s.perf.OverheadEstimations" />
+		</javah>
+		<cc
+				outtype="shared"
+				subsystem="console"
+				outfile="${agent.build.dir}/ubench-agent"
+				warnings="diagnostic"
+				objdir="${agent.build.dir}">
+			<compilerarg value="-std=c99" />
+			<fileset dir="${agent.src.dir}" includes="*.c"/>
+			<includepath location="${agent.build.dir}" />
+			<includepath location="${env.JAVA_HOME}/include" />
+			<includepath location="${env.JAVA_HOME}/include/linux" />
+			<libset libs="papi" />
+	        </cc>
 	</target>
 
 	<target name="compile-test">
@@ -78,7 +101,7 @@
 					<pathelement path="${classes.build.dir}" />
 					<pathelement path="${test.classes.build.dir}" />
 				</classpath>
-				<jvmarg value="-agentpath:${agent.build.dir}/ubench-agent.so" />
+				<jvmarg value="-agentpath:${agent.build.dir}/libubench-agent.so" />
 				<jvmarg value="@{jvmarg}" />
 				<arg value="@{progarg}" />
 			</java>
