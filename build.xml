@@ -60,6 +60,14 @@
 	<!--
 		Prepare some compiler/linker settings.
 	-->
+	<!-- Agent file naming -->
+	<condition property="agent.filename" value="libubench-agent.so">
+		<os family="unix" />
+	</condition>
+	<condition property="agent.filename" value="ubench-agent.dll">
+		<os family="windows" />
+	</condition>
+	<property name="agent.path" location="${agent.build.dir}${file.separator}${agent.filename}" />
 	<!-- Java include paths -->
 	<property name="agent.cc.java.include" location="${env.JAVA_HOME}/include" />
 	<condition property="agent.cc.java.os.include" value="${env.JAVA_HOME}/include/linux">
@@ -138,7 +146,7 @@
 			<arg value="-fPIC" />
 			<arg line="${agent.link.papi}" />
 			<arg value="-o" />
-			<arg file="${agent.build.dir}/libubench-agent.so" />
+			<arg file="${agent.path}" />
 			<srcfile />
 			<fileset dir="${agent.build.dir}" includes="*.o" />
 		</apply>
@@ -160,7 +168,7 @@
 		<apply executable="link.exe" parallel="true" verbose="true">
 			<arg value="/DLL" />
 			<arg line="/DEF:${agent.src.dir}${file.separator}agent.def" />
-			<arg value="/OUT:${agent.build.dir}${file.separator}ubench-agent.dll" />
+			<arg value="/OUT:${agent.path}" />
 			<srcfile />
 			<fileset dir="${agent.build.dir}" includes="*.obj" />
 		</apply>
@@ -194,7 +202,7 @@
 					<pathelement path="${classes.build.dir}" />
 					<pathelement path="${test.classes.build.dir}" />
 				</classpath>
-				<jvmarg value="-agentpath:${agent.build.dir}/libubench-agent.so" />
+				<jvmarg value="-agentpath:${agent.path}" />
 				<jvmarg value="@{jvmarg}" />
 				<arg value="@{progarg}" />
 			</java>
