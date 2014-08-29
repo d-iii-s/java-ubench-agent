@@ -29,16 +29,12 @@
 	<property name="test.classes.build.dir" location="${build.dir}/test-classes" />
 	<property name="agent.build.dir" location="${build.dir}/agent/" />
 	
-	<path id="cpptasks.classpath" location="lib/cpptasks-1.0b5.jar" />
-	
-	<taskdef
-		resource="cpptasks.tasks"
-		classpathref="cpptasks.classpath"
-		loaderref="cpptasks.classloader" />
-	<typedef
-		resource="cpptasks.types"
-		classpathref="cpptasks.classpath"
-		loaderref="cpptasks.classloader" />
+	<property name="agent.cc" value="gcc" />
+
+	<condition property="agent.cc.is.gcc">
+		<equals arg1="${agent.cc}" arg2="gcc" />
+	</condition>
+		
 	
 	<!--
 		Determine features (capabilities) of the agent based
@@ -51,34 +47,29 @@
 			<available file="libpapi.so" filepath="/usr/lib" />
 		</and>
 	</condition>
-	<condition property="agent.feature.has.rusage">
-		<os name="Linux" />
-	</condition>
-	
-	<condition property="os.is.linux">
-		<os name="Linux" />
-	</condition>
-	<condition property="os.is.windows">
-		<os family="windows" />
-	</condition>
 	
 	<!--
-		Prepare compiler and linker settings.
+		Prepare some compiler/linker settings.
 	-->
-	<compiler
-			id="agent.c.compiler"
-			warnings="severe">
-		<defineset>
-			<define name="HAS_PAPI" if="agent.feature.has.papi" />
-		</defineset>
-		<includepath location="${env.JAVA_HOME}/include" />
-		<includepath location="${env.JAVA_HOME}/include/linux" if="os.is.linux"/>
-		<includepath location="${env.JAVA_HOME}/include/win32" if="os.is.windows"/>
-	</compiler>
-	<linker id="agent.c.linker">
-		<libset libs="papi" if="agent.feature.has.papi" />
-	</linker>
-			
+	<!-- Java include paths -->
+	<property name="agent.cc.java.include" location="${env.JAVA_HOME}/include" />
+	<condition property="agent.cc.java.os.include" value="${env.JAVA_HOME}/include/linux">
+		<os name="Linux" />
+	</condition>
+	<condition property="agent.cc.java.os.include" value="${env.JAVA_HOME}/include/win32">
+		<os family="windows" />
+	</condition>
+	<!-- PAPI support -->
+	<condition property="agent.link.papi" value="-lpapi" else="">
+		<isset property="agent.feature.has.papi" />
+	</condition>
+	<condition property="agent.cc.papi" value="-DHAS_PAPI" else="">
+		<isset property="agent.feature.has.papi" />
+	</condition>
+	
+	
+	
+	
 	<target name="print-properties">
 		<echoproperties format="text" />
 	</target>
@@ -97,7 +88,10 @@
 		</javac>
 	</target>
 
-	<target name="compile-agent" depends="compile-java">
+	<target name="compile-agent" depends="compile-java,compile-agent-gcc">
+	</target>
+	
+	<target name="compile-agent-prepare-headers" depends="compile-java">
 		<mkdir dir="${agent.build.dir}" />
 		<javah
 				destdir="${agent.build.dir}"
@@ -106,16 +100,32 @@
 			<class name="cz.cuni.mff.d3s.perf.Benchmark" />
 			<class name="cz.cuni.mff.d3s.perf.OverheadEstimations" />
 		</javah>
-		<cc
-				outtype="shared"
-				subsystem="console"
-				outfile="${agent.build.dir}/ubench-agent"
-				objdir="${agent.build.dir}">
-			<compiler refid="agent.c.compiler" />
-			<linker refid="agent.c.linker" />
-			<includepath location="${agent.build.dir}" />
-			<fileset dir="${agent.src.dir}" includes="*.c"/>
-		</cc>
+	</target>
+	
+	<target name="compile-agent-gcc" depends="compile-agent-prepare-headers" if="agent.cc.is.gcc">
+		<apply executable="gcc" dest="${agent.build.dir}" parallel="false" verbose="true">
+			<arg value="-c" />
+			<arg value="-I${agent.build.dir}" />
+			<arg value="-I${agent.cc.java.include}" />
+			<arg value="-I${agent.cc.java.os.include}" />
+			<arg value="-fPIC" />
+			<arg line="${agent.cc.papi}" />
+			<arg value="-o"/>
+			<targetfile />
+			<srcfile />
+			<fileset dir="${agent.src.dir}" includes="*.c" />
+			<mapper type="glob" from="*.c" to="*.o" />
+		</apply>
+		<!-- FIXME: do not link when everything is up to date. -->
+		<apply executable="gcc" parallel="true" verbose="true">
+			<arg value="-shared" />
+			<arg value="-fPIC" />
+			<arg line="${agent.link.papi}" />
+			<arg value="-o" />
+			<arg file="${agent.build.dir}/libubench-agent.so" />
+			<srcfile />
+			<fileset dir="${agent.build.dir}" includes="*.o" />
+		</apply>
 	</target>
 
 	<target name="compile-test">
