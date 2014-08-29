@@ -30,14 +30,7 @@
 	<property name="agent.build.dir" location="${build.dir}/agent/" />
 	
 	<property name="agent.cc" value="gcc" />
-
-	<condition property="agent.cc.is.gcc">
-		<equals arg1="${agent.cc}" arg2="gcc" />
-	</condition>
-	<condition property="agent.cc.is.msvc">
-		<equals arg1="${agent.cc}" arg2="msvc" />
-	</condition>
-		
+	
 	
 	<!--
 		Determine features (capabilities) of the agent based
@@ -57,9 +50,21 @@
 		<os name="Linux" />
 	</condition>
 	
+	
+	
 	<!--
 		Prepare some compiler/linker settings.
 	-->
+	
+	<!-- Helper properties to check for compiler -->
+	<condition property="agent.cc.is.gcc">
+		<equals arg1="${agent.cc}" arg2="gcc" />
+	</condition>
+	<condition property="agent.cc.is.msvc">
+		<equals arg1="${agent.cc}" arg2="msvc" />
+	</condition>
+		
+	
 	<!-- Agent file naming -->
 	<condition property="agent.filename" value="libubench-agent.so">
 		<os family="unix" />
@@ -67,15 +72,21 @@
 	<condition property="agent.filename" value="ubench-agent.dll">
 		<os family="windows" />
 	</condition>
-	<property name="agent.path" location="${agent.build.dir}${file.separator}${agent.filename}" />
+	<property name="agent.path"
+		location="${agent.build.dir}${file.separator}${agent.filename}" />
+	
 	<!-- Java include paths -->
-	<property name="agent.cc.java.include" location="${env.JAVA_HOME}${file.separator}include" />
-	<condition property="agent.cc.java.os.include" value="${env.JAVA_HOME}${file.separator}include${file.separator}linux">
+	<property name="agent.cc.java.include"
+		location="${env.JAVA_HOME}${file.separator}include" />
+	<condition property="agent.cc.java.os.include"
+			value="${env.JAVA_HOME}${file.separator}include${file.separator}linux">
 		<os name="Linux" />
 	</condition>
-	<condition property="agent.cc.java.os.include" value="${env.JAVA_HOME}${file.separator}include${file.separator}win32">
+	<condition property="agent.cc.java.os.include"
+			value="${env.JAVA_HOME}${file.separator}include${file.separator}win32">
 		<os family="windows" />
 	</condition>
+	
 	<!-- PAPI support -->
 	<condition property="agent.link.papi" value="-lpapi" else="">
 		<isset property="agent.feature.has.papi" />
@@ -125,7 +136,11 @@
 	</target>
 	
 	<target name="compile-agent-gcc" depends="compile-agent-prepare-headers" if="agent.cc.is.gcc">
-		<apply executable="gcc" dest="${agent.build.dir}" parallel="false" verbose="true">
+		<apply
+				executable="gcc"
+				dest="${agent.build.dir}"
+				parallel="false"
+				verbose="true">
 			<arg value="-c" />
 			<arg value="-I${agent.build.dir}" />
 			<arg value="-I${agent.cc.java.include}" />
@@ -141,7 +156,10 @@
 			<mapper type="glob" from="*.c" to="*.o" />
 		</apply>
 		<!-- FIXME: do not link when everything is up to date. -->
-		<apply executable="gcc" parallel="true" verbose="true">
+		<apply
+				executable="gcc"
+				parallel="true"
+				verbose="true">
 			<arg value="-shared" />
 			<arg value="-fPIC" />
 			<arg line="${agent.link.papi}" />
@@ -153,7 +171,11 @@
 	</target>
 	
 	<target name="compile-agent-msvc" depends="compile-agent-prepare-headers" if="agent.cc.is.msvc">
-		<apply executable="cl.exe" dest="${agent.build.dir}" parallel="false" verbose="true">
+		<apply
+				executable="cl.exe"
+				dest="${agent.build.dir}"
+				parallel="false"
+				verbose="true">
 			<arg value="/c" />
 			<arg value="/I${agent.build.dir}" />
 			<arg value="/I${agent.cc.java.include}" />
@@ -165,7 +187,10 @@
 			<mapper type="glob" from="*.c" to="*.obj" />
 		</apply>
 		<!-- FIXME: do not link when everything is up to date. -->
-		<apply executable="link.exe" parallel="true" verbose="true">
+		<apply
+				executable="link.exe"
+				parallel="true"
+				verbose="true">
 			<arg value="/DLL" />
 			<arg line="/DEF:${agent.src.dir}${file.separator}agent.def" />
 			<arg value="/OUT:${agent.path}" />
