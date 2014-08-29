@@ -69,11 +69,11 @@
 	</condition>
 	<property name="agent.path" location="${agent.build.dir}${file.separator}${agent.filename}" />
 	<!-- Java include paths -->
-	<property name="agent.cc.java.include" location="${env.JAVA_HOME}/include" />
-	<condition property="agent.cc.java.os.include" value="${env.JAVA_HOME}/include/linux">
+	<property name="agent.cc.java.include" location="${env.JAVA_HOME}${file.separator}include" />
+	<condition property="agent.cc.java.os.include" value="${env.JAVA_HOME}${file.separator}include${file.separator}linux">
 		<os name="Linux" />
 	</condition>
-	<condition property="agent.cc.java.os.include" value="${env.JAVA_HOME}/include/win32">
+	<condition property="agent.cc.java.os.include" value="${env.JAVA_HOME}${file.separator}include${file.separator}win32">
 		<os family="windows" />
 	</condition>
 	<!-- PAPI support -->
