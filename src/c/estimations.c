@@ -15,15 +15,13 @@
  * limitations under the License.
  */
 
-// TODO: replace later with some real check
-#define USE_GETRUSAGE
 
 #include "cz_cuni_mff_d3s_perf_OverheadEstimations.h"
 #include "microbench.h"
 #include <stdlib.h>
 #include <time.h>
 #include <string.h>
-#ifdef USE_GETRUSAGE
+#ifdef HAS_GETRUSAGE
 #include <sys/resource.h>
 #endif
 
@@ -36,7 +34,7 @@ void JNICALL Java_cz_cuni_mff_d3s_perf_OverheadEstimations_emptyNativeCall(
 
 void JNICALL Java_cz_cuni_mff_d3s_perf_OverheadEstimations_resourceUsageCall(
 		JNIEnv *env, jclass klass) {
-#ifdef USE_GETRUSAGE
+#ifdef HAS_GETRUSAGE
 	struct rusage resource_usage;
 	getrusage(RUSAGE_SELF, &resource_usage);
 #endif

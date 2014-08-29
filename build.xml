@@ -34,6 +34,9 @@
 	<condition property="agent.cc.is.gcc">
 		<equals arg1="${agent.cc}" arg2="gcc" />
 	</condition>
+	<condition property="agent.cc.is.msvc">
+		<equals arg1="${agent.cc}" arg2="msvc" />
+	</condition>
 		
 	
 	<!--
@@ -88,7 +91,7 @@
 		</javac>
 	</target>
 
-	<target name="compile-agent" depends="compile-java,compile-agent-gcc">
+	<target name="compile-agent" depends="compile-java,compile-agent-gcc,compile-agent-msvc">
 	</target>
 	
 	<target name="compile-agent-prepare-headers" depends="compile-java">
@@ -125,6 +128,28 @@
 			<arg file="${agent.build.dir}/libubench-agent.so" />
 			<srcfile />
 			<fileset dir="${agent.build.dir}" includes="*.o" />
+		</apply>
+	</target>
+	
+	<target name="compile-agent-msvc" depends="compile-agent-prepare-headers" if="agent.cc.is.msvc">
+		<apply executable="cl.exe" dest="${agent.build.dir}" parallel="false" verbose="true">
+			<arg value="/c" />
+			<arg value="/I${agent.build.dir}" />
+			<arg value="/I${agent.cc.java.include}" />
+			<arg value="/I${agent.cc.java.os.include}" />
+			<arg value="/Fo${agent.build.dir}${file.separator}"/>
+			<arg value="/TC" />
+			<srcfile />
+			<fileset dir="${agent.src.dir}" includes="*.c" />
+			<mapper type="glob" from="*.c" to="*.obj" />
+		</apply>
+		<!-- FIXME: do not link when everything is up to date. -->
+		<apply executable="link.exe" parallel="true" verbose="true">
+			<arg value="/DLL" />
+			<arg line="/DEF:${agent.src.dir}${file.separator}agent.def" />
+			<arg value="/OUT:${agent.build.dir}${file.separator}ubench-agent.dll" />
+			<srcfile />
+			<fileset dir="${agent.build.dir}" includes="*.obj" />
 		</apply>
 	</target>
 

@@ -27,19 +27,19 @@ typedef struct ubench_atomic {
 	int atomic_value;
 } ubench_atomic_t;
 
-static inline void ubench_atomic_init(ubench_atomic_t *atomic, int new_value) {
+static void ubench_atomic_init(ubench_atomic_t *atomic, int new_value) {
 	atomic->atomic_value = new_value;
 }
 
-static inline int ubench_atomic_get(ubench_atomic_t *atomic) {
+static int ubench_atomic_get(ubench_atomic_t *atomic) {
 	return atomic->atomic_value;
 }
 
-static inline void ubench_atomic_add(ubench_atomic_t *atomic, int how_much_to_add) {
+static void ubench_atomic_add(ubench_atomic_t *atomic, int how_much_to_add) {
 	atomic->atomic_value += how_much_to_add;
 }
 
-static inline int ubench_atomic_get_and_set(ubench_atomic_t *atomic, int new_value) {
+static int ubench_atomic_get_and_set(ubench_atomic_t *atomic, int new_value) {
 	int result = atomic->atomic_value;
 	atomic->atomic_value = new_value;
 	return result;

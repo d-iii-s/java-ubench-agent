@@ -29,7 +29,10 @@
 #include <stddef.h>
 #include <time.h>
 #include <string.h>
+
+#ifdef HAS_GETRUSAGE
 #include <sys/resource.h>
+#endif
 
 #ifdef HAS_PAPI
 /*
@@ -41,9 +44,13 @@
 #include <papi.h>
 #endif
 
+#ifdef HAS_TIMESPEC
 typedef struct timespec timestamp_t;
 #define PRI_TIMESTAMP_FMT "%6ld.%09ld"
 #define PRI_TIMESTAMP(x) (x).tv_sec, (x).tv_nsec
+#else
+typedef int timestamp_t;
+#endif
 
 #define UBENCH_MAX_PAPI_EVENTS 20
 
@@ -53,7 +60,9 @@ typedef struct timespec timestamp_t;
 
 typedef struct {
 	timestamp_t timestamp;
+#ifdef HAS_GETRUSAGE
 	struct rusage resource_usage;
+#endif
 	long compilations;
 	int garbage_collections;
 #ifdef HAS_PAPI
@@ -96,24 +105,34 @@ typedef struct {
 
 static benchmark_configuration_t current_benchmark;
 
-
-static inline long long timestamp_diff_ns(const timestamp_t *a, const timestamp_t *b) {
+static long long timestamp_diff_ns(const timestamp_t *a, const timestamp_t *b) {
+#ifdef HAS_TIMESPEC
 	long long sec_diff = b->tv_sec - a->tv_sec;
 	long long nanosec_diff = b->tv_nsec - a->tv_nsec;
 	return sec_diff * 1000 * 1000 * 1000 + nanosec_diff;
+#else
+	return *b - *a;
+#endif
 }
 
-static inline void store_current_timestamp(timestamp_t *ts) {
+
+static void store_current_timestamp(timestamp_t *ts) {
+#ifdef HAS_TIMESPEC
 	clock_gettime(CLOCK_MONOTONIC, ts);
+#else
+	*ts = -1;
+#endif
 }
 
 static long long getter_wall_clock_time(const benchmark_run_t *bench, const ubench_event_info_t *info) {
 	return timestamp_diff_ns(&bench->start.timestamp, &bench->end.timestamp);
 }
 
+#ifdef HAS_GETRUSAGE
 static long long getter_context_switch_forced(const benchmark_run_t *bench, const ubench_event_info_t *info) {
 	return bench->end.resource_usage.ru_nivcsw - bench->start.resource_usage.ru_nivcsw;
 }
+#endif
 
 #ifdef HAS_PAPI
 static long long getter_papi(const benchmark_run_t *bench, const ubench_event_info_t *info) {
@@ -154,15 +173,21 @@ static int resolve_event(const char *event, ubench_event_info_t *info) {
 		return 0;
 	}
 
+#ifdef HAS_TIMESPEC
 	if (strcmp(event, "clock-monotonic") == 0) {
 		info->backend = UBENCH_EVENT_BACKEND_LINUX;
 		info->op_get = getter_wall_clock_time;
 		return 1;
-	} else if (strcmp(event, "forced-context-switch") == 0) {
+	}
+#endif
+
+#ifdef HAS_GETRUSAGE
+	if (strcmp(event, "forced-context-switch") == 0) {
 		info->backend = UBENCH_EVENT_BACKEND_RESOURCE_USAGE;
 		info->op_get = getter_context_switch_forced;
 		return 1;
 	}
+#endif
 
 #ifdef HAS_PAPI
 	/* Let's try PAPI */
@@ -271,9 +296,11 @@ void JNICALL Java_cz_cuni_mff_d3s_perf_Benchmark_start(
 
 	ubench_events_snapshot_t *snapshot = &current_benchmark.data[current_benchmark.data_index].start;
 
+#ifdef HAS_GETRUSAGE
 	if ((current_benchmark.used_backends & UBENCH_EVENT_BACKEND_RESOURCE_USAGE) > 0) {
 		getrusage(RUSAGE_SELF, &(snapshot->resource_usage));
 	}
+#endif
 
 	snapshot->compilations = ubench_atomic_get(&counter_compilation_total);
 	snapshot->garbage_collections = ubench_atomic_get(&counter_gc_total);
@@ -305,9 +332,11 @@ void JNICALL Java_cz_cuni_mff_d3s_perf_Benchmark_stop(
 	snapshot->compilations = ubench_atomic_get(&counter_compilation_total);
 	snapshot->garbage_collections = ubench_atomic_get(&counter_gc_total);
 
+#ifdef HAS_GETRUSAGE
 	if ((current_benchmark.used_backends & UBENCH_EVENT_BACKEND_RESOURCE_USAGE) > 0) {
 		getrusage(RUSAGE_SELF, &(snapshot->resource_usage));
 	}
+#endif
 
 	current_benchmark.data_index++;
 }
