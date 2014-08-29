@@ -50,6 +50,12 @@
 			<available file="libpapi.so" filepath="/usr/lib" />
 		</and>
 	</condition>
+	<condition property="agent.feature.has.getrusage">
+		<os name="Linux" />
+	</condition>
+	<condition property="agent.feature.has.timespec">
+		<os name="Linux" />
+	</condition>
 	
 	<!--
 		Prepare some compiler/linker settings.
@@ -69,7 +75,12 @@
 	<condition property="agent.cc.papi" value="-DHAS_PAPI" else="">
 		<isset property="agent.feature.has.papi" />
 	</condition>
-	
+	<condition property="agent.cc.getrusage" value="-DHAS_GETRUSAGE" else="">
+		<isset property="agent.feature.has.getrusage" />
+	</condition>
+	<condition property="agent.cc.timespec" value="-DHAS_TIMESPEC" else="">
+		<isset property="agent.feature.has.timespec" />
+	</condition>	
 	
 	
 	
@@ -113,6 +124,8 @@
 			<arg value="-I${agent.cc.java.os.include}" />
 			<arg value="-fPIC" />
 			<arg line="${agent.cc.papi}" />
+			<arg line="${agent.cc.getrusage}" />
+			<arg line="${agent.cc.timespec}" />
 			<arg value="-o"/>
 			<targetfile />
 			<srcfile />
