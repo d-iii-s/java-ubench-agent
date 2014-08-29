@@ -138,6 +138,7 @@
 	<target name="compile-agent-gcc" depends="compile-agent-prepare-headers" if="agent.cc.is.gcc">
 		<apply
 				executable="gcc"
+				failonerror="true"
 				dest="${agent.build.dir}"
 				parallel="false"
 				verbose="true">
@@ -158,6 +159,7 @@
 		<!-- FIXME: do not link when everything is up to date. -->
 		<apply
 				executable="gcc"
+				failonerror="true"
 				parallel="true"
 				verbose="true">
 			<arg value="-shared" />
@@ -173,6 +175,7 @@
 	<target name="compile-agent-msvc" depends="compile-agent-prepare-headers" if="agent.cc.is.msvc">
 		<apply
 				executable="cl.exe"
+				failonerror="true"
 				dest="${agent.build.dir}"
 				parallel="false"
 				verbose="true">
@@ -189,6 +192,7 @@
 		<!-- FIXME: do not link when everything is up to date. -->
 		<apply
 				executable="link.exe"
+				failonerror="true"
 				parallel="true"
 				verbose="true">
 			<arg value="/DLL" />
