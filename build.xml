@@ -55,6 +55,7 @@
 	<!--
 		Prepare some compiler/linker settings.
 	-->
+	<property name="agent.cc.warnings" value="diagnostic" />
 	
 	<!-- Helper properties to check for compiler -->
 	<condition property="agent.cc.is.gcc">
@@ -101,6 +102,28 @@
 		<isset property="agent.feature.has.timespec" />
 	</condition>	
 	
+	<!-- Warning-related compiler flags -->
+	<condition property="agent.gcc.warn.flags" value="-Wall -Wextra">
+		<equals arg1="${agent.cc.warnings}" arg2="diagnostic" />
+	</condition>
+	<condition property="agent.gcc.warn.flags" value="-Wall">
+		<equals arg1="${agent.cc.warnings}" arg2="default" />
+	</condition>
+	<condition property="agent.gcc.warn.flags" value="-Wall -Wextra -Werror">
+		<equals arg1="${agent.cc.warnings}" arg2="aserror" />
+	</condition>
+	<property name="agent.gcc.warn.flags" value="" />
+	
+	<condition property="agent.msvc.warn.flags" value="/Wall">
+		<equals arg1="${agent.cc.warnings}" arg2="diagnostic" />
+	</condition>
+	<condition property="agent.msvc.warn.flags" value="/W3">
+		<equals arg1="${agent.cc.warnings}" arg2="default" />
+	</condition>
+	<condition property="agent.msvc.warn.flags" value="/Wall /WX">
+		<equals arg1="${agent.cc.warnings}" arg2="aserror" />
+	</condition>
+	<property name="agent.msvc.warn.flags" value="" />
 	
 	
 	<target name="print-properties">
@@ -150,6 +173,7 @@
 			<arg line="${agent.cc.papi}" />
 			<arg line="${agent.cc.getrusage}" />
 			<arg line="${agent.cc.timespec}" />
+			<arg line="${agent.gcc.warn.flags}" />
 			<arg value="-o"/>
 			<targetfile />
 			<srcfile />
@@ -183,6 +207,7 @@
 			<arg value="/I${agent.build.dir}" />
 			<arg value="/I${agent.cc.java.include}" />
 			<arg value="/I${agent.cc.java.os.include}" />
+			<arg line="${agent.msvc.warn.flags}" />
 			<arg value="/Fo${agent.build.dir}${file.separator}"/>
 			<arg value="/TC" />
 			<srcfile />
