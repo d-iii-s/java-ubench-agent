@@ -16,7 +16,32 @@
  */
 package cz.cuni.mff.d3s.perf;
 
+import java.io.*;
+
+import org.junit.*;
+
 public class CompilationCounterTest {
+	@Test
+	public void noCompilationHappensInInterpretedMode() throws IOException, InterruptedException {
+		runSelf("-Xint", "int", true);
+	}
+	
+	@Test
+	public void someCompilationHappensInMixedMode() throws IOException, InterruptedException {
+		runSelf("-Xmixed", "mixed", true);
+	}
+	
+	@Test
+	public void detectUnexpectedCompilation() throws IOException, InterruptedException {
+		runSelf("-Xmixed", "int", false);
+	}
+	
+	protected void runSelf(String compilationMode, String parameter, boolean isOkay) throws IOException, InterruptedException {
+		TestUtils.runInJvm(isOkay, new String[] { compilationMode },
+				"cz.cuni.mff.d3s.perf.CompilationCounterTest",
+				new String[] { parameter });
+	}	
+	
 	public static volatile long BLACK_HOLE = 0;
 	private static final int LOOPS_TO_ENSURE_COMPILATION = 10000;
 	

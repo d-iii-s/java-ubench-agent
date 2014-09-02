@@ -27,7 +27,10 @@
 	<property name="build.dir" location="out" />
 	<property name="classes.build.dir" location="${build.dir}/classes" />
 	<property name="test.classes.build.dir" location="${build.dir}/test-classes" />
+	<property name="test.results.dir" value="${build.dir}/test-results" />
 	<property name="agent.build.dir" location="${build.dir}/agent/" />
+	
+	<property name="junit.jar.path" value="lib/junit-4.11.jar" />
 	
 	<property name="agent.cc" value="gcc" />
 	
@@ -237,6 +240,7 @@
 			<src path="${java.test.src.dir}" />
 			<classpath>
 				<pathelement path="${classes.build.dir}" />
+				<pathelement path="${junit.jar.path}" />
 			</classpath>
 			<compilerarg value="-Xlint:all"/>
 		</javac>
@@ -278,6 +282,39 @@
 				
 		<echo level="info" message="All tests passed." />
 	</target>
+	
+	<target name="test-junit" depends="compile,compile-test">
+		<mkdir dir="${test.results.dir}"/>
+		<junit printsummary="withOutAndErr" haltonfailure="no">
+			<classpath>
+				<pathelement path="${junit.jar.path}"/>
+				<pathelement path="${test.classes.build.dir}"/>
+				<pathelement path="${classes.build.dir}"/>
+			</classpath>
+			<jvmarg value="-Dubench.classpath=${test.classes.build.dir}${path.separator}${classes.build.dir}" />
+			<jvmarg value="-Dubench.agent=${agent.path}" />
+			
+			<assertions>
+				<enable/>
+			</assertions>
+			
+			<formatter type="plain" />
+			<formatter type="xml" />
+			
+			<batchtest fork="yes" todir="${test.results.dir}">
+				<fileset dir="${test.classes.build.dir}">
+					<include name="**/*Compilation*Test*.class"/>
+				</fileset>
+			</batchtest>
+		</junit>
+		<junitreport todir="${test.results.dir}">
+			<fileset dir="${test.results.dir}">
+				<include name="TEST-*.xml"/>
+			</fileset>
+			<report format="frames" todir="${test.results.dir}/html"/>
+		</junitreport>
+	</target>
+
 
 	<target name="clean">
 		<delete dir="${classes.build.dir}" />
