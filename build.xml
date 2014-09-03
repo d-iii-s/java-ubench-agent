@@ -31,6 +31,7 @@
 	<property name="agent.build.dir" location="${build.dir}/agent/" />
 	
 	<property name="junit.jar.path" value="lib/junit-4.11.jar" />
+	<property name="hamcrest.jar.path" value="lib/hamcrest-core.jar" />
 	
 	<property name="agent.cc" value="gcc" />
 	
@@ -241,6 +242,7 @@
 			<classpath>
 				<pathelement path="${classes.build.dir}" />
 				<pathelement path="${junit.jar.path}" />
+				<pathelement path="${hamcrest.jar.path}" />
 			</classpath>
 			<compilerarg value="-Xlint:all"/>
 		</javac>
@@ -288,6 +290,7 @@
 		<junit printsummary="withOutAndErr" haltonfailure="no">
 			<classpath>
 				<pathelement path="${junit.jar.path}"/>
+				<pathelement path="${hamcrest.jar.path}" />
 				<pathelement path="${test.classes.build.dir}"/>
 				<pathelement path="${classes.build.dir}"/>
 			</classpath>
