@@ -52,7 +52,7 @@ public class TestUtils {
 		int rc = proc.waitFor();
 		
 		if (exitCodeShallBeZero) {
-			Assert.assertEquals(classname + "ought to exit with 0", 0, rc);
+			Assert.assertEquals(classname + " ought to exit with 0", 0, rc);
 		} else {
 			Assert.assertFalse(classname + " ought to exit with error", rc == 0);
 		}
