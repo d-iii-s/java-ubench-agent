@@ -48,6 +48,9 @@
 typedef struct timespec timestamp_t;
 #define PRI_TIMESTAMP_FMT "%6ld.%09ld"
 #define PRI_TIMESTAMP(x) (x).tv_sec, (x).tv_nsec
+#elif defined(HAS_QUERY_PERFORMANCE_COUNTER)
+#include <windows.h>
+typedef LARGE_INTEGER timestamp_t;
 #else
 typedef int timestamp_t;
 #endif
@@ -105,11 +108,20 @@ typedef struct {
 
 static benchmark_configuration_t current_benchmark;
 
+#ifdef HAS_QUERY_PERFORMANCE_COUNTER
+static LARGE_INTEGER windows_timer_frequency;
+#endif
+
 static long long timestamp_diff_ns(const timestamp_t *a, const timestamp_t *b) {
 #ifdef HAS_TIMESPEC
 	long long sec_diff = b->tv_sec - a->tv_sec;
 	long long nanosec_diff = b->tv_nsec - a->tv_nsec;
 	return sec_diff * 1000 * 1000 * 1000 + nanosec_diff;
+#elif defined(HAS_QUERY_PERFORMANCE_COUNTER)
+	if (windows_timer_frequency.QuadPart == 0) {
+		return -1;
+	}
+	return (b->QuadPart - a->QuadPart) * 1000 * 1000 * 1000 / windows_timer_frequency.QuadPart;
 #else
 	return *b - *a;
 #endif
@@ -119,6 +131,8 @@ static long long timestamp_diff_ns(const timestamp_t *a, const timestamp_t *b) {
 static void store_current_timestamp(timestamp_t *ts) {
 #ifdef HAS_TIMESPEC
 	clock_gettime(CLOCK_MONOTONIC, ts);
+#elif defined(HAS_QUERY_PERFORMANCE_COUNTER)
+	QueryPerformanceCounter(ts);
 #else
 	*ts = -1;
 #endif
@@ -165,6 +179,10 @@ jint ubench_benchmark_init(void) {
 	current_benchmark.data_index = 0;
 	current_benchmark.data_size = 0;
 
+#ifdef HAS_QUERY_PERFORMANCE_COUNTER
+	 QueryPerformanceFrequency(&windows_timer_frequency);
+#endif
+
 	return JNI_OK;
 }
 
@@ -180,6 +198,8 @@ static int resolve_event(const char *event, ubench_event_info_t *info) {
 		return 1;
 	}
 #endif
+
+
 
 #ifdef HAS_GETRUSAGE
 	if (strcmp(event, "forced-context-switch") == 0) {

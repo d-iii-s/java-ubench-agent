@@ -53,6 +53,13 @@
 	<condition property="agent.feature.has.timespec">
 		<os name="Linux" />
 	</condition>
+	<!-- Only MSVC on Windows -->
+	<condition property="agent.features.has.native.windows">
+		<and>
+			<os family="windows" />
+			<equals arg1="${agent.cc}" arg2="msvc" />
+		</and>
+	</condition>
 	
 	
 	
@@ -92,7 +99,7 @@
 		<os family="windows" />
 	</condition>
 	
-	<!-- PAPI support -->
+	<!-- PAPI support and other has.* settings -->
 	<condition property="agent.link.papi" value="-lpapi" else="">
 		<isset property="agent.feature.has.papi" />
 	</condition>
@@ -104,7 +111,11 @@
 	</condition>
 	<condition property="agent.cc.timespec" value="-DHAS_TIMESPEC" else="">
 		<isset property="agent.feature.has.timespec" />
-	</condition>	
+	</condition>
+	<condition property="agent.cc.native.windows" value="-DHAS_QUERY_PERFORMANCE_COUNTER" else="">
+		<isset property="agent.features.has.native.windows" />
+	</condition>
+	
 	
 	<!-- Warning-related compiler flags -->
 	<condition property="agent.gcc.warn.flags" value="-Wall -Wextra">
@@ -212,6 +223,7 @@
 			<arg value="/I${agent.cc.java.include}" />
 			<arg value="/I${agent.cc.java.os.include}" />
 			<arg line="${agent.msvc.warn.flags}" />
+			<arg line="${agent.cc.native.windows}" />
 			<arg value="/Fo${agent.build.dir}${file.separator}"/>
 			<arg value="/TC" />
 			<srcfile />
