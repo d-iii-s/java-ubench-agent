@@ -1,1 +1,7 @@
 out
+local-settings.ini
+
+.project
+.cproject
+.classpath
+.settings
