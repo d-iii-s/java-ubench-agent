@@ -38,3 +38,12 @@ extern jint ubench_benchmark_init(void);
 extern ubench_atomic_t counter_compilation;
 extern ubench_atomic_t counter_compilation_total;
 extern ubench_atomic_t counter_gc_total;
+
+static char *ubench_str_dup(const char *str) {
+	char *result = malloc(sizeof(char) * strlen(str) + 1);
+	if (result == NULL) {
+		return NULL;
+	}
+	strcpy(result, str);
+	return result;
+}

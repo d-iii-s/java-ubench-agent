@@ -57,4 +57,12 @@ public class TestUtils {
 			Assert.assertFalse(classname + " ought to exit with error", rc == 0);
 		}
 	}
+	
+	public static void noThrowSleep(long millis) {
+		try {
+			Thread.sleep(millis);
+		} catch (InterruptedException e) {
+			/* Do nothing. */
+		}
+	}
 }

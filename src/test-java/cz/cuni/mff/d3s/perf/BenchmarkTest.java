@@ -16,8 +16,47 @@
  */
 package cz.cuni.mff.d3s.perf;
 
+import java.util.*;
+
+import org.junit.*;
+
 
 public class BenchmarkTest {
+	private static final String[] SMOKE_TEST_EVENTS = { "clock-monotonic" };
+	private static final int SMOKE_TEST_SLEEP_MILLIS = 100;
+	
+	@Test
+	public void getResultsSmokeTest() {
+		Benchmark.init(1, SMOKE_TEST_EVENTS);
+		Benchmark.start();
+		TestUtils.noThrowSleep(SMOKE_TEST_SLEEP_MILLIS);
+		Benchmark.stop();
+		
+		
+		BenchmarkResults results = Benchmark.getResults();
+		Assert.assertNotNull("getResults() may not return null", results);
+		
+		String[] eventNames = results.getEventNames();
+		Assert.assertNotNull("getEventNames() may not return null", eventNames);
+		Assert.assertArrayEquals(SMOKE_TEST_EVENTS, eventNames);
+		
+		Iterable<long[]> data = results.getData();
+		Assert.assertNotNull("getData() may not return null", data);
+		Iterator<long[]> iterator = data.iterator();
+		
+		Assert.assertTrue("there ought to be some data", iterator.hasNext());
+		
+		long[] numbers = iterator.next();
+		Assert.assertNotNull("the array with results ought not to be null", numbers);
+		Assert.assertEquals("we collected single event only", 1, numbers.length);
+		
+		Assert.assertFalse("there ought not to be any more data", iterator.hasNext());
+		
+		Assert.assertTrue("sample " + numbers[0] + " is not in range",
+			(numbers[0] > 0)
+			&& (numbers[0] < SMOKE_TEST_SLEEP_MILLIS*1000*1000*10));
+	}
+	
 	private static final int LOOPS = 5;
 	
 	private static final String[] columns = {

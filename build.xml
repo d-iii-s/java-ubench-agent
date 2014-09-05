@@ -308,6 +308,7 @@
 			</classpath>
 			<jvmarg value="-Dubench.classpath=${test.classes.build.dir}${path.separator}${classes.build.dir}" />
 			<jvmarg value="-Dubench.agent=${agent.path}" />
+			<jvmarg value="-agentpath:${agent.path}" />
 			
 			<assertions>
 				<enable/>
@@ -318,7 +319,7 @@
 			
 			<batchtest fork="yes" todir="${test.results.dir}">
 				<fileset dir="${test.classes.build.dir}">
-					<include name="**/*Compilation*Test*.class"/>
+					<include name="**/*Test.class"/>
 				</fileset>
 			</batchtest>
 		</junit>

@@ -88,6 +88,7 @@ struct ubench_event_info {
 	int id;
 	size_t papi_index;
 	event_getter_func_t op_get;
+	const char *name;
 };
 
 typedef struct {
@@ -169,8 +170,13 @@ jint ubench_benchmark_init(void) {
 #endif
 
 	current_benchmark.used_backends = 0;
+	while (current_benchmark.used_events_count > 0) {
+		current_benchmark.used_events_count--;
+		free(current_benchmark.used_events[current_benchmark.used_events_count].name);
+	}
 	current_benchmark.used_events = NULL;
 	current_benchmark.used_events_count = 0;
+
 #ifdef HAS_PAPI
 	current_benchmark.used_papi_events_count = 0;
 #endif
@@ -195,6 +201,7 @@ static int resolve_event(const char *event, ubench_event_info_t *info) {
 	if (strcmp(event, "clock-monotonic") == 0) {
 		info->backend = UBENCH_EVENT_BACKEND_LINUX;
 		info->op_get = getter_wall_clock_time;
+		info->name = ubench_str_dup(event);
 		return 1;
 	}
 #endif
@@ -205,6 +212,7 @@ static int resolve_event(const char *event, ubench_event_info_t *info) {
 	if (strcmp(event, "forced-context-switch") == 0) {
 		info->backend = UBENCH_EVENT_BACKEND_RESOURCE_USAGE;
 		info->op_get = getter_context_switch_forced;
+		info->name = ubench_str_dup(event);
 		return 1;
 	}
 #endif
@@ -217,6 +225,7 @@ static int resolve_event(const char *event, ubench_event_info_t *info) {
 		info->backend = UBENCH_EVENT_BACKEND_PAPI;
 		info->id = papi_event_id;
 		info->op_get = getter_papi;
+		info->name = ubench_str_dup(event);
 		return 1;
 	}
 #endif
@@ -235,6 +244,8 @@ void JNICALL Java_cz_cuni_mff_d3s_perf_Benchmark_init(
 
 	current_benchmark.used_backends = 0;
 	current_benchmark.used_events_count = 0;
+
+
 #ifdef HAS_PAPI
 	current_benchmark.used_papi_events_count = 0;
 #endif
@@ -410,4 +421,61 @@ void JNICALL Java_cz_cuni_mff_d3s_perf_Benchmark_dump(
 
 leave:
 	(*env)->ReleaseStringUTFChars(env, jfilename, filename);
+}
+
+jobject JNICALL Java_cz_cuni_mff_d3s_perf_Benchmark_getResults(JNIEnv *env,
+		jclass UNUSED_PARAMETER(klass)) {
+	jmethodID constructor;
+	jclass results_class = (*env)->FindClass(env, "cz/cuni/mff/d3s/perf/BenchmarkResultsImpl");
+	if (results_class == NULL) {
+		return NULL;
+	}
+	jclass string_class = (*env)->FindClass(env, "java/lang/String");
+	if (string_class == NULL) {
+		return NULL;
+	}
+
+	jobjectArray jevent_names = (jobjectArray) (*env)->NewObjectArray(env,
+		current_benchmark.used_events_count,
+		string_class, NULL);
+	size_t i;
+	for (i = 0; i < current_benchmark.used_events_count; i++) {
+		(*env)->SetObjectArrayElement(env, jevent_names, i, (*env)->NewStringUTF(env, current_benchmark.used_events[i].name));
+	}
+
+
+	constructor = (*env)->GetMethodID(env, results_class, "<init>", "([Ljava/lang/String;)V");
+	if (constructor == NULL) {
+		return NULL;
+	}
+
+	jobject jresults = (*env)->NewObject(env, results_class, constructor, jevent_names);
+	if (jresults == NULL) {
+		return NULL;
+	}
+
+	size_t bi;
+	jlongArray event_values = (*env)->NewLongArray(env, current_benchmark.used_events_count);
+	if (event_values == NULL) {
+		return NULL;
+	}
+	jmethodID set_data_method = (*env)->GetMethodID(env, results_class, "addDataRow", "([J)V");
+	if (set_data_method == NULL) {
+		return NULL;
+	}
+	for (bi = 0; bi < current_benchmark.data_index; bi++) {
+		benchmark_run_t *benchmark = &current_benchmark.data[bi];
+
+		size_t ei;
+		for (ei = 0; ei < current_benchmark.used_events_count; ei++) {
+			ubench_event_info_t *event = &current_benchmark.used_events[ei];
+			long long value = event->op_get(benchmark, event);
+			jlong jvalue = (jlong) value;
+			(*env)->SetLongArrayRegion(env, event_values, ei, 1, &jvalue);
+		}
+
+		(*env)->CallVoidMethod(env, jresults, set_data_method, event_values);
+	}
+
+	return jresults;
 }

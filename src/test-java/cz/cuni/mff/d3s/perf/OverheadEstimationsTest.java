@@ -16,7 +16,9 @@
  */
 package cz.cuni.mff.d3s.perf;
 
+import org.junit.*;
 
+@Ignore
 public class OverheadEstimationsTest {
 	private static final int LOOPS = 10;
 	private static final int INNER_LOOPS = 1000000;
