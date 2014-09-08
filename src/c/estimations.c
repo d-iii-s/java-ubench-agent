@@ -27,13 +27,13 @@
 
 
 void JNICALL Java_cz_cuni_mff_d3s_perf_OverheadEstimations_emptyNativeCall(
-		JNIEnv *env, jclass klass) {
+		JNIEnv *UNUSED_PARAMETER(env), jclass UNUSED_PARAMETER(klass)) {
 	return;
 }
 
 
 void JNICALL Java_cz_cuni_mff_d3s_perf_OverheadEstimations_resourceUsageCall(
-		JNIEnv *env, jclass klass) {
+		JNIEnv *UNUSED_PARAMETER(env), jclass UNUSED_PARAMETER(klass)) {
 #ifdef HAS_GETRUSAGE
 	struct rusage resource_usage;
 	getrusage(RUSAGE_SELF, &resource_usage);

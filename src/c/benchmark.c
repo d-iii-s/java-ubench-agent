@@ -88,7 +88,7 @@ struct ubench_event_info {
 	int id;
 	size_t papi_index;
 	event_getter_func_t op_get;
-	const char *name;
+	char *name;
 };
 
 typedef struct {
@@ -139,12 +139,12 @@ static void store_current_timestamp(timestamp_t *ts) {
 #endif
 }
 
-static long long getter_wall_clock_time(const benchmark_run_t *bench, const ubench_event_info_t *info) {
+static long long getter_wall_clock_time(const benchmark_run_t *bench, const ubench_event_info_t *UNUSED_PARAMETER(info)) {
 	return timestamp_diff_ns(&bench->start.timestamp, &bench->end.timestamp);
 }
 
 #ifdef HAS_GETRUSAGE
-static long long getter_context_switch_forced(const benchmark_run_t *bench, const ubench_event_info_t *info) {
+static long long getter_context_switch_forced(const benchmark_run_t *bench, const ubench_event_info_t *UNUSED_PARAMETER(info)) {
 	return bench->end.resource_usage.ru_nivcsw - bench->start.resource_usage.ru_nivcsw;
 }
 #endif

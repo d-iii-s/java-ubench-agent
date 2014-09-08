@@ -18,6 +18,8 @@
 #include <jvmti.h>
 #include <jni.h>
 #include <jvmticmlr.h>
+#include <stdlib.h>
+#include <string.h>
 #include "myatomic.h"
 
 #ifdef __GNUC__
@@ -39,7 +41,7 @@ extern ubench_atomic_t counter_compilation;
 extern ubench_atomic_t counter_compilation_total;
 extern ubench_atomic_t counter_gc_total;
 
-static char *ubench_str_dup(const char *str) {
+static inline char *ubench_str_dup(const char *str) {
 	char *result = malloc(sizeof(char) * strlen(str) + 1);
 	if (result == NULL) {
 		return NULL;
