@@ -56,7 +56,7 @@ static void report_error(const char *line_prefix,
 			REPORT_ERROR(err, "enabling notification for " #event); \
 			return JNI_ERR; \
 		} \
-	} while (0)
+	} ONCE
 
 
 static void JNICALL on_compiled_method_load(jvmtiEnv* UNUSED_PARAMETER(jvmti),
@@ -91,7 +91,7 @@ static void JNICALL on_gc_finish(jvmtiEnv *UNUSED_PARAMETER(jvmti_env)) {
  * We need to enable the capability, set the callback and enable the
  * actual notification.
  */
-static jint register_and_enable_callback() {
+static jint register_and_enable_callback(void) {
 	jvmtiError err;
 
 	jvmtiCapabilities capabilities;
@@ -123,7 +123,7 @@ static jint register_and_enable_callback() {
 	return JNI_OK;
 }
 
-static void prepare_counters() {
+static void prepare_counters(void) {
 	ubench_atomic_init(&counter_compilation, 0);
 	ubench_atomic_init(&counter_compilation_total, 0);
 }

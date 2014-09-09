@@ -30,6 +30,20 @@
 #define UNUSED_PARAMETER(name) name
 #endif
 
+/*
+ * Prevent condition expression is constant warning in wrappers around
+ * multi-statement macros (the do { ... } while (0) construct).
+ */
+#ifdef _MSC_VER
+#define ONCE \
+	__pragma(warning(push)) \
+	__pragma(warning(disable:4127)) \
+    while (0) \
+    __pragma(warning(pop))
+#else
+#define ONCE while (0)
+#endif
+
 #ifdef JITCOUNTER_DEBUG
 #define DEBUG_PRINTF(fmt, ...) printf("[ubench-agent]: " fmt "\n", ##__VA_ARGS__)
 #else
@@ -48,6 +62,13 @@ static inline char *ubench_str_dup(const char *str) {
 	if (result == NULL) {
 		return NULL;
 	}
+
+	/*
+	 * We know that the buffer is big enough and thus we can use strcpy()
+	 * without worrying that we would run past the buffer.
+	 */
+#pragma warning(suppress:4996)
 	strcpy(result, str);
+
 	return result;
 }
