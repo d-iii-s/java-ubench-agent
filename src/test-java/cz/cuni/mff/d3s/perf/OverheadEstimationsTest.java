@@ -16,6 +16,8 @@
  */
 package cz.cuni.mff.d3s.perf;
 
+import java.util.*;
+
 import org.junit.*;
 
 @Ignore
@@ -40,7 +42,28 @@ public class OverheadEstimationsTest {
 			Benchmark.stop();
 		}
 		
-		Benchmark.dump("-");
+		ArrayList<long[]> data = new ArrayList<>();
+		for (long[] row : Benchmark.getResults().getData()) {
+			data.add(row);
+		}
+		
+		if (data.size() != LOOPS * 2) {
+			System.err.printf("Expected %d values but got %d.\n", LOOPS * 2, data.size());
+			System.exit(1);
+		}
+		
+		long sumEmptyNativeCalls = 0;
+		long sumResourceUsageCalls = 0;
+		for (int i = 0; i < data.size(); i += 2) {
+			sumEmptyNativeCalls += data.get(i)[0];
+			sumResourceUsageCalls += data.get(i + 1)[0];
+		}
+		
+		double avgEmptyNativeCall = (double) sumEmptyNativeCalls / LOOPS / INNER_LOOPS;
+		double avgResourceUsageCall = (double) sumResourceUsageCalls / LOOPS / INNER_LOOPS;
+		System.out.printf("Average for empty native call is %.2fns, getrusage() takes about %.2fns (%.0f%%).\n",
+			avgEmptyNativeCall, avgResourceUsageCall,
+			100 * avgResourceUsageCall / avgEmptyNativeCall);
 		
 		System.exit(0);
 	}
