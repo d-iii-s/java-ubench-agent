@@ -73,8 +73,6 @@ public class BenchmarkTest {
 			Benchmark.stop();
 		}
 		
-		Benchmark.dump("-");
-		
 		Benchmark.init(LOOPS, columns);	
 		
 		for (int i = 0; i < LOOPS; i++) {
@@ -92,8 +90,6 @@ public class BenchmarkTest {
 					duration / 1000, start_measurement_duration,
 					end_measurement_duration);
 		}
-		
-		Benchmark.dump("-");
 		
 		System.exit(0);
 	}

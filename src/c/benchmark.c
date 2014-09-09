@@ -376,57 +376,6 @@ void JNICALL Java_cz_cuni_mff_d3s_perf_Benchmark_stop(
 	current_benchmark.data_index++;
 }
 
-void JNICALL Java_cz_cuni_mff_d3s_perf_Benchmark_dump(
-		JNIEnv *env, jclass UNUSED_PARAMETER(klass),
-		jstring jfilename) {
-	const char *filename = (*env)->GetStringUTFChars(env, jfilename, 0);
-
-	FILE *file = NULL;
-	if (strcmp(filename, "-") == 0) {
-		file = stdout;
-	} else {
-		file = fopen(filename, "wt");
-	}
-
-	if (file == NULL) {
-		goto leave;
-	}
-
-	/* Print the results. */
-	size_t bi;
-	for (bi = 0; bi < current_benchmark.data_index; bi++) {
-		benchmark_run_t *benchmark = &current_benchmark.data[bi];
-
-		size_t ei;
-		for (ei = 0; ei < current_benchmark.used_events_count; ei++) {
-			ubench_event_info_t *event = &current_benchmark.used_events[ei];
-			long long value = event->op_get(benchmark, event);
-			fprintf(file, "%12lld", value);
-		}
-
-#ifdef HAS_PAPI
-		if (current_benchmark.used_backends & UBENCH_EVENT_BACKEND_PAPI) {
-			if (benchmark->start.papi_rc1 != PAPI_OK) {
-				fprintf(file, " start_counters=%s", PAPI_strerror(benchmark->start.papi_rc1));
-			} else if (benchmark->start.papi_rc2 != PAPI_OK) {
-				fprintf(file, " read_counters=%s", PAPI_strerror(benchmark->start.papi_rc2));
-			} else if (benchmark->end.papi_rc1 != PAPI_OK) {
-				fprintf(file, " stop_counters=%s", PAPI_strerror(benchmark->end.papi_rc1));
-			}
-		}
-#endif
-
-		fprintf(file, "\n");
-	}
-
-	if (file != stdout) {
-		fclose(file);
-	}
-
-leave:
-	(*env)->ReleaseStringUTFChars(env, jfilename, filename);
-}
-
 jobject JNICALL Java_cz_cuni_mff_d3s_perf_Benchmark_getResults(JNIEnv *env,
 		jclass UNUSED_PARAMETER(klass)) {
 	jmethodID constructor;
@@ -475,6 +424,7 @@ jobject JNICALL Java_cz_cuni_mff_d3s_perf_Benchmark_getResults(JNIEnv *env,
 			ubench_event_info_t *event = &current_benchmark.used_events[ei];
 			long long value = event->op_get(benchmark, event);
 			jlong jvalue = (jlong) value;
+			// FIXME: report PAPI errors etc.
 			(*env)->SetLongArrayRegion(env, event_values, (jsize) ei, 1, &jvalue);
 		}
 

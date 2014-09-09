@@ -21,6 +21,5 @@ public final class Benchmark {
 	public static native void init(final int measurements, final String[] events);
 	public static native void start();
 	public static native void stop();
-	public static native void dump(final String filename);
 	public static native BenchmarkResults getResults();
 }
