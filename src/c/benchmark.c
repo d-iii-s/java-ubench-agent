@@ -270,7 +270,7 @@ void JNICALL Java_cz_cuni_mff_d3s_perf_Benchmark_init(
 
 	size_t i;
 	for (i = 0; i < events_count; i++) {
-		jstring jevent_name = (jstring) (*env)->GetObjectArrayElement(env, jeventNames, i);
+		jstring jevent_name = (jstring) (*env)->GetObjectArrayElement(env, jeventNames, (jsize) i);
 		const char *event_name = (*env)->GetStringUTFChars(env, jevent_name, 0);
 
 		ubench_event_info_t *event_info = &current_benchmark.used_events[current_benchmark.used_events_count];
@@ -440,11 +440,11 @@ jobject JNICALL Java_cz_cuni_mff_d3s_perf_Benchmark_getResults(JNIEnv *env,
 	}
 
 	jobjectArray jevent_names = (jobjectArray) (*env)->NewObjectArray(env,
-		current_benchmark.used_events_count,
+		(jsize) current_benchmark.used_events_count,
 		string_class, NULL);
 	size_t i;
 	for (i = 0; i < current_benchmark.used_events_count; i++) {
-		(*env)->SetObjectArrayElement(env, jevent_names, i, (*env)->NewStringUTF(env, current_benchmark.used_events[i].name));
+		(*env)->SetObjectArrayElement(env, jevent_names, (jsize) i, (*env)->NewStringUTF(env, current_benchmark.used_events[i].name));
 	}
 
 
@@ -459,7 +459,7 @@ jobject JNICALL Java_cz_cuni_mff_d3s_perf_Benchmark_getResults(JNIEnv *env,
 	}
 
 	size_t bi;
-	jlongArray event_values = (*env)->NewLongArray(env, current_benchmark.used_events_count);
+	jlongArray event_values = (*env)->NewLongArray(env, (jsize) current_benchmark.used_events_count);
 	if (event_values == NULL) {
 		return NULL;
 	}
@@ -475,7 +475,7 @@ jobject JNICALL Java_cz_cuni_mff_d3s_perf_Benchmark_getResults(JNIEnv *env,
 			ubench_event_info_t *event = &current_benchmark.used_events[ei];
 			long long value = event->op_get(benchmark, event);
 			jlong jvalue = (jlong) value;
-			(*env)->SetLongArrayRegion(env, event_values, ei, 1, &jvalue);
+			(*env)->SetLongArrayRegion(env, event_values, (jsize) ei, 1, &jvalue);
 		}
 
 		(*env)->CallVoidMethod(env, jresults, set_data_method, event_values);
