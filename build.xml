@@ -118,13 +118,13 @@
 	
 	
 	<!-- Warning-related compiler flags -->
-	<condition property="agent.gcc.warn.flags" value="-Wall -Wextra">
+	<condition property="agent.gcc.warn.flags" value="-Wall -Wextra -Wno-unknown-pragmas">
 		<equals arg1="${agent.cc.warnings}" arg2="diagnostic" />
 	</condition>
-	<condition property="agent.gcc.warn.flags" value="-Wall">
+	<condition property="agent.gcc.warn.flags" value="-Wall -Wno-unknown-pragmas">
 		<equals arg1="${agent.cc.warnings}" arg2="default" />
 	</condition>
-	<condition property="agent.gcc.warn.flags" value="-Wall -Wextra -Werror">
+	<condition property="agent.gcc.warn.flags" value="-Wall -Wextra -Werror -Wno-unknown-pragmas">
 		<equals arg1="${agent.cc.warnings}" arg2="aserror" />
 	</condition>
 	<property name="agent.gcc.warn.flags" value="" />
