@@ -15,11 +15,13 @@
  * limitations under the License.
  */
 
+#pragma warning(push, 0)
 #include <jvmti.h>
 #include <jni.h>
 #include <jvmticmlr.h>
 #include <stdlib.h>
 #include <string.h>
+#pragma warning(pop)
 #include "myatomic.h"
 
 #ifdef __GNUC__

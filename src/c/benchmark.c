@@ -22,13 +22,15 @@
 
 #define NOTSUP_LONG ((long)-1)
 
-
-#include "cz_cuni_mff_d3s_perf_CompilationCounter.h"
 #include "microbench.h"
+
+#pragma warning(push, 0)
+#include "cz_cuni_mff_d3s_perf_CompilationCounter.h"
 #include <stdlib.h>
 #include <stddef.h>
 #include <time.h>
 #include <string.h>
+#pragma warning(pop)
 
 #ifdef HAS_GETRUSAGE
 #include <sys/resource.h>
@@ -49,7 +51,9 @@ typedef struct timespec timestamp_t;
 #define PRI_TIMESTAMP_FMT "%6ld.%09ld"
 #define PRI_TIMESTAMP(x) (x).tv_sec, (x).tv_nsec
 #elif defined(HAS_QUERY_PERFORMANCE_COUNTER)
+#pragma warning(push, 0)
 #include <windows.h>
+#pragma warning(pop)
 typedef LARGE_INTEGER timestamp_t;
 #else
 typedef int timestamp_t;

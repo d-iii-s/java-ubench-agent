@@ -16,15 +16,16 @@
  */
 
 
-#include "cz_cuni_mff_d3s_perf_OverheadEstimations.h"
 #include "microbench.h"
+#pragma warning(push, 0)
+#include "cz_cuni_mff_d3s_perf_OverheadEstimations.h"
 #include <stdlib.h>
 #include <time.h>
 #include <string.h>
 #ifdef HAS_GETRUSAGE
 #include <sys/resource.h>
 #endif
-
+#pragma warning(pop)
 
 void JNICALL Java_cz_cuni_mff_d3s_perf_OverheadEstimations_emptyNativeCall(
 		JNIEnv *UNUSED_PARAMETER(env), jclass UNUSED_PARAMETER(klass)) {

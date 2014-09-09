@@ -15,8 +15,10 @@
  * limitations under the License.
  */
 
+#pragma warning(push, 0)
 #include <stdio.h>
 #include <string.h>
+#pragma warning(pop)
 
 #include "microbench.h"
 

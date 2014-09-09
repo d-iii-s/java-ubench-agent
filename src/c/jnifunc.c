@@ -15,7 +15,9 @@
  * limitations under the License.
  */
 
+#pragma warning(push, 0)
 #include "cz_cuni_mff_d3s_perf_CompilationCounter.h"
+#pragma warning(pop)
 #include "microbench.h"
 
 jint JNICALL

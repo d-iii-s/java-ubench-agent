@@ -15,9 +15,11 @@
  * limitations under the License.
  */
 
+#pragma warning(push, 0)
 #include <jvmti.h>
 #include <jni.h>
 #include <jvmticmlr.h>
+#pragma warning(pop)
 
 #ifdef _MSC_VER
 /* MSVC offers inline only for C++ code. */
