@@ -28,8 +28,12 @@ class BenchmarkResultsImpl implements BenchmarkResults {
 		data = new ArrayList<>();
 	}
 	
-	public void addDataRow(long[] row) {
-		data.add(row);
+	void addDataRow(long[] row) {
+		long copy[] = new long[row.length];
+		for (int i = 0; i < row.length; i++) {
+			copy[i] = row[i];
+		}
+		data.add(copy);
 	}
 	
 	@Override
