@@ -129,13 +129,13 @@
 	</condition>
 	<property name="agent.gcc.warn.flags" value="" />
 	
-	<condition property="agent.msvc.warn.flags" value="/Wall">
+	<condition property="agent.msvc.warn.flags" value="/Wall /wd4100">
 		<equals arg1="${agent.cc.warnings}" arg2="diagnostic" />
 	</condition>
 	<condition property="agent.msvc.warn.flags" value="/W3">
 		<equals arg1="${agent.cc.warnings}" arg2="default" />
 	</condition>
-	<condition property="agent.msvc.warn.flags" value="/Wall /WX">
+	<condition property="agent.msvc.warn.flags" value="/Wall /WX /wd4100">
 		<equals arg1="${agent.cc.warnings}" arg2="aserror" />
 	</condition>
 	<property name="agent.msvc.warn.flags" value="" />
