@@ -15,11 +15,11 @@
  * limitations under the License.
  */
 
+#include "ubench.h"
+
 #pragma warning(push, 0)
 #include <string.h>
 #pragma warning(pop)
-
-#include "microbench.h"
 
 #define FILL_WITH_ZEROS(variable) memset(&variable, 0, sizeof(variable))
 

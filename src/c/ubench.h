@@ -15,6 +15,9 @@
  * limitations under the License.
  */
 
+#ifndef UBENCH_H_GUARD
+#define UBENCH_H_GUARD
+
 #pragma warning(push, 0)
 #include <jvmti.h>
 #include <jni.h>
@@ -22,6 +25,7 @@
 #include <stdlib.h>
 #include <string.h>
 #pragma warning(pop)
+
 #include "myatomic.h"
 
 #ifdef __GNUC__
@@ -72,3 +76,5 @@ static inline char *ubench_str_dup(const char *str) {
 
 	return result;
 }
+
+#endif

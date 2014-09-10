@@ -15,12 +15,12 @@
  * limitations under the License.
  */
 
+#include "ubench.h"
+
 #pragma warning(push, 0)
 #include <stdio.h>
 #include <string.h>
 #pragma warning(pop)
-
-#include "microbench.h"
 
 JNIEXPORT jint JNICALL
 Agent_OnLoad(JavaVM *vm, char *UNUSED_PARAMETER(options), void *UNUSED_PARAMETER(reserved)) {

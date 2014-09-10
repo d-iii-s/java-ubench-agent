@@ -15,10 +15,11 @@
  * limitations under the License.
  */
 
+#include "ubench.h"
+
 #pragma warning(push, 0)
 #include "cz_cuni_mff_d3s_perf_CompilationCounter.h"
 #pragma warning(pop)
-#include "microbench.h"
 
 jint JNICALL
 Java_cz_cuni_mff_d3s_perf_CompilationCounter_getCompilationCountAndReset(
