@@ -65,6 +65,7 @@ typedef int timestamp_t;
 #define UBENCH_EVENT_BACKEND_RESOURCE_USAGE 2
 #define UBENCH_EVENT_BACKEND_PAPI 4
 #define UBENCH_EVENT_BACKEND_SYS_WALLCLOCK 8
+#define UBENCH_EVENT_BACKEND_JVM_COMPILATIONS 16
 
 typedef struct {
 	timestamp_t timestamp;
@@ -148,6 +149,10 @@ static long long getter_wall_clock_time(const benchmark_run_t *bench, const uben
 	return timestamp_diff_ns(&bench->start.timestamp, &bench->end.timestamp);
 }
 
+static long long getter_jvm_compilations(const benchmark_run_t *bench, const ubench_event_info_t *UNUSED_PARAMETER(info)) {
+	return bench->end.compilations - bench->start.compilations;
+}
+
 #ifdef HAS_GETRUSAGE
 static long long getter_context_switch_forced(const benchmark_run_t *bench, const ubench_event_info_t *UNUSED_PARAMETER(info)) {
 	return bench->end.resource_usage.ru_nivcsw - bench->start.resource_usage.ru_nivcsw;
@@ -205,6 +210,13 @@ static int resolve_event(const char *event, ubench_event_info_t *info) {
 	if (strcmp(event, "SYS_WALLCLOCK") == 0) {
 		info->backend = UBENCH_EVENT_BACKEND_SYS_WALLCLOCK;
 		info->op_get = getter_wall_clock_time;
+		info->name = ubench_str_dup(event);
+		return 1;
+	}
+
+	if (strcmp(event, "JVM_COMPILATIONS") == 0) {
+		info->backend = UBENCH_EVENT_BACKEND_JVM_COMPILATIONS;
+		info->op_get = getter_jvm_compilations;
 		info->name = ubench_str_dup(event);
 		return 1;
 	}
@@ -334,7 +346,10 @@ void JNICALL Java_cz_cuni_mff_d3s_perf_Benchmark_start(
 	}
 #endif
 
-	snapshot->compilations = ubench_atomic_get(&counter_compilation_total);
+	if ((current_benchmark.used_backends & UBENCH_EVENT_BACKEND_JVM_COMPILATIONS) > 0) {
+		snapshot->compilations = ubench_atomic_get(&counter_compilation_total);
+	}
+
 	snapshot->garbage_collections = ubench_atomic_get(&counter_gc_total);
 
 #ifdef HAS_PAPI
@@ -365,7 +380,10 @@ void JNICALL Java_cz_cuni_mff_d3s_perf_Benchmark_stop(
 	}
 #endif
 
-	snapshot->compilations = ubench_atomic_get(&counter_compilation_total);
+	if ((current_benchmark.used_backends & UBENCH_EVENT_BACKEND_JVM_COMPILATIONS) > 0) {
+		snapshot->compilations = ubench_atomic_get(&counter_compilation_total);
+	}
+
 	snapshot->garbage_collections = ubench_atomic_get(&counter_gc_total);
 
 #ifdef HAS_GETRUSAGE

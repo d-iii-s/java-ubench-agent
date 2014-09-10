@@ -61,6 +61,7 @@ public class BenchmarkTest {
 	
 	private static final String[] columns = {
 		"SYS_WALLCLOCK",
+		"JVM_COMPILATIONS",
 		"forced-context-switch",
 		"PAPI_L1_DCM",
 		"PAPI_L1_DCM",
