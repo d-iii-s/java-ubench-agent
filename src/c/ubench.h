@@ -24,6 +24,7 @@
 #include <jvmticmlr.h>
 #include <stdlib.h>
 #include <string.h>
+#include <time.h>
 #pragma warning(pop)
 
 #include "myatomic.h"
@@ -54,8 +55,86 @@
 #define DEBUG_PRINTF(fmt, ...) (void)0
 #endif
 
+#ifdef HAS_GETRUSAGE
+#include <sys/resource.h>
+#endif
+
+#ifdef HAS_TIMESPEC
+typedef struct timespec timestamp_t;
+#elif defined(HAS_QUERY_PERFORMANCE_COUNTER)
+#pragma warning(push, 0)
+#include <windows.h>
+#pragma warning(pop)
+typedef LARGE_INTEGER timestamp_t;
+#else
+typedef int timestamp_t;
+#endif
+
+#define UBENCH_MAX_PAPI_EVENTS 20
+
+/*
+ * Backend bit masks.
+ *
+ * Backend refers to a function that collects the counters (be it number
+ * of JIT compilations or number of page faults or ...).
+ */
+#define UBENCH_EVENT_BACKEND_LINUX 1
+#define UBENCH_EVENT_BACKEND_RESOURCE_USAGE 2
+#define UBENCH_EVENT_BACKEND_PAPI 4
+#define UBENCH_EVENT_BACKEND_SYS_WALLCLOCK 8
+#define UBENCH_EVENT_BACKEND_JVM_COMPILATIONS 16
+
+typedef struct {
+	timestamp_t timestamp;
+#ifdef HAS_GETRUSAGE
+	struct rusage resource_usage;
+#endif
+	long compilations;
+	int garbage_collections;
+#ifdef HAS_PAPI
+	long long papi_events[UBENCH_MAX_PAPI_EVENTS];
+	int papi_rc1;
+	int papi_rc2;
+#endif
+} ubench_events_snapshot_t;
+
+typedef struct {
+	ubench_events_snapshot_t start;
+	ubench_events_snapshot_t end;
+} benchmark_run_t;
+
+typedef struct ubench_event_info ubench_event_info_t;
+typedef long long (*event_getter_func_t)(const benchmark_run_t *, const ubench_event_info_t *);
+
+struct ubench_event_info {
+	unsigned int backend;
+	int id;
+	size_t papi_index;
+	event_getter_func_t op_get;
+	char *name;
+};
+
+typedef struct {
+	unsigned int used_backends;
+
+	ubench_event_info_t *used_events;
+	size_t used_events_count;
+
+#ifdef HAS_PAPI
+	int used_papi_events[UBENCH_MAX_PAPI_EVENTS];
+	size_t used_papi_events_count;
+#endif
+
+	benchmark_run_t *data;
+	size_t data_size;
+	size_t data_index;
+} benchmark_configuration_t;
+
+
 extern jint ubench_counters_init(jvmtiEnv *);
 extern jint ubench_benchmark_init(void);
+extern int ubench_event_init(void);
+extern int ubench_event_resolve(const char *, ubench_event_info_t *);
 
 extern ubench_atomic_t counter_compilation;
 extern ubench_atomic_t counter_compilation_total;

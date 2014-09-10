@@ -27,10 +27,6 @@
 #include <string.h>
 #pragma warning(pop)
 
-#ifdef HAS_GETRUSAGE
-#include <sys/resource.h>
-#endif
-
 #ifdef HAS_PAPI
 /*
  * Include <sys/types.h> and define __USE_BSD because of caddr_t.
@@ -41,92 +37,13 @@
 #include <papi.h>
 #endif
 
-#ifdef HAS_TIMESPEC
-typedef struct timespec timestamp_t;
-#elif defined(HAS_QUERY_PERFORMANCE_COUNTER)
+#ifdef HAS_QUERY_PERFORMANCE_COUNTER
 #pragma warning(push, 0)
 #include <windows.h>
 #pragma warning(pop)
-typedef LARGE_INTEGER timestamp_t;
-#else
-typedef int timestamp_t;
 #endif
-
-#define UBENCH_MAX_PAPI_EVENTS 20
-
-#define UBENCH_EVENT_BACKEND_LINUX 1
-#define UBENCH_EVENT_BACKEND_RESOURCE_USAGE 2
-#define UBENCH_EVENT_BACKEND_PAPI 4
-#define UBENCH_EVENT_BACKEND_SYS_WALLCLOCK 8
-#define UBENCH_EVENT_BACKEND_JVM_COMPILATIONS 16
-
-typedef struct {
-	timestamp_t timestamp;
-#ifdef HAS_GETRUSAGE
-	struct rusage resource_usage;
-#endif
-	long compilations;
-	int garbage_collections;
-#ifdef HAS_PAPI
-	long long papi_events[UBENCH_MAX_PAPI_EVENTS];
-	int papi_rc1;
-	int papi_rc2;
-#endif
-} ubench_events_snapshot_t;
-
-typedef struct {
-	ubench_events_snapshot_t start;
-	ubench_events_snapshot_t end;
-} benchmark_run_t;
-
-typedef struct ubench_event_info ubench_event_info_t;
-typedef long long (*event_getter_func_t)(const benchmark_run_t *, const ubench_event_info_t *);
-
-struct ubench_event_info {
-	unsigned int backend;
-	int id;
-	size_t papi_index;
-	event_getter_func_t op_get;
-	char *name;
-};
-
-typedef struct {
-	unsigned int used_backends;
-
-	ubench_event_info_t *used_events;
-	size_t used_events_count;
-
-#ifdef HAS_PAPI
-	int used_papi_events[UBENCH_MAX_PAPI_EVENTS];
-	size_t used_papi_events_count;
-#endif
-
-	benchmark_run_t *data;
-	size_t data_size;
-	size_t data_index;
-} benchmark_configuration_t;
 
 static benchmark_configuration_t current_benchmark;
-
-#ifdef HAS_QUERY_PERFORMANCE_COUNTER
-static LARGE_INTEGER windows_timer_frequency;
-#endif
-
-static long long timestamp_diff_ns(const timestamp_t *a, const timestamp_t *b) {
-#ifdef HAS_TIMESPEC
-	long long sec_diff = b->tv_sec - a->tv_sec;
-	long long nanosec_diff = b->tv_nsec - a->tv_nsec;
-	return sec_diff * 1000 * 1000 * 1000 + nanosec_diff;
-#elif defined(HAS_QUERY_PERFORMANCE_COUNTER)
-	if (windows_timer_frequency.QuadPart == 0) {
-		return -1;
-	}
-	return (b->QuadPart - a->QuadPart) * 1000 * 1000 * 1000 / windows_timer_frequency.QuadPart;
-#else
-	return *b - *a;
-#endif
-}
-
 
 static void store_current_timestamp(timestamp_t *ts) {
 #ifdef HAS_TIMESPEC
@@ -137,34 +54,6 @@ static void store_current_timestamp(timestamp_t *ts) {
 	*ts = -1;
 #endif
 }
-
-static long long getter_wall_clock_time(const benchmark_run_t *bench, const ubench_event_info_t *UNUSED_PARAMETER(info)) {
-	return timestamp_diff_ns(&bench->start.timestamp, &bench->end.timestamp);
-}
-
-static long long getter_jvm_compilations(const benchmark_run_t *bench, const ubench_event_info_t *UNUSED_PARAMETER(info)) {
-	return bench->end.compilations - bench->start.compilations;
-}
-
-#ifdef HAS_GETRUSAGE
-static long long getter_context_switch_forced(const benchmark_run_t *bench, const ubench_event_info_t *UNUSED_PARAMETER(info)) {
-	return bench->end.resource_usage.ru_nivcsw - bench->start.resource_usage.ru_nivcsw;
-}
-#endif
-
-#ifdef HAS_PAPI
-static long long getter_papi(const benchmark_run_t *bench, const ubench_event_info_t *info) {
-	if (bench->start.papi_rc1 != PAPI_OK) {
-		return -1;
-	} else if (bench->start.papi_rc2 != PAPI_OK) {
-		return -1;
-	} else if (bench->end.papi_rc1 != PAPI_OK) {
-		return -1;
-	}
-
-	return bench->end.papi_events[info->papi_index] - bench->start.papi_events[info->papi_index];
-}
-#endif
 
 jint ubench_benchmark_init(void) {
 #ifdef HAS_PAPI
@@ -188,56 +77,11 @@ jint ubench_benchmark_init(void) {
 	current_benchmark.data_index = 0;
 	current_benchmark.data_size = 0;
 
-#ifdef HAS_QUERY_PERFORMANCE_COUNTER
-	 QueryPerformanceFrequency(&windows_timer_frequency);
-#endif
+	ubench_event_init();
 
 	return JNI_OK;
 }
 
-static int resolve_event(const char *event, ubench_event_info_t *info) {
-	if (event == NULL) {
-		return 0;
-	}
-
-	if (strcmp(event, "SYS_WALLCLOCK") == 0) {
-		info->backend = UBENCH_EVENT_BACKEND_SYS_WALLCLOCK;
-		info->op_get = getter_wall_clock_time;
-		info->name = ubench_str_dup(event);
-		return 1;
-	}
-
-	if (strcmp(event, "JVM_COMPILATIONS") == 0) {
-		info->backend = UBENCH_EVENT_BACKEND_JVM_COMPILATIONS;
-		info->op_get = getter_jvm_compilations;
-		info->name = ubench_str_dup(event);
-		return 1;
-	}
-
-#ifdef HAS_GETRUSAGE
-	if (strcmp(event, "forced-context-switch") == 0) {
-		info->backend = UBENCH_EVENT_BACKEND_RESOURCE_USAGE;
-		info->op_get = getter_context_switch_forced;
-		info->name = ubench_str_dup(event);
-		return 1;
-	}
-#endif
-
-#ifdef HAS_PAPI
-	/* Let's try PAPI */
-	int papi_event_id = 0;
-	int ok = PAPI_event_name_to_code((char *) event, &papi_event_id);
-	if (ok == PAPI_OK) {
-		info->backend = UBENCH_EVENT_BACKEND_PAPI;
-		info->id = papi_event_id;
-		info->op_get = getter_papi;
-		info->name = ubench_str_dup(event);
-		return 1;
-	}
-#endif
-
-	return 0;
-}
 
 void JNICALL Java_cz_cuni_mff_d3s_perf_Benchmark_init(
 		JNIEnv *env, jclass UNUSED_PARAMETER(klass),
@@ -277,7 +121,7 @@ void JNICALL Java_cz_cuni_mff_d3s_perf_Benchmark_init(
 
 		ubench_event_info_t *event_info = &current_benchmark.used_events[current_benchmark.used_events_count];
 
-		int event_ok = resolve_event(event_name, event_info);
+		int event_ok = ubench_event_resolve(event_name, event_info);
 		if (!event_ok) {
 			fprintf(stderr, "Unrecognized event %s\n", event_name);
 			goto event_loop_end;
