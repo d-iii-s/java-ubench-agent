@@ -167,57 +167,14 @@ void JNICALL Java_cz_cuni_mff_d3s_perf_Benchmark_start(
 
 	ubench_events_snapshot_t *snapshot = &current_benchmark.data[current_benchmark.data_index].start;
 
-#ifdef HAS_GETRUSAGE
-	if ((current_benchmark.used_backends & UBENCH_EVENT_BACKEND_RESOURCE_USAGE) > 0) {
-		getrusage(RUSAGE_SELF, &(snapshot->resource_usage));
-	}
-#endif
-
-	if ((current_benchmark.used_backends & UBENCH_EVENT_BACKEND_JVM_COMPILATIONS) > 0) {
-		snapshot->compilations = ubench_atomic_get(&counter_compilation_total);
-	}
-
-	snapshot->garbage_collections = ubench_atomic_get(&counter_gc_total);
-
-#ifdef HAS_PAPI
-	if ((current_benchmark.used_backends & UBENCH_EVENT_BACKEND_PAPI) > 0) {
-		// TODO: check for errors
-		snapshot->papi_rc1 = PAPI_start_counters(current_benchmark.used_papi_events, current_benchmark.used_papi_events_count);
-		snapshot->papi_rc2 = PAPI_read_counters(snapshot->papi_events, current_benchmark.used_papi_events_count);
-	}
-#endif
-
-	if ((current_benchmark.used_backends & UBENCH_EVENT_BACKEND_SYS_WALLCLOCK) > 0) {
-		ubench_event_store_wallclock(&(snapshot->timestamp));
-	}
+	ubench_measure_start(&current_benchmark, snapshot);
 }
 
 void JNICALL Java_cz_cuni_mff_d3s_perf_Benchmark_stop(
 		JNIEnv *UNUSED_PARAMETER(env), jclass UNUSED_PARAMETER(klass)) {
 	ubench_events_snapshot_t *snapshot = &current_benchmark.data[current_benchmark.data_index].end;
 
-	if ((current_benchmark.used_backends & UBENCH_EVENT_BACKEND_SYS_WALLCLOCK) > 0) {
-		ubench_event_store_wallclock(&(snapshot->timestamp));
-	}
-
-#ifdef HAS_PAPI
-	// TODO: check for errors
-	if ((current_benchmark.used_backends & UBENCH_EVENT_BACKEND_PAPI) > 0) {
-		snapshot->papi_rc1 = PAPI_stop_counters(snapshot->papi_events, current_benchmark.used_papi_events_count);
-	}
-#endif
-
-	if ((current_benchmark.used_backends & UBENCH_EVENT_BACKEND_JVM_COMPILATIONS) > 0) {
-		snapshot->compilations = ubench_atomic_get(&counter_compilation_total);
-	}
-
-	snapshot->garbage_collections = ubench_atomic_get(&counter_gc_total);
-
-#ifdef HAS_GETRUSAGE
-	if ((current_benchmark.used_backends & UBENCH_EVENT_BACKEND_RESOURCE_USAGE) > 0) {
-		getrusage(RUSAGE_SELF, &(snapshot->resource_usage));
-	}
-#endif
+	ubench_measure_stop(&current_benchmark, snapshot);
 
 	current_benchmark.data_index++;
 }

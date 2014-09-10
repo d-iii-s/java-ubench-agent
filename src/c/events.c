@@ -132,13 +132,3 @@ int ubench_event_resolve(const char *event, ubench_event_info_t *info) {
 
 	return 0;
 }
-
-void ubench_event_store_wallclock(timestamp_t *ts) {
-#ifdef HAS_TIMESPEC
-	clock_gettime(CLOCK_MONOTONIC, ts);
-#elif defined(HAS_QUERY_PERFORMANCE_COUNTER)
-	QueryPerformanceCounter(ts);
-#else
-	*ts = -1;
-#endif
-}
