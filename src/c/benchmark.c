@@ -45,16 +45,6 @@
 
 static benchmark_configuration_t current_benchmark;
 
-static void store_current_timestamp(timestamp_t *ts) {
-#ifdef HAS_TIMESPEC
-	clock_gettime(CLOCK_MONOTONIC, ts);
-#elif defined(HAS_QUERY_PERFORMANCE_COUNTER)
-	QueryPerformanceCounter(ts);
-#else
-	*ts = -1;
-#endif
-}
-
 jint ubench_benchmark_init(void) {
 #ifdef HAS_PAPI
 	// TODO: check for errors
@@ -198,7 +188,7 @@ void JNICALL Java_cz_cuni_mff_d3s_perf_Benchmark_start(
 #endif
 
 	if ((current_benchmark.used_backends & UBENCH_EVENT_BACKEND_SYS_WALLCLOCK) > 0) {
-		store_current_timestamp(&(snapshot->timestamp));
+		ubench_event_store_wallclock(&(snapshot->timestamp));
 	}
 }
 
@@ -207,7 +197,7 @@ void JNICALL Java_cz_cuni_mff_d3s_perf_Benchmark_stop(
 	ubench_events_snapshot_t *snapshot = &current_benchmark.data[current_benchmark.data_index].end;
 
 	if ((current_benchmark.used_backends & UBENCH_EVENT_BACKEND_SYS_WALLCLOCK) > 0) {
-		store_current_timestamp(&(snapshot->timestamp));
+		ubench_event_store_wallclock(&(snapshot->timestamp));
 	}
 
 #ifdef HAS_PAPI

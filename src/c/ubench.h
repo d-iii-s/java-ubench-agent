@@ -136,6 +136,9 @@ extern jint ubench_benchmark_init(void);
 extern int ubench_event_init(void);
 extern int ubench_event_resolve(const char *, ubench_event_info_t *);
 
+extern void ubench_event_store_wallclock(timestamp_t *ts);
+
+
 extern ubench_atomic_t counter_compilation;
 extern ubench_atomic_t counter_compilation_total;
 extern ubench_atomic_t counter_gc_total;
