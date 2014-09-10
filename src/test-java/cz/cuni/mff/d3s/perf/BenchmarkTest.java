@@ -22,14 +22,14 @@ import org.junit.*;
 
 
 public class BenchmarkTest {
-	private static final String[] SMOKE_TEST_EVENTS = { "clock-monotonic" };
+	private static final String[] SMOKE_TEST_EVENTS = { "SYS_WALLCLOCK" };
 	private static final int SMOKE_TEST_SLEEP_MILLIS = 100;
 	
 	@Test
-	public void getResultsSmokeTest() {
+	public void getResultsSmokeTest() throws InterruptedException {
 		Benchmark.init(1, SMOKE_TEST_EVENTS);
 		Benchmark.start();
-		TestUtils.noThrowSleep(SMOKE_TEST_SLEEP_MILLIS);
+		Thread.sleep(SMOKE_TEST_SLEEP_MILLIS);
 		Benchmark.stop();
 		
 		
@@ -53,14 +53,14 @@ public class BenchmarkTest {
 		Assert.assertFalse("there ought not to be any more data", iterator.hasNext());
 		
 		Assert.assertTrue("sample " + numbers[0] + " is not in range",
-			(numbers[0] > 0)
+			(numbers[0] > SMOKE_TEST_SLEEP_MILLIS*1000*1000/2)
 			&& (numbers[0] < SMOKE_TEST_SLEEP_MILLIS*1000*1000*10));
 	}
 	
 	private static final int LOOPS = 5;
 	
 	private static final String[] columns = {
-		"clock-monotonic",
+		"SYS_WALLCLOCK",
 		"forced-context-switch",
 		"PAPI_L1_DCM",
 		"PAPI_L1_DCM",

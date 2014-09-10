@@ -64,6 +64,7 @@ typedef int timestamp_t;
 #define UBENCH_EVENT_BACKEND_LINUX 1
 #define UBENCH_EVENT_BACKEND_RESOURCE_USAGE 2
 #define UBENCH_EVENT_BACKEND_PAPI 4
+#define UBENCH_EVENT_BACKEND_SYS_WALLCLOCK 8
 
 typedef struct {
 	timestamp_t timestamp;
@@ -201,16 +202,12 @@ static int resolve_event(const char *event, ubench_event_info_t *info) {
 		return 0;
 	}
 
-#ifdef HAS_TIMESPEC
-	if (strcmp(event, "clock-monotonic") == 0) {
-		info->backend = UBENCH_EVENT_BACKEND_LINUX;
+	if (strcmp(event, "SYS_WALLCLOCK") == 0) {
+		info->backend = UBENCH_EVENT_BACKEND_SYS_WALLCLOCK;
 		info->op_get = getter_wall_clock_time;
 		info->name = ubench_str_dup(event);
 		return 1;
 	}
-#endif
-
-
 
 #ifdef HAS_GETRUSAGE
 	if (strcmp(event, "forced-context-switch") == 0) {
@@ -348,14 +345,18 @@ void JNICALL Java_cz_cuni_mff_d3s_perf_Benchmark_start(
 	}
 #endif
 
-	store_current_timestamp(&(snapshot->timestamp));
+	if ((current_benchmark.used_backends & UBENCH_EVENT_BACKEND_SYS_WALLCLOCK) > 0) {
+		store_current_timestamp(&(snapshot->timestamp));
+	}
 }
 
 void JNICALL Java_cz_cuni_mff_d3s_perf_Benchmark_stop(
 		JNIEnv *UNUSED_PARAMETER(env), jclass UNUSED_PARAMETER(klass)) {
 	ubench_events_snapshot_t *snapshot = &current_benchmark.data[current_benchmark.data_index].end;
 
-	store_current_timestamp(&(snapshot->timestamp));
+	if ((current_benchmark.used_backends & UBENCH_EVENT_BACKEND_SYS_WALLCLOCK) > 0) {
+		store_current_timestamp(&(snapshot->timestamp));
+	}
 
 #ifdef HAS_PAPI
 	// TODO: check for errors

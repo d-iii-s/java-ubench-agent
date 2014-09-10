@@ -26,7 +26,7 @@ public class OverheadEstimationsTest {
 	private static final int INNER_LOOPS = 1000000;
 	
 	public static void main(String[] args) {
-		Benchmark.init(LOOPS * 2, new String[] { "clock-monotonic" });
+		Benchmark.init(LOOPS * 2, new String[] { "SYS_WALLCLOCK" });
 		
 		for (int loop = 0; loop < LOOPS; loop++) {
 			Benchmark.start();
