@@ -91,6 +91,17 @@ public class BenchmarkTest {
 					end_measurement_duration);
 		}
 		
+		for (String c : columns) {
+			System.out.printf("%14s", c.substring(0, Math.min(c.length(), 13)));
+		}
+		System.out.printf("\n");
+		for (long[] row : Benchmark.getResults().getData()) {
+			for (long r : row) {
+				System.out.printf("%14d", r);
+			}
+			System.out.println("");
+		}
+
 		System.exit(0);
 	}
 }
