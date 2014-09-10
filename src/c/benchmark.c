@@ -17,11 +17,6 @@
 
 #define  _POSIX_C_SOURCE 200809L
 
-// TODO: reintroduce conditional compilation if getrusage or PAPI
-// is not available
-
-#define NOTSUP_LONG ((long)-1)
-
 #include "microbench.h"
 
 #pragma warning(push, 0)
@@ -48,8 +43,6 @@
 
 #ifdef HAS_TIMESPEC
 typedef struct timespec timestamp_t;
-#define PRI_TIMESTAMP_FMT "%6ld.%09ld"
-#define PRI_TIMESTAMP(x) (x).tv_sec, (x).tv_nsec
 #elif defined(HAS_QUERY_PERFORMANCE_COUNTER)
 #pragma warning(push, 0)
 #include <windows.h>
