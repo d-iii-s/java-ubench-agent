@@ -15,7 +15,7 @@
   - See the License for the specific language governing permissions and
   - limitations under the License.
   -->
-<project basedir="." name="Microbenchmarking agent" default="compile">
+<project basedir="." name="Microbenchmarking agent for Java" default="main">
 	<property file="local-settings.ini" />
 	
 	<property environment="env" />
@@ -144,11 +144,22 @@
 	<target name="print-properties">
 		<echoproperties format="text" />
 	</target>
-
-	<target name="compile" depends="compile-java,compile-agent">
+	
+	<target name="main"
+			depends="compile"
+			description="Default target: compile everything."
+		>
 	</target>
 
-	<target name="compile-java">
+	<target name="compile"
+			depends="compile-java,compile-agent"
+			description="Compile everything."
+		>
+	</target>
+
+	<target name="compile-java"
+			description="Compile Java sources."
+		>
 		<mkdir dir="${classes.build.dir}" />
 		<javac 
 				destdir="${classes.build.dir}"
@@ -159,10 +170,16 @@
 		</javac>
 	</target>
 
-	<target name="compile-agent" depends="compile-java,compile-agent-gcc,compile-agent-msvc">
+	<target name="compile-agent"
+			depends="compile-java,compile-agent-gcc,compile-agent-msvc"
+			description="Compile the C agent."
+		>
 	</target>
 	
-	<target name="compile-agent-prepare-headers" depends="compile-java">
+	<target name="compile-agent-prepare-headers"
+			depends="compile-java"
+			description="Generate JNI headers."
+		>
 		<mkdir dir="${agent.build.dir}" />
 		<javah
 				destdir="${agent.build.dir}"
@@ -173,7 +190,10 @@
 		</javah>
 	</target>
 	
-	<target name="compile-agent-gcc" depends="compile-agent-prepare-headers" if="agent.cc.is.gcc">
+	<target name="compile-agent-gcc"
+			depends="compile-agent-prepare-headers"
+			if="agent.cc.is.gcc"
+		>
 		<apply
 				executable="gcc"
 				failonerror="true"
@@ -211,7 +231,10 @@
 		</apply>
 	</target>
 	
-	<target name="compile-agent-msvc" depends="compile-agent-prepare-headers" if="agent.cc.is.msvc">
+	<target name="compile-agent-msvc"
+			depends="compile-agent-prepare-headers"
+			if="agent.cc.is.msvc"
+		>
 		<apply
 				executable="cl.exe"
 				failonerror="true"
@@ -244,7 +267,9 @@
 		</apply>
 	</target>
 
-	<target name="compile-test">
+	<target name="compile-test"
+			description="Compile all the test code."
+		>
 		<mkdir dir="${test.classes.build.dir}" />
 		<javac 
 				destdir="${test.classes.build.dir}"
@@ -281,7 +306,10 @@
 		</sequential>
 	</macrodef>
 
-	<target name="test" depends="compile,compile-test">
+	<target name="test"
+			depends="compile,compile-test"
+			description="Run simple self-tests (obsoleted)."
+		>
 		<self-test
 			classname="cz.cuni.mff.d3s.perf.CompilationCounterTest"
 			jvmarg="-Xmixed"
@@ -297,7 +325,10 @@
 		<echo level="info" message="All tests passed." />
 	</target>
 	
-	<target name="test-junit" depends="compile,compile-test">
+	<target name="test-junit"
+			depends="compile,compile-test"
+			description="Run JUnit tests, generate HTML report."
+		>
 		<mkdir dir="${test.results.dir}"/>
 		<junit printsummary="withOutAndErr" haltonfailure="no">
 			<classpath>
@@ -332,7 +363,9 @@
 	</target>
 
 
-	<target name="clean">
+	<target name="clean"
+			description="Remove generated files."
+		>
 		<delete dir="${classes.build.dir}" />
 		<delete dir="${build.dir}" />
 	</target>
