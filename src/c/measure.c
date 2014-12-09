@@ -15,7 +15,8 @@
  * limitations under the License.
  */
 
-#define _DEFAULT_SOURCE
+#define _BSD_SOURCE // For glibc 2.18 to include caddr_t
+#define _DEFAULT_SOURCE // For glibc 2.20 to include caddr_t
 #define _POSIX_C_SOURCE 200809L
 
 #include "ubench.h"
