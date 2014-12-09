@@ -44,7 +44,10 @@
 	<condition property="agent.feature.has.papi">
 		<and>
 			<os family="unix" />
-			<available file="libpapi.so" filepath="/usr/lib" />
+			<or>
+				<available file="libpapi.so" filepath="/usr/lib" />
+				<available file="libpapi.so" filepath="/usr/lib64" />
+			</or>
 		</and>
 	</condition>
 	<condition property="agent.feature.has.getrusage">

@@ -15,7 +15,8 @@
  * limitations under the License.
  */
 
-#define  _POSIX_C_SOURCE 200809L
+#define _DEFAULT_SOURCE
+#define _POSIX_C_SOURCE 200809L
 
 #include "ubench.h"
 
@@ -29,10 +30,9 @@
 
 #ifdef HAS_PAPI
 /*
- * Include <sys/types.h> and define __USE_BSD because of caddr_t.
- * This is not needed if we would compile with GCC and -std=c99.
+ * Include <sys/types.h> to have caddr_t.
+ * Not needed with GCC and -std=c99.
  */
-#define __USE_BSD
 #include <sys/types.h>
 #include <papi.h>
 #endif

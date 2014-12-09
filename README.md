@@ -1,6 +1,8 @@
-Microbenchmarking agent for Java
+Microbenchmarking Agent for Java
 ================================
 
-Java agent to capture and report on low-level events in JVM, such
-as just-in-time compilation or garbage-collection.
+A JVMTI agent to be used with microbenchmarks. Basic features:
 
+- Reports major JVM events such as GC and JIT runs.
+- Can collect performance counters through JNI.
+- Can collect accurate time through JNI.
