@@ -115,6 +115,9 @@
 	<condition property="agent.cc.timespec" value="-DHAS_TIMESPEC" else="">
 		<isset property="agent.feature.has.timespec" />
 	</condition>
+	<condition property="agent.link.librt" value="-lrt" else="">
+		<os name="Linux" />
+	</condition>
 	<condition property="agent.cc.native.windows" value="-DHAS_QUERY_PERFORMANCE_COUNTER" else="">
 		<isset property="agent.features.has.native.windows" />
 	</condition>
@@ -227,6 +230,7 @@
 			<arg value="-shared" />
 			<arg value="-fPIC" />
 			<arg line="${agent.link.papi}" />
+			<arg line="${agent.link.librt}" />
 			<arg value="-o" />
 			<arg file="${agent.path}" />
 			<srcfile />
