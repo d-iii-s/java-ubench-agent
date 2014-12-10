@@ -20,6 +20,8 @@
 	
 	<property environment="env" />
 
+	<property name="dist.name" value="ubench-agent" />
+
 	<property name="java.src.dir" value="src/java" />
 	<property name="agent.src.dir" value="src/c" />
 	<property name="java.test.src.dir" value="src/test-java" />
@@ -367,6 +369,20 @@
 			</fileset>
 			<report format="frames" todir="${test.results.dir}/html"/>
 		</junitreport>
+	</target>
+
+
+	<target name="dist"
+			description="Create distributable ZIP with all sources."
+		>
+		<mkdir dir="${build.dir}" />
+		<zip destfile="${build.dir}/${dist.name}.zip">
+			<zipfileset dir="src" prefix="${dist.name}/src" />
+			<zipfileset dir="lib" prefix="${dist.name}/lib" />
+			<zipfileset file="build.xml" prefix="${dist.name}/" />
+			<zipfileset file="LICENSE.txt" prefix="${dist.name}/" />
+			<zipfileset file="README.md" prefix="${dist.name}/" />
+		</zip>
 	</target>
 
 
