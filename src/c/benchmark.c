@@ -180,6 +180,11 @@ void JNICALL Java_cz_cuni_mff_d3s_perf_Benchmark_stop(
 	current_benchmark.data_index++;
 }
 
+void JNICALL Java_cz_cuni_mff_d3s_perf_Benchmark_reset(
+		JNIEnv *UNUSED_PARAMETER(env), jclass UNUSED_PARAMETER(klass)) {
+	current_benchmark.data_index = 0;
+}
+
 jobject JNICALL Java_cz_cuni_mff_d3s_perf_Benchmark_getResults(JNIEnv *env,
 		jclass UNUSED_PARAMETER(klass)) {
 	jmethodID constructor;

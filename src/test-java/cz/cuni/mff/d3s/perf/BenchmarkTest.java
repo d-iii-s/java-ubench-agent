@@ -24,6 +24,7 @@ import org.junit.*;
 public class BenchmarkTest {
 	private static final String[] SMOKE_TEST_EVENTS = { "SYS_WALLCLOCK" };
 	private static final int SMOKE_TEST_SLEEP_MILLIS = 100;
+	private static final int LOOPS = 5;
 	
 	@Test
 	public void getResultsSmokeTest() throws InterruptedException {
@@ -57,7 +58,32 @@ public class BenchmarkTest {
 			&& (numbers[0] < SMOKE_TEST_SLEEP_MILLIS*1000*1000*10));
 	}
 	
-	private static final int LOOPS = 5;
+	@Test
+	public void resetWorks() throws InterruptedException {
+		Benchmark.init(LOOPS, SMOKE_TEST_EVENTS);
+		for (int i = 0; i < LOOPS; i++) {
+			Benchmark.start();
+			Thread.sleep(SMOKE_TEST_SLEEP_MILLIS);
+			Benchmark.stop();
+		}
+		
+		Benchmark.reset();
+		
+		for (int i = 0; i < LOOPS / 2; i++) {
+			Benchmark.start();
+			Thread.sleep(SMOKE_TEST_SLEEP_MILLIS);
+			Benchmark.stop();
+		}
+		
+		BenchmarkResults results = Benchmark.getResults();
+		Iterable<long[]> data = results.getData();
+		int size = 0;
+		for (@SuppressWarnings("unused") long[] d : data) {
+			size++;
+		}
+		
+		Assert.assertEquals(LOOPS / 2, size);
+	}
 	
 	private static final String[] columns = {
 		"SYS_WALLCLOCK",
