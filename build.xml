@@ -93,14 +93,52 @@
 		location="${agent.build.dir}${file.separator}${agent.filename}" />
 	
 	<!-- Java include paths -->
-	<property name="agent.cc.java.include"
-		location="${env.JAVA_HOME}${file.separator}include" />
+	<pathconvert property="agent.cc.java.jni.h.path" setonempty="false">
+		<!--
+			Try to find jni.h in known locations.
+			
+			We first try $JAVA_HOME (%JAVA_HOME%) if set (that
+			shall take care of custom locations or when the
+			user wants to compile with a specific version of JDK).
+			Then we try ${java.home} that usually points to JRE
+			that could be inside JDK. After that, we go through
+			list of typical locations in various distributions.
+			
+			If your distribution uses different location, feel
+			free to add it here (but preferably only directories
+			without build versions, such as/usr/java/jdk1.7 but
+			not /usr/java/jdk1.7.0_55/).
+			
+			If you have a custom location, use local-settings.ini
+			to specify the exact path as a value of the
+			agent.cc.java.include property.
+		-->
+		<first>
+			<restrict>
+				<exists />
+				<union>					
+					<filelist dir="${env.JAVA_HOME}${file.separator}include" files="jni.h" />
+					<filelist dir="${java.home}${file.separator}..${file.separator}include" files="jni.h" />
+					<filelist dir="/usr/lib/jvm/default/include/" files="jni.h" />
+					<filelist dir="/usr/lib/jvm/java/include" files="jni.h" />
+					<filelist dir="/usr/java/default/include" files="jni.h" />
+					<filelist dir="/usr/java/latest/include" files="jni.h" />
+				</union>
+			</restrict>
+		</first>
+	</pathconvert>
+	<fail unless="agent.cc.java.jni.h.path"
+		message="Failed to locate JDK directory with C headers (set JAVA_HOME)."/>
+	
+	<dirname property="agent.cc.java.include"
+		file="${agent.cc.java.jni.h.path}" />
+	
 	<condition property="agent.cc.java.os.include"
-			value="${env.JAVA_HOME}${file.separator}include${file.separator}linux">
+			value="${agent.cc.java.include}${file.separator}linux">
 		<os name="Linux" />
 	</condition>
 	<condition property="agent.cc.java.os.include"
-			value="${env.JAVA_HOME}${file.separator}include${file.separator}win32">
+			value="${agent.cc.java.include}${file.separator}win32">
 		<os family="windows" />
 	</condition>
 	
@@ -148,6 +186,14 @@
 	</condition>
 	<property name="agent.msvc.warn.flags" value="" />
 	
+	
+	<target name="print-config"
+			description="Print current configuration (include paths, compiler, ...)."
+		>
+		<echo message="Used Java version: ${ant.java.version}" />
+		<echo message="Java C headers in: ${agent.cc.java.include}" />
+		<echo message="  Used C compiler: ${agent.cc}" />
+	</target>
 	
 	<target name="print-properties">
 		<echoproperties format="text" />
