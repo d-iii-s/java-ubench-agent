@@ -13,35 +13,35 @@ Usage
 ```java
 private static final int LOOPS = 10;
 private static final String[] EVENTS = {
-  "SYS_WALLCLOCK",
-  "JVM_COMPILATIONS",
-  /* Only on Linux with PAPI installed */
-  "PAPI_L1_DCM"
+	"SYS_WALLCLOCK",
+	"JVM_COMPILATIONS",
+	/* Only on Linux with PAPI installed */
+	"PAPI_L1_DCM"
 };
 	
 public static void myBenchmark() {
-  /* We would have LOOPS measurements and we
-     want to record these EVENTS. */
-  Benchmark.init(LOOPS, EVENTS);
-  
-  for (int i = 0; i < LOOPS; i++) {
-    /* Start the measurement. */
-    Benchmark.start();
+	/* We would have LOOPS measurements and we
+	   want to record these EVENTS. */
+	Benchmark.init(LOOPS, EVENTS);
+
+	for (int i = 0; i < LOOPS; i++) {
+		/* Start the measurement. */
+		Benchmark.start();
+    	
+    		/* Here goes your code that ought to be measured. */
     
-    /* Your code that ought to be measured. */
-    
-    /* Stop the measurement. */
-    Benchmark.stop();
-  }
-  
-  /* Get the results (available as Iterable<long[]>). */
-  BenchmarkResults results = Benchmark.getResults();
-  
-  /* Either print them in CSV (to be later processed)... */
-  BenchmarkResultsPrinter.toCsv(results, System.out);
-  
-  /* ... or as a space-padded table. */
-  BenchmarkResultsPrinter.table(results, System.out);
+		/* Stop the measurement. */
+		Benchmark.stop();
+	}
+
+	/* Get the results (available as Iterable<long[]>). */
+	BenchmarkResults results = Benchmark.getResults();
+
+	/* Either print them in CSV (to be later processed)... */
+	BenchmarkResultsPrinter.toCsv(results, System.out);
+
+	/* ... or as a space-padded table. */
+	BenchmarkResultsPrinter.table(results, System.out);
 }
 ```
 
