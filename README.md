@@ -28,7 +28,7 @@ public static void myBenchmark() {
 		/* Start the measurement. */
 		Benchmark.start();
     	
-    		/* Here goes your code that ought to be measured. */
+		/* Here goes your code that ought to be measured. */
     
 		/* Stop the measurement. */
 		Benchmark.stop();
