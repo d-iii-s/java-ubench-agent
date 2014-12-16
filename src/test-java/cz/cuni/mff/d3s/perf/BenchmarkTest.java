@@ -41,17 +41,14 @@ public class BenchmarkTest {
 		Assert.assertNotNull("getEventNames() may not return null", eventNames);
 		Assert.assertArrayEquals(SMOKE_TEST_EVENTS, eventNames);
 		
-		Iterable<long[]> data = results.getData();
+		List<long[]> data = results.getData();
 		Assert.assertNotNull("getData() may not return null", data);
-		Iterator<long[]> iterator = data.iterator();
 		
-		Assert.assertTrue("there ought to be some data", iterator.hasNext());
+		Assert.assertEquals("we collected single sample only", 1, data.size());
 		
-		long[] numbers = iterator.next();
+		long[] numbers = data.get(0);
 		Assert.assertNotNull("the array with results ought not to be null", numbers);
 		Assert.assertEquals("we collected single event only", 1, numbers.length);
-		
-		Assert.assertFalse("there ought not to be any more data", iterator.hasNext());
 		
 		Assert.assertTrue("sample " + numbers[0] + " is not in range",
 			(numbers[0] > SMOKE_TEST_SLEEP_MILLIS*1000*1000/2)
@@ -76,13 +73,9 @@ public class BenchmarkTest {
 		}
 		
 		BenchmarkResults results = Benchmark.getResults();
-		Iterable<long[]> data = results.getData();
-		int size = 0;
-		for (@SuppressWarnings("unused") long[] d : data) {
-			size++;
-		}
+		List<long[]> data = results.getData();
 		
-		Assert.assertEquals(LOOPS / 2, size);
+		Assert.assertEquals(LOOPS / 2, data.size());
 	}
 	
 	private static final String[] columns = {

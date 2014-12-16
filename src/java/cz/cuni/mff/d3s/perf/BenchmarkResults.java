@@ -17,7 +17,9 @@
 
 package cz.cuni.mff.d3s.perf;
 
+import java.util.List;
+
 public interface BenchmarkResults {
 	public String[] getEventNames();
-	Iterable<long[]> getData();
+	List<long[]> getData();
 }

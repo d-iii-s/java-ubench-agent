@@ -21,7 +21,7 @@ import java.util.*;
 
 class BenchmarkResultsImpl implements BenchmarkResults {
 	private final String[] events;
-	private final Collection<long[]> data;
+	private final List<long[]> data;
 	
 	public BenchmarkResultsImpl(String[] eventNames) {
 		events = eventNames;
@@ -42,7 +42,7 @@ class BenchmarkResultsImpl implements BenchmarkResults {
 	}
 	
 	@Override
-	public Iterable<long[]> getData() {
-		return data;
+	public List<long[]> getData() {
+		return Collections.unmodifiableList(data);
 	}
 }
