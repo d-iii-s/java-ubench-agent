@@ -29,11 +29,8 @@ class BenchmarkResultsImpl implements BenchmarkResults {
 	}
 	
 	void addDataRow(long[] row) {
-		long copy[] = new long[row.length];
-		for (int i = 0; i < row.length; i++) {
-			copy[i] = row[i];
-		}
-		data.add(copy);
+		/* Need to create the copy. */
+		data.add(Arrays.copyOf(row, row.length));
 	}
 	
 	@Override
