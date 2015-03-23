@@ -33,6 +33,7 @@
 	<property name="test.classes.build.dir" location="${build.dir}/test-classes" />
 	<property name="test.results.dir" value="${build.dir}/test-results" />
 	<property name="agent.build.dir" location="${build.dir}/agent/" />
+	<property name="lib.build.dir" location="${build.dir}/lib/" />
 	
 	<property name="junit.jar.path" value="lib/junit-4.11.jar" />
 	<property name="hamcrest.jar.path" value="lib/hamcrest-core.jar" />
@@ -322,6 +323,19 @@
 			<srcfile />
 			<fileset dir="${agent.build.dir}" includes="*.obj" />
 		</apply>
+	</target>
+	
+	<target name="lib"
+			description="Create the library, that is JAR and C-agent."
+			depends="compile"
+		>
+		<mkdir dir="${lib.build.dir}" />
+		<jar
+				destfile="${lib.build.dir}${file.separator}ubench-agent.jar"
+				basedir="${classes.build.dir}"
+			>
+		</jar>
+		<copy file="${agent.path}" todir="${lib.build.dir}" />
 	</target>
 	
 	<target name="compile-demo"

@@ -45,6 +45,12 @@ public static void myBenchmark() {
 }
 ```
 
+To run your program with our agent, add the `ubench-agent.jar` to
+your classpath and start JVM with the C-agent:
+`-agentpath:libubench-agent.so` (GNU/Linux)
+or `-agentpath:ubench-agent.dll` (Windows).
+
+
 Compilation
 -----------
 You will need recent version of Ant and GCC. Then simple
@@ -53,6 +59,13 @@ ant && ant test test-junit
 ```
 shall compile the agent and run the built-in tests
 (you might need to set `JAVA_HOME` if you have JDK in non-standard location).
+
+You might also wish to execute
+```
+ant lib
+```
+to create a JAR with the agent class files (it also copies the C-agent to
+the same folder for easier use).
 
 Demo
 ----
@@ -79,3 +92,4 @@ demo:
      [java]           68760              1         469812           1295
      [java] Hash is d41d8cd98f00b204e9800998ecf8427e.
 ```
+
