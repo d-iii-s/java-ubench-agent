@@ -24,10 +24,12 @@
 
 	<property name="java.src.dir" value="src/java" />
 	<property name="agent.src.dir" value="src/c" />
+	<property name="demo.src.dir" value="src/demo-java" />
 	<property name="java.test.src.dir" value="src/test-java" />
 
 	<property name="build.dir" location="out" />
 	<property name="classes.build.dir" location="${build.dir}/classes" />
+	<property name="demo.classes.build.dir" location="${build.dir}/demo-classes" />
 	<property name="test.classes.build.dir" location="${build.dir}/test-classes" />
 	<property name="test.results.dir" value="${build.dir}/test-results" />
 	<property name="agent.build.dir" location="${build.dir}/agent/" />
@@ -321,6 +323,23 @@
 			<fileset dir="${agent.build.dir}" includes="*.obj" />
 		</apply>
 	</target>
+	
+	<target name="compile-demo"
+			description="Compile all the demo code."
+			depends="compile"
+		>
+		<mkdir dir="${demo.classes.build.dir}" />
+		<javac 
+				destdir="${demo.classes.build.dir}"
+				debug="true"
+				includeantruntime="false">
+			<src path="${demo.src.dir}" />
+			<classpath>
+				<pathelement path="${classes.build.dir}" />
+			</classpath>
+			<compilerarg value="-Xlint:all"/>
+		</javac>
+	</target>
 
 	<target name="compile-test"
 			description="Compile all the test code."
@@ -415,6 +434,24 @@
 			</fileset>
 			<report format="frames" todir="${test.results.dir}/html"/>
 		</junitreport>
+	</target>
+	
+	
+	<target name="demo"
+		depends="compile,compile-demo"
+		description="Run simple demo (measure md5 speed)."
+		>
+		<java
+				classname="cz.cuni.mff.d3s.perf.demo.MeasureHashing"
+				fork="true"
+				failonerror="true">
+			<classpath>
+				<pathelement path="${classes.build.dir}" />
+				<pathelement path="${demo.classes.build.dir}" />
+			</classpath>
+			<jvmarg value="-agentpath:${agent.path}" />
+			<arg value="build.xml" />
+		</java>
 	</target>
 
 
