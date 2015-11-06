@@ -100,10 +100,10 @@ void JNICALL Java_cz_cuni_mff_d3s_perf_Benchmark_init(
 		return;
 	}
 
-	current_benchmark.data = malloc(sizeof(benchmark_run_t) * jmeasurements);
+	current_benchmark.data = calloc(jmeasurements, sizeof(benchmark_run_t));
 	current_benchmark.data_size = jmeasurements;
 
-	current_benchmark.used_events = malloc(sizeof(ubench_event_info_t) * events_count);
+	current_benchmark.used_events = calloc(events_count, sizeof(ubench_event_info_t));
 
 	size_t i;
 	for (i = 0; i < events_count; i++) {
