@@ -189,6 +189,66 @@
 	</condition>
 	<property name="agent.msvc.warn.flags" value="" />
 	
+	<!-- Determine when recompilation is necessary -->
+	<condition property="agent.gcc.recompilation.necessary">
+		<or>
+			<and>
+				<isset property="agent.cc.is.gcc" />
+				<not><and>
+					<uptodate targetfile="${agent.path}">
+						<srcfiles
+							dir="${agent.build.dir}"
+							includes="*.o"
+						/>
+					</uptodate>
+					<uptodate>
+						<srcfiles
+							dir="${agent.src.dir}"
+							includes="*.c"
+						/>
+						<mapper type="glob"
+							from="*.c"
+							to="${agent.build.dir}${file.separator}*.o" />
+					</uptodate>
+				</and></not>
+			</and>
+			<contains
+				string="${ant.project.invoked-targets}"
+				substring="clean"
+			/>
+		</or>
+	</condition>
+	<condition property="agent.msvc.recompilation.necessary">
+		<or>
+    		<and>
+    			<isset property="agent.cc.is.msvc" />
+    			<not><and>
+    				<uptodate targetfile="${agent.path}">
+    					<srcfiles
+    						dir="${agent.build.dir}"
+    						includes="*.obj"
+    					/>
+    				</uptodate>
+    				<uptodate>
+    					<srcfiles
+    						dir="${agent.src.dir}"
+    						includes="*.c"
+    					/>
+    					<mapper type="glob"
+    						from="*.c"
+    						to="${agent.build.dir}${file.separator}*.obj" />
+    				</uptodate>
+    			</and></not>
+    		</and>
+			<contains
+				string="${ant.project.invoked-targets}"
+				substring="clean"
+			/>
+		</or>
+	</condition>
+	
+	
+	
 	
 	<target name="print-config"
 			description="Print current configuration (include paths, compiler, ...)."
@@ -228,7 +288,7 @@
 	</target>
 
 	<target name="compile-agent"
-			depends="compile-java,compile-agent-gcc,compile-agent-msvc"
+			depends="compile-agent-maybe-gcc,compile-agent-maybe-msvc"
 			description="Compile the C agent."
 		>
 	</target>
@@ -247,9 +307,13 @@
 		</javah>
 	</target>
 	
+	<target name="compile-agent-maybe-gcc" if="agent.cc.is.gcc">
+		<antcall target="compile-agent-gcc" />
+	</target>
+	
 	<target name="compile-agent-gcc"
 			depends="compile-agent-prepare-headers"
-			if="agent.cc.is.gcc"
+			if="agent.gcc.recompilation.necessary"
 		>
 		<apply
 				executable="gcc"
@@ -272,7 +336,6 @@
 			<fileset dir="${agent.src.dir}" includes="*.c" />
 			<mapper type="glob" from="*.c" to="*.o" />
 		</apply>
-		<!-- FIXME: do not link when everything is up to date. -->
 		<apply
 				executable="gcc"
 				failonerror="true"
@@ -289,9 +352,13 @@
 		</apply>
 	</target>
 	
+	<target name="compile-agent-maybe-msvc" if="agent.cc.is.msvc">
+		<antcall target="compile-agent-msvc" />
+	</target>
+	
 	<target name="compile-agent-msvc"
 			depends="compile-agent-prepare-headers"
-			if="agent.cc.is.msvc"
+			if="agent.msvc.recompilation.necessary"
 		>
 		<apply
 				executable="cl.exe"
@@ -311,7 +378,6 @@
 			<fileset dir="${agent.src.dir}" includes="*.c" />
 			<mapper type="glob" from="*.c" to="*.obj" />
 		</apply>
-		<!-- FIXME: do not link when everything is up to date. -->
 		<apply
 				executable="link.exe"
 				failonerror="true"
