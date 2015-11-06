@@ -132,16 +132,15 @@ static void prepare_counters(void) {
 jint ubench_counters_init(jvmtiEnv *jvmti) {
 	DEBUG_PRINTF("initializing counters");
 
+	prepare_counters();
+
 	agent_env = jvmti;
 
 	jint rc;
-
 	rc = register_and_enable_callback();
 	if (rc != JNI_OK) {
 		return rc;
 	}
-
-	prepare_counters();
 
 	return JNI_OK;
 }
