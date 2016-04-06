@@ -71,7 +71,12 @@ void ubench_measure_start(const benchmark_configuration_t const *config,
 	if ((config->used_backends & UBENCH_EVENT_BACKEND_PAPI) > 0) {
 		// TODO: check for errors
 		snapshot->papi_rc1 = PAPI_start_counters((int *) config->used_papi_events, config->used_papi_events_count);
-		snapshot->papi_rc2 = PAPI_read_counters(snapshot->papi_events, config->used_papi_events_count);
+		// Reset the counters but ignore the values!
+		// Consider situation when PAPI_start_counters() by itself caused
+		// the event but that would be the only place. We would then record
+		// the count here and 0 (zero) in stop(). Thus the diff would be
+		// negative.
+		(void) PAPI_read_counters(snapshot->papi_events, config->used_papi_events_count);
 	}
 #endif
 

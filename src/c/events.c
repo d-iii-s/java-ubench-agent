@@ -80,13 +80,12 @@ static long long getter_context_switch_forced(const benchmark_run_t *bench, cons
 static long long getter_papi(const benchmark_run_t *bench, const ubench_event_info_t *info) {
 	if (bench->start.papi_rc1 != PAPI_OK) {
 		return -1;
-	} else if (bench->start.papi_rc2 != PAPI_OK) {
-		return -1;
 	} else if (bench->end.papi_rc1 != PAPI_OK) {
 		return -1;
 	}
 
-	return bench->end.papi_events[info->papi_index] - bench->start.papi_events[info->papi_index];
+	// See comments in ubench_measure_start() why we return the end value only.
+	return bench->end.papi_events[info->papi_index];
 }
 #endif
 
