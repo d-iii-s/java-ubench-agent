@@ -21,7 +21,7 @@ import java.util.List;
 
 import org.junit.*;
 
-public class TheadTest {
+public class ThreadTest {
 	public static class Runner extends Thread {
 		public static volatile int BLACKHOLE = 0;
 		
