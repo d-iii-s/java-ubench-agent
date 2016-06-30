@@ -122,6 +122,7 @@ typedef struct {
 #ifdef HAS_PAPI
 	int used_papi_events[UBENCH_MAX_PAPI_EVENTS];
 	size_t used_papi_events_count;
+	int papi_eventset;
 #endif
 
 	benchmark_run_t *data;

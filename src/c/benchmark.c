@@ -27,6 +27,7 @@
 #include <stddef.h>
 #include <time.h>
 #include <string.h>
+#include <assert.h>
 #pragma warning(pop)
 
 #ifdef HAS_PAPI
@@ -89,6 +90,8 @@ void JNICALL Java_cz_cuni_mff_d3s_perf_Benchmark_init(
 
 #ifdef HAS_PAPI
 	current_benchmark.used_papi_events_count = 0;
+	PAPI_destroy_eventset(&current_benchmark.papi_eventset);
+	current_benchmark.papi_eventset = PAPI_NULL;
 #endif
 
 	size_t events_count = (*env)->GetArrayLength(env, jeventNames);
@@ -148,6 +151,20 @@ void JNICALL Java_cz_cuni_mff_d3s_perf_Benchmark_init(
 event_loop_end:
 		(*env)->ReleaseStringUTFChars(env, jevent_name, event_name);
 	}
+
+#ifdef HAS_PAPI
+	if ((current_benchmark.used_backends & UBENCH_EVENT_BACKEND_PAPI) > 0) {
+		int rc = PAPI_create_eventset(&current_benchmark.papi_eventset);
+		// FIXME: handle errors
+		assert(rc == PAPI_OK);
+		for (i = 0; i < current_benchmark.used_papi_events_count; i++) {
+			rc = PAPI_add_event(current_benchmark.papi_eventset,
+					current_benchmark.used_papi_events[i]);
+			assert(rc == PAPI_OK);
+		}
+	}
+#endif
+
 
 #if 0
 	for (i = 0; i < current_benchmark.used_events_count; i++) {
