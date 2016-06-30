@@ -65,4 +65,8 @@ public class TestUtils {
 			/* Do nothing. */
 		}
 	}
+	
+	public static void assertGreaterThan(String message, long min, long actual) {
+		Assert.assertTrue(String.format("%s (expected %d > %d)", message, actual, min), actual > min);
+	}
 }

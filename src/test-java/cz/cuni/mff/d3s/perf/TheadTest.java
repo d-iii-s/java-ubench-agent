@@ -62,6 +62,9 @@ public class TheadTest {
 		long resultOneThread = results.get(0)[0];
 		long resultManyThreads = results.get(1)[0];
 		
+		TestUtils.assertGreaterThan("Instruction count must be positive (one thread)", 0, resultOneThread);
+		TestUtils.assertGreaterThan("Instruction count must be positive (many threads)", 0, resultManyThreads);
+		
 		double orderOfMagnitudeOneThread = Math.log10(resultOneThread);
 		double orderOfMagnitudeManyThreads = Math.log10(resultManyThreads);
 		
@@ -85,6 +88,9 @@ public class TheadTest {
 		List<long[]> results = Benchmark.getResults().getData();
 		long resultOneThread = results.get(0)[0];
 		long resultManyThreads = results.get(1)[0];
+		
+		TestUtils.assertGreaterThan("Instruction count must be positive (one thread)", 0, resultOneThread);
+		TestUtils.assertGreaterThan("Instruction count must be positive (many threads)", 0, resultManyThreads);
 		
 		double orderOfMagnitudeOneThread = Math.log10(resultOneThread);
 		double orderOfMagnitudeManyThreads = Math.log10(resultManyThreads);
