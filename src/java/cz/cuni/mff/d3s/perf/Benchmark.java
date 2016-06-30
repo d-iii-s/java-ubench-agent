@@ -1,6 +1,6 @@
 /*
- * Copyright 2014 Charles University in Prague
- * Copyright 2014 Vojtech Horky
+ * Copyright 2014-2016 Charles University in Prague
+ * Copyright 2014-2016 Vojtech Horky
  * 
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,7 +18,8 @@
 package cz.cuni.mff.d3s.perf;
 
 public final class Benchmark {
-	public static native void init(final int measurements, final String[] events);
+	public static final int THREAD_INHERIT = 1;
+	public static native void init(final int measurements, final String[] events, int... options);
 	public static native void start();
 	public static native void stop();
 	public static native void reset();

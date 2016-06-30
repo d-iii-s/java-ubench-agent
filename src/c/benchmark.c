@@ -1,6 +1,6 @@
 /*
- * Copyright 2014 Charles University in Prague
- * Copyright 2014 Vojtech Horky
+ * Copyright 2014-2016 Charles University in Prague
+ * Copyright 2014-2016 Vojtech Horky
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,6 +23,7 @@
 
 #pragma warning(push, 0)
 #include "cz_cuni_mff_d3s_perf_CompilationCounter.h"
+#include "cz_cuni_mff_d3s_perf_Benchmark.h"
 #include <stdlib.h>
 #include <stddef.h>
 #include <time.h>
@@ -77,7 +78,7 @@ jint ubench_benchmark_init(void) {
 
 void JNICALL Java_cz_cuni_mff_d3s_perf_Benchmark_init(
 		JNIEnv *env, jclass UNUSED_PARAMETER(klass),
-		jint jmeasurements, jobjectArray jeventNames) {
+		jint jmeasurements, jobjectArray jeventNames, jintArray joptions) {
 	free(current_benchmark.data);
 	free(current_benchmark.used_events);
 	current_benchmark.data = NULL;
@@ -102,6 +103,9 @@ void JNICALL Java_cz_cuni_mff_d3s_perf_Benchmark_init(
 	if (jmeasurements <= 0) {
 		return;
 	}
+
+	size_t options_count = (*env)->GetArrayLength(env, joptions);
+	jint *options = (*env)->GetIntArrayElements(env, joptions, NULL);
 
 	current_benchmark.data = calloc(jmeasurements, sizeof(benchmark_run_t));
 	current_benchmark.data_size = jmeasurements;
@@ -162,6 +166,17 @@ event_loop_end:
 					current_benchmark.used_papi_events[i]);
 			assert(rc == PAPI_OK);
 		}
+
+		for (i = 0; i < options_count; i++) {
+			if (options[i] == cz_cuni_mff_d3s_perf_Benchmark_THREAD_INHERIT) {
+				PAPI_option_t opt;
+				memset(&opt, 0, sizeof(opt));
+				opt.inherit.inherit = PAPI_INHERIT_ALL;
+				opt.inherit.eventset = current_benchmark.papi_eventset;
+				rc = PAPI_set_opt(PAPI_INHERIT, &opt);
+				assert(rc == PAPI_OK);
+			}
+		}
 	}
 #endif
 
@@ -172,6 +187,8 @@ event_loop_end:
 		fprintf(stderr, "Event #%2zu: %s\n", i, all_known_events_info[event_id].id);
 	}
 #endif
+
+	(*env)->ReleaseIntArrayElements(env, joptions, options, JNI_ABORT);
 }
 
 void JNICALL Java_cz_cuni_mff_d3s_perf_Benchmark_start(
