@@ -34,6 +34,7 @@
  */
 #include <sys/types.h>
 #include <papi.h>
+#include <errno.h>
 #endif
 
 #ifdef HAS_QUERY_PERFORMANCE_COUNTER
@@ -79,9 +80,9 @@ static long long getter_context_switch_forced(const benchmark_run_t *bench, cons
 #ifdef HAS_PAPI
 static long long getter_papi(const benchmark_run_t *bench, const ubench_event_info_t *info) {
 	if (bench->start.papi_rc1 != PAPI_OK) {
-		return -1;
+		return bench->start.papi_rc1;
 	} else if (bench->end.papi_rc1 != PAPI_OK) {
-		return -1;
+		return bench->end.papi_rc1;
 	}
 
 	// See comments in ubench_measure_start() why we return the end value only.

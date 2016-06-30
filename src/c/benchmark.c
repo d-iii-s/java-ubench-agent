@@ -38,6 +38,7 @@
  */
 #include <sys/types.h>
 #include <papi.h>
+#include <pthread.h>
 #endif
 
 #ifdef HAS_QUERY_PERFORMANCE_COUNTER
@@ -52,6 +53,8 @@ jint ubench_benchmark_init(void) {
 #ifdef HAS_PAPI
 	// TODO: check for errors
 	PAPI_library_init(PAPI_VER_CURRENT);
+	int papi_rc = PAPI_thread_init(pthread_self);
+	assert(papi_rc == PAPI_OK);
 #endif
 
 	current_benchmark.used_backends = 0;
@@ -158,14 +161,14 @@ event_loop_end:
 
 #ifdef HAS_PAPI
 	if ((current_benchmark.used_backends & UBENCH_EVENT_BACKEND_PAPI) > 0) {
-		int rc = PAPI_create_eventset(&current_benchmark.papi_eventset);
 		// FIXME: handle errors
+		int rc = PAPI_create_eventset(&current_benchmark.papi_eventset);
 		assert(rc == PAPI_OK);
-		for (i = 0; i < current_benchmark.used_papi_events_count; i++) {
-			rc = PAPI_add_event(current_benchmark.papi_eventset,
-					current_benchmark.used_papi_events[i]);
-			assert(rc == PAPI_OK);
-		}
+
+		// TODO: find out why setting the component and inherit flag
+		// *before* adding the individual events work
+		rc = PAPI_assign_eventset_component(current_benchmark.papi_eventset, 0);
+		assert(rc == PAPI_OK);
 
 		for (i = 0; i < options_count; i++) {
 			if (options[i] == cz_cuni_mff_d3s_perf_Benchmark_THREAD_INHERIT) {
@@ -177,6 +180,13 @@ event_loop_end:
 				assert(rc == PAPI_OK);
 			}
 		}
+
+		for (i = 0; i < current_benchmark.used_papi_events_count; i++) {
+			rc = PAPI_add_event(current_benchmark.papi_eventset,
+					current_benchmark.used_papi_events[i]);
+			assert(rc == PAPI_OK);
+		}
+
 	}
 #endif
 

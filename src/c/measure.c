@@ -76,7 +76,7 @@ void ubench_measure_start(const benchmark_configuration_t const *config,
 		// the event but that would be the only place. We would then record
 		// the count here and 0 (zero) in stop(). Thus the diff would be
 		// negative.
-		(void) PAPI_read(config->papi_eventset, snapshot->papi_events);
+		(void) PAPI_reset(config->papi_eventset);
 	}
 #endif
 
