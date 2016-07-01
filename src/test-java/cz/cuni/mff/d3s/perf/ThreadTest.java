@@ -98,6 +98,88 @@ public class ThreadTest {
 		Assert.assertEquals(orderOfMagnitudeOneThread + 3, orderOfMagnitudeManyThreads, 1);
 	}
 	
+	// The following two tests assert that we do not accumulate the
+	// results. Because the number of instructions varies across executions
+	// (JIT, GC etc.) we again use logarithmic scaling to assert that
+	// we are at the same order of magnitude.
+	//
+	// We then assert that the first execution was either slower than the
+	// last one (i.e. assume warm-up) or that they are both at the
+	// same order of magnitude. Definitely, if the value is accumulated
+	// from previous runs, the order-of-magnitude-test would reveal this.
+	//
+	// There are two tests, in the first one we collect the results right
+	// after the execution (i.e. the internal buffer is set to size 1)
+	// in the second we collect all results at once.
+	
+	private void accumulationOneByOneInner(int loops, String event, int... options) {
+		final String[] events = new String[] { event };
+		
+		Benchmark.init(1, events, options);
+		
+		double first = Double.NEGATIVE_INFINITY;
+		double last = Double.POSITIVE_INFINITY;
+		
+		for (int i = 0; i < loops; i++) {
+			Benchmark.start();
+			runThreads(10);
+			Benchmark.stop();
+			
+			long[] results = Benchmark.getResults().getData().iterator().next();
+			
+			if (i == loops - 1) {
+				last = Math.log10(results[0]);
+			}
+			if (i == 0) {
+				first = Math.log10(results[0]);
+			}
+		}
+		
+		if (last > first) {
+			Assert.assertEquals(first, last, 0.5);
+		}
+	}
+	
+	private void accumulationAllAtOnceInner(int loops, String event, int... options) {
+		final String[] events = new String[] { event };
+		Benchmark.init(loops, events, options);
+		
+		for (int i = 0; i < loops; i++) {
+			Benchmark.start();
+			runThreads(10);
+			Benchmark.stop();
+		}
+		
+		List<long[]> results = Benchmark.getResults().getData();
+		double first = Math.log10(results.get(0)[0]);
+		double last = Math.log10(results.get(loops - 1)[0]);
+				
+		if (last > first) {
+			Assert.assertEquals(first, last, 0.5);
+		}
+	}
+	
+	@Test
+	public void noAccumulationWithoutInheritanceOneByOne() {
+		accumulationOneByOneInner(100, "PAPI_TOT_INS");
+	}
+	
+	@Test
+	public void noAccumulationWithInheritanceOneByOne() {
+		accumulationOneByOneInner(100, "PAPI_TOT_INS", Benchmark.THREAD_INHERIT);
+	}
+	
+	@Test
+	public void noAccumulationWithoutInheritanceAllAtOnce() {
+		accumulationAllAtOnceInner(100, "PAPI_TOT_INS");
+	}
+	
+	@Test
+	public void noAccumulationWithInheritanceAllAtOnce() {
+		accumulationAllAtOnceInner(100, "PAPI_TOT_INS", Benchmark.THREAD_INHERIT);
+	}
+	
+	
 	private void runThreads(int threadCount) {
 		Thread[] threads = new Thread[threadCount];
 		for (int i = 0; i < threads.length; i++) {
