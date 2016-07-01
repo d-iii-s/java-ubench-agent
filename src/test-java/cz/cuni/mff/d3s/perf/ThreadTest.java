@@ -26,7 +26,7 @@ public class ThreadTest {
 		public static volatile int BLACKHOLE = 0;
 		
 		public static void action() {
-			for (int i = 0; i < 100000; i++) {
+			for (int i = 0; i < 1000; i++) {
 				BLACKHOLE += i;
 			}
 		}
@@ -37,10 +37,42 @@ public class ThreadTest {
 		}
 	}
 	
+	public static class ThreadWrapper extends Thread {
+		private final int threadCount;
+		
+		public ThreadWrapper(int count) {
+			threadCount = count;
+		}
+		
+		@Override
+		public void run() {
+			Thread[] threads = new Thread[threadCount];
+			for (int i = 0; i < threads.length; i++) {
+				threads[i] = new Runner();
+			}
+			
+			for (Thread t : threads) {
+				t.start();
+			}
+			
+			for (int i = 0; i < 5; i++) {
+				Runner.action();
+			}
+			
+			for (Thread t : threads) {
+				try {
+					t.join();
+				} catch (InterruptedException e) {
+					
+				}
+			}
+		}
+	}
+	
 	@Before
 	public void warmUp() {
 		for (int i = 0; i < 100; i++) {
-			runThreads(12);
+			runThreads(2);
 		}
 	}
 	
@@ -181,26 +213,11 @@ public class ThreadTest {
 	
 	
 	private void runThreads(int threadCount) {
-		Thread[] threads = new Thread[threadCount];
-		for (int i = 0; i < threads.length; i++) {
-			threads[i] = new Runner();
-		}
-		
-		for (Thread t : threads) {
-			t.start();
-		}
-		
-		for (int i = 0; i < 5; i++) {
-			Runner.action();
-		}
-		
-		for (Thread t : threads) {
-			try {
-				t.join();
-			} catch (InterruptedException e) {
-				
-			}
+		Thread wrapper = new ThreadWrapper(threadCount);
+		wrapper.start();
+		try {
+			wrapper.join();
+		} catch (InterruptedException e) {
 		}
 	}
-	
 }
