@@ -94,6 +94,7 @@ typedef struct {
 #ifdef HAS_PAPI
 	long long papi_events[UBENCH_MAX_PAPI_EVENTS];
 	int papi_rc1;
+	int papi_rc2;
 #endif
 } ubench_events_snapshot_t;
 

@@ -67,6 +67,7 @@ jint ubench_benchmark_init(void) {
 
 #ifdef HAS_PAPI
 	current_benchmark.used_papi_events_count = 0;
+	current_benchmark.papi_eventset = PAPI_NULL;
 #endif
 
 	current_benchmark.data = NULL;
@@ -94,6 +95,7 @@ void JNICALL Java_cz_cuni_mff_d3s_perf_Benchmark_init(
 
 #ifdef HAS_PAPI
 	current_benchmark.used_papi_events_count = 0;
+	PAPI_cleanup_eventset(current_benchmark.papi_eventset);
 	PAPI_destroy_eventset(&current_benchmark.papi_eventset);
 	current_benchmark.papi_eventset = PAPI_NULL;
 #endif
