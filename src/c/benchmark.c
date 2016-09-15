@@ -49,12 +49,39 @@
 
 static benchmark_configuration_t current_benchmark;
 
+
+static void
+__die_with_papi_error (int papi_error, const char * message) {
+	fprintf (
+		stderr, "error: %s: %s (%d)\n",
+		message, PAPI_strerror (papi_error), papi_error
+	);
+
+	exit (1);
+}
+
+
+static void
+__check_papi_error (int papi_error, const char *message) {
+	if (papi_error < 0) {
+		__die_with_papi_error (papi_error, message);
+	}
+}
+
+
 jint ubench_benchmark_init(void) {
 #ifdef HAS_PAPI
 	// TODO: check for errors
-	PAPI_library_init(PAPI_VER_CURRENT);
-	int papi_rc = PAPI_thread_init(pthread_self);
-	assert(papi_rc == PAPI_OK);
+	int lib_init_rc = PAPI_library_init(PAPI_VER_CURRENT);
+	if (lib_init_rc != PAPI_VER_CURRENT && lib_init_rc > 0) {
+		fprintf(stderr,"error: PAPI library version mismatch!\n");
+		exit(1);
+	}
+
+	__check_papi_error (lib_init_rc, "PAPI library initialization");
+
+	int thread_init_rc = PAPI_thread_init(pthread_self);
+	__check_papi_error (thread_init_rc, "PAPI thread initialization");
 #endif
 
 	current_benchmark.used_backends = 0;
