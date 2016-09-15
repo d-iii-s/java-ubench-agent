@@ -62,7 +62,7 @@ public class BenchmarkResultsPrinter {
 		}
 		
 		String format = String.format("%%%dd", columnWidth);
-		for (long[] row : Benchmark.getResults().getData()) {
+		for (long[] row : results.getData()) {
 			for (long r : row) {
 				stream.append(String.format(format, r));
 			}
