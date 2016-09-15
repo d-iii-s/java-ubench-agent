@@ -52,6 +52,7 @@
 			<or>
 				<available file="libpapi.so" filepath="/usr/lib" />
 				<available file="libpapi.so" filepath="/usr/lib64" />
+				<available file="libpapi.so" filepath="/usr/lib/x86_64-linux-gnu" />
 			</or>
 		</and>
 	</condition>
@@ -337,7 +338,7 @@
 			<mapper type="glob" from="*.c" to="*.o" />
 		</apply>
 		<apply
-				executable="gcc"
+				executable="ld"
 				failonerror="true"
 				parallel="true"
 				verbose="true">
