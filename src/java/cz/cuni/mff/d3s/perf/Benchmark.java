@@ -18,10 +18,29 @@
 package cz.cuni.mff.d3s.perf;
 
 public final class Benchmark {
-	public static final int THREAD_INHERIT = 1;
-	public static native void init(final int measurements, final String[] events, int... options);
-	public static native void start();
-	public static native void stop();
-	public static native void reset();
-	public static native BenchmarkResults getResults();
+	public static final int THREAD_INHERIT = Measurement.THREAD_INHERIT;
+	
+	private static int defaultEventSet = -1;
+	
+	public static void init(final int measurements, final String[] events, int... options) {
+		if (defaultEventSet != -1) {
+			Measurement.destroyEventSet(defaultEventSet);
+		}
+		defaultEventSet = Measurement.createEventSet(measurements, events, options);
+	}
+	
+	public static void start() {
+		Measurement.start(defaultEventSet);		
+	}
+	
+	public static void stop() {
+		Measurement.stop(defaultEventSet);
+	}
+	public static void reset() {
+		Measurement.reset(defaultEventSet);
+	}
+	
+	public static BenchmarkResults getResults() {
+		return Measurement.getResults(defaultEventSet);
+	}
 }

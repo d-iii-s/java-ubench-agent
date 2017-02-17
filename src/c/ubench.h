@@ -133,6 +133,8 @@ typedef struct {
 
 
 extern jint ubench_counters_init(jvmtiEnv *);
+extern void ubench_register_this_thread(jthread, JNIEnv*);
+extern void ubench_unregister_this_thread(jthread, JNIEnv*);
 extern jint ubench_benchmark_init(void);
 extern int ubench_event_init(void);
 extern int ubench_event_resolve(const char *, ubench_event_info_t *);

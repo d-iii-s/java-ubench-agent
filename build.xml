@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
-  - Copyright 2014 Charles University in Prague
-  - Copyright 2014 Vojtech Horky
+  - Copyright 2014-2017 Charles University in Prague
+  - Copyright 2014-2017 Vojtech Horky
   - 
   - Licensed under the Apache License, Version 2.0 (the "License");
   - you may not use this file except in compliance with the License.
@@ -303,8 +303,8 @@
 				destdir="${agent.build.dir}"
 				classpath="${classes.build.dir}">
 			<class name="cz.cuni.mff.d3s.perf.CompilationCounter" />
-			<class name="cz.cuni.mff.d3s.perf.Benchmark" />
 			<class name="cz.cuni.mff.d3s.perf.OverheadEstimations" />
+			<class name="cz.cuni.mff.d3s.perf.Measurement" />
 		</javah>
 	</target>
 	

@@ -85,6 +85,16 @@ static void JNICALL on_gc_finish(jvmtiEnv *UNUSED_PARAMETER(jvmti_env)) {
 }
 
 
+static void JNICALL on_thread_start(jvmtiEnv *UNUSED_PARAMETER(jvmti_env),
+		JNIEnv* jni_env, jthread thread) {
+	ubench_register_this_thread(thread, jni_env);
+}
+
+static void JNICALL on_thread_end(jvmtiEnv *UNUSED_PARAMETER(jvmti_env),
+		JNIEnv* jni_env, jthread thread) {
+	ubench_unregister_this_thread(thread, jni_env);
+}
+
 
 /*
  * Register event handler for JVMTI_EVENT_COMPILED_METHOD_LOAD.
@@ -109,6 +119,8 @@ static jint register_and_enable_callback(void) {
 	callbacks.CompiledMethodLoad = &on_compiled_method_load;
 	// callbacks.GarbageCollectionStart = &on_gc_start;
 	callbacks.GarbageCollectionFinish = &on_gc_finish;
+	callbacks.ThreadStart = &on_thread_start;
+	callbacks.ThreadEnd = &on_thread_end;
 	err = (*agent_env)->SetEventCallbacks(agent_env, &callbacks, sizeof(callbacks));
 	if (err != JVMTI_ERROR_NONE) {
 		REPORT_ERROR(err, "adding callbacks for various JVMTI events");
@@ -119,6 +131,8 @@ static jint register_and_enable_callback(void) {
 	REGISTER_EVENT_OR_RETURN(agent_env, JVMTI_EVENT_COMPILED_METHOD_LOAD);
 	// REGISTER_EVENT_OR_RETURN(agent_env, JVMTI_EVENT_GARBAGE_COLLECTION_START);
 	REGISTER_EVENT_OR_RETURN(agent_env, JVMTI_EVENT_GARBAGE_COLLECTION_FINISH);
+	REGISTER_EVENT_OR_RETURN(agent_env, JVMTI_EVENT_THREAD_START);
+	REGISTER_EVENT_OR_RETURN(agent_env, JVMTI_EVENT_THREAD_END);
 
 	return JNI_OK;
 }
