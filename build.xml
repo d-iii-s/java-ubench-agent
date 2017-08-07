@@ -424,6 +424,7 @@
 
 	<target name="compile-test"
 			description="Compile all the test code."
+			depends="compile"
 		>
 		<mkdir dir="${test.classes.build.dir}" />
 		<javac 
