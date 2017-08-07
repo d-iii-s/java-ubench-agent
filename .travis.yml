@@ -1,9 +1,10 @@
 language: java
-install: ant
+before_install:
+ - sudo apt-get install ant-optional
 script:
  - ant print-config
  - ant print-properties
  - gcc --version
- - ant -v test-junit
+ - ant test-junit
 os:
  - linux
