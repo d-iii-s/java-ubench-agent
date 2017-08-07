@@ -7,6 +7,7 @@ A JVMTI agent to be used with microbenchmarks. Basic features:
 - Can collect performance counters through JNI.
 - Can collect accurate time through JNI.
 
+[![Build Status](https://travis-ci.org/D-iii-S/java-ubench-agent.svg?branch=master)](https://travis-ci.org/D-iii-S/java-ubench-agent)
 
 Usage
 -----
