@@ -69,6 +69,15 @@ public class ThreadTest {
 		}
 	}
 	
+	@BeforeClass
+	public static void checkPapiAvailability() {
+		try {
+			Benchmark.init(1, new String[] { "PAPI_TOT_INS" });
+		} catch (MeasurementException e) {
+			Assume.assumeNoException(e);
+		}
+	}
+	
 	@Before
 	public void warmUp() {
 		for (int i = 0; i < 100; i++) {
