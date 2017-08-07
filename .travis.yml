@@ -1,5 +1,11 @@
 language: java
-script: ant test-junit
+install:
+ - ant
+ - gcc
+script:
+ - ant print-config
+ - ant print-properties
+ - gcc --version
+ - ant -v test-junit
 os:
-  - linux
-  - osx
+ - linux
