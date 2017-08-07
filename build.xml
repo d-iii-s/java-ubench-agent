@@ -327,6 +327,7 @@
 			<arg value="-I${agent.cc.java.include}" />
 			<arg value="-I${agent.cc.java.os.include}" />
 			<arg value="-fPIC" />
+			<arg value="-std=gnu99" />
 			<arg line="${agent.cc.papi}" />
 			<arg line="${agent.cc.getrusage}" />
 			<arg line="${agent.cc.timespec}" />
