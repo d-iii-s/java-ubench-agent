@@ -52,6 +52,8 @@
 #endif
 
 
+#ifdef HAS_PAPI
+
 static jclass class_java_lang_Thread = NULL;
 static jmethodID method_java_lang_Thread_getId = NULL;
 #define THREAD_ID_INVALID ((unsigned long) -1)
@@ -62,6 +64,8 @@ typedef struct {
 
 static thread_mapping_t *thread_mappings = NULL;
 static int thread_mapping_count = 0;
+
+#endif
 
 typedef struct {
 	benchmark_configuration_t config;
@@ -118,6 +122,9 @@ void ubench_register_this_thread(jthread thread, JNIEnv* jni_env) {
 	DEBUG_PRINTF("Registered thread mapping %ld => %lu.\n", java_id, papi_id);
 
 	PAPI_unlock(PAPI_LOCK_USR1);
+#else
+	UNUSED_VARIABLE(thread);
+	UNUSED_VARIABLE(jni_env);
 #endif
 }
 
@@ -211,11 +218,13 @@ static void do_throw(JNIEnv *env, const char *message) {
 	(*env)->ThrowNew(env, exClass, message);
 }
 
+#ifdef HAS_PAPI
 static void do_papi_error_throw(JNIEnv *env, int rc, const char *function_that_failed) {
 	char message[512];
 	sprintf(message, "%s failed: %s.", function_that_failed, PAPI_strerror(rc));
 	do_throw(env, message);
 }
+#endif
 
 #define THROW_OOM(env, message) \
 	do_throw(env, "Out of memory (" message ").")
@@ -224,6 +233,9 @@ static void do_papi_error_throw(JNIEnv *env, int rc, const char *function_that_f
 jint JNICALL Java_cz_cuni_mff_d3s_perf_Measurement_createEventSet(
 		JNIEnv *env, jclass UNUSED_PARAMETER(klass),
 		jint jmeasurements, jobjectArray jeventNames, jintArray joptions) {
+#ifndef HAS_PAPI
+	UNUSED_VARIABLE(joptions);
+#endif
 
 	if (jmeasurements <= 0) {
 		do_throw(env, "Number of measurements has to be positive.");
@@ -393,10 +405,11 @@ jint JNICALL Java_cz_cuni_mff_d3s_perf_Measurement_createEventSet(
 		}
 
 	}
-#endif
-	eventset->valid = 1;
 
 	(*env)->ReleaseIntArrayElements(env, joptions, options, JNI_ABORT);
+
+#endif
+	eventset->valid = 1;
 
 	return eventset_id;
 }
@@ -406,7 +419,7 @@ int JNICALL Java_cz_cuni_mff_d3s_perf_Measurement_createAttachedEventSetNative(
 		jlong jthread_id, jint jmeasurements, jobjectArray jeventNames, jintArray joptions) {
 	int eventSet = Java_cz_cuni_mff_d3s_perf_Measurement_createEventSet(env, klass, jmeasurements, jeventNames, joptions);
 
-#ifdef HAS_PAPI
+	#ifdef HAS_PAPI
 	unsigned long papi_id = ubench_get_thread_id_mapping(jthread_id);
 
 	DEBUG_PRINTF("Trying to attach %d to %lu (%ld).\n", eventSet, papi_id, jthread_id);
@@ -418,6 +431,9 @@ int JNICALL Java_cz_cuni_mff_d3s_perf_Measurement_createAttachedEventSetNative(
 		return -1;
 	}
 	DEBUG_PRINTF("Attached %d to %lu (%ld).\n", eventsets[ eventSet ].config.papi_eventset, papi_id, jthread_id);
+#else
+	UNUSED_VARIABLE(joptions);
+	UNUSED_VARIABLE(jthread_id);
 #endif
 
 	return eventSet;

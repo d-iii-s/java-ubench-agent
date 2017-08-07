@@ -34,6 +34,7 @@
 #else
 #define UNUSED_PARAMETER(name) name
 #endif
+#define UNUSED_VARIABLE(name) (void) name
 
 /*
  * Prevent condition expression is constant warning in wrappers around
