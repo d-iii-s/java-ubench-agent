@@ -61,6 +61,7 @@
 
 #ifdef HAS_TIMESPEC
 typedef struct timespec timestamp_t;
+typedef struct timespec threadtime_t;
 #elif defined(HAS_QUERY_PERFORMANCE_COUNTER)
 #pragma warning(push, 0)
 #include <windows.h>
@@ -68,6 +69,7 @@ typedef struct timespec timestamp_t;
 typedef LARGE_INTEGER timestamp_t;
 #else
 typedef int timestamp_t;
+typedef int threadtime_t;
 #endif
 
 #define UBENCH_MAX_PAPI_EVENTS 20
@@ -83,9 +85,11 @@ typedef int timestamp_t;
 #define UBENCH_EVENT_BACKEND_PAPI 4
 #define UBENCH_EVENT_BACKEND_SYS_WALLCLOCK 8
 #define UBENCH_EVENT_BACKEND_JVM_COMPILATIONS 16
+#define UBENCH_EVENT_BACKEND_SYS_THREADTIME 32
 
 typedef struct {
 	timestamp_t timestamp;
+	threadtime_t threadtime;
 #ifdef HAS_GETRUSAGE
 	struct rusage resource_usage;
 #endif

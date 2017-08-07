@@ -48,11 +48,17 @@ int ubench_event_init(void) {
 	 return JNI_OK;
 }
 
-static long long timestamp_diff_ns(const timestamp_t *a, const timestamp_t *b) {
 #ifdef HAS_TIMESPEC
+static inline long long timespec_diff_as_ns(const struct timespec *a, const struct timespec *b) {
 	long long sec_diff = b->tv_sec - a->tv_sec;
 	long long nanosec_diff = b->tv_nsec - a->tv_nsec;
 	return sec_diff * 1000 * 1000 * 1000 + nanosec_diff;
+}
+#endif
+
+static long long timestamp_diff_ns(const timestamp_t *a, const timestamp_t *b) {
+#ifdef HAS_TIMESPEC
+	return timespec_diff_as_ns(a, b);
 #elif defined(HAS_QUERY_PERFORMANCE_COUNTER)
 	if (windows_timer_frequency.QuadPart == 0) {
 		return -1;
@@ -67,6 +73,16 @@ static long long getter_wall_clock_time(const benchmark_run_t *bench, const uben
 	return timestamp_diff_ns(&bench->start.timestamp, &bench->end.timestamp);
 }
 
+static long long getter_thread_time(const benchmark_run_t *bench, const ubench_event_info_t *UNUSED_PARAMETER(info)) {
+#ifdef HAS_TIMESPEC
+	long long result = timespec_diff_as_ns(&bench->start.threadtime, &bench->end.threadtime);
+	// fprintf(stderr, "getter_thread_time(%lld:%lld, %lld:%lld) = %lld\n", (long long) bench->start.threadtime.tv_sec, (long long) bench->start.threadtime.tv_nsec, (long long) bench->end.threadtime.tv_sec, (long long) bench->end.threadtime.tv_nsec, result);
+	return result;
+#else
+	return 0;
+#endif
+}
+
 static long long getter_jvm_compilations(const benchmark_run_t *bench, const ubench_event_info_t *UNUSED_PARAMETER(info)) {
 	return bench->end.compilations - bench->start.compilations;
 }
@@ -75,6 +91,21 @@ static long long getter_jvm_compilations(const benchmark_run_t *bench, const ube
 static long long getter_context_switch_forced(const benchmark_run_t *bench, const ubench_event_info_t *UNUSED_PARAMETER(info)) {
 	return bench->end.resource_usage.ru_nivcsw - bench->start.resource_usage.ru_nivcsw;
 }
+
+static inline long long timeval_diff_as_us(const struct timeval *a, const struct timeval *b) {
+	// fprintf(stderr, "timeval_diff_as_us(%lld:%lld, %lld:%lld)\n", (long long) a->tv_sec, (long long) a->tv_usec, (long long) b->tv_sec, (long long) b->tv_usec);
+	long long sec_diff = b->tv_sec - a->tv_sec;
+	long long usec_diff = b->tv_usec - a->tv_usec;
+
+	return sec_diff * 1000 * 1000 + usec_diff;
+}
+
+static long long getter_thread_time_rusage(const benchmark_run_t *bench, const ubench_event_info_t *UNUSED_PARAMETER(info)) {
+	long long user_us = timeval_diff_as_us(&bench->start.resource_usage.ru_utime, &bench->end.resource_usage.ru_utime);
+	long long system_us = timeval_diff_as_us(&bench->start.resource_usage.ru_stime, &bench->end.resource_usage.ru_stime);
+	return (user_us + system_us) * (long long) 1000;
+}
+
 #endif
 
 #ifdef HAS_PAPI
@@ -102,6 +133,44 @@ int ubench_event_resolve(const char *event, ubench_event_info_t *info) {
 		return 0;
 	}
 
+	if (strcasecmp(event, "SYS:wallclock-time") == 0) {
+		info->backend = UBENCH_EVENT_BACKEND_SYS_WALLCLOCK;
+		info->op_get = getter_wall_clock_time;
+		info->name = ubench_str_dup(event);
+		return 1;
+	} else if (strcasecmp(event, "SYS:thread-time") == 0) {
+		info->backend = UBENCH_EVENT_BACKEND_SYS_THREADTIME;
+		info->op_get = getter_thread_time;
+		info->name = ubench_str_dup(event);
+		return 1;
+	} else if (strcasecmp(event, "SYS:thread-time-rusage") == 0) {
+#ifdef HAS_GETRUSAGE
+		info->backend = UBENCH_EVENT_BACKEND_RESOURCE_USAGE;
+		info->op_get = getter_thread_time_rusage;
+		info->name = ubench_str_dup(event);
+		return 1;
+#else
+		return 0;
+#endif
+	} else if (strcasecmp(event, "SYS:forced-context-switches") == 0) {
+#ifdef HAS_GETRUSAGE
+		info->backend = UBENCH_EVENT_BACKEND_RESOURCE_USAGE;
+		info->op_get = getter_context_switch_forced;
+		info->name = ubench_str_dup(event);
+		return 1;
+#else
+		return 0;
+#endif
+	} else if (strcasecmp(event, "JVM:compilations") == 0) {
+		info->backend = UBENCH_EVENT_BACKEND_JVM_COMPILATIONS;
+		info->op_get = getter_jvm_compilations;
+		info->name = ubench_str_dup(event);
+		return 1;
+	}
+
+	/*
+	 * Legacy names.
+	 */
 	if (strcmp(event, "SYS_WALLCLOCK") == 0) {
 		info->backend = UBENCH_EVENT_BACKEND_SYS_WALLCLOCK;
 		info->op_get = getter_wall_clock_time;
@@ -124,6 +193,8 @@ int ubench_event_resolve(const char *event, ubench_event_info_t *info) {
 		return 1;
 	}
 #endif
+
+
 
 #ifdef HAS_PAPI
 	/* Let's try PAPI */

@@ -17,6 +17,7 @@
 
 #define _BSD_SOURCE // For glibc 2.18 to include caddr_t
 #define _DEFAULT_SOURCE // For glibc 2.20 to include caddr_t
+#define _GNU_SOURCE
 #define _POSIX_C_SOURCE 200809L
 
 #include "ubench.h"
@@ -37,6 +38,11 @@
 #include <papi.h>
 #endif
 
+#ifdef HAS_GETRUSAGE
+#include <sys/time.h>
+#include <sys/resource.h>
+#endif
+
 #ifdef HAS_QUERY_PERFORMANCE_COUNTER
 #pragma warning(push, 0)
 #include <windows.h>
@@ -53,11 +59,19 @@ static void store_wallclock(timestamp_t *ts) {
 #endif
 }
 
+static void store_threadtime(threadtime_t *ts) {
+#ifdef HAS_TIMESPEC
+	clock_gettime(CLOCK_THREAD_CPUTIME_ID, ts);
+#else
+	*ts = -1;
+#endif
+}
+
 void ubench_measure_start(const benchmark_configuration_t const *config,
 		ubench_events_snapshot_t *snapshot) {
 #ifdef HAS_GETRUSAGE
 	if ((config->used_backends & UBENCH_EVENT_BACKEND_RESOURCE_USAGE) > 0) {
-		getrusage(RUSAGE_SELF, &(snapshot->resource_usage));
+		getrusage(RUSAGE_THREAD, &(snapshot->resource_usage));
 	}
 #endif
 
@@ -66,6 +80,10 @@ void ubench_measure_start(const benchmark_configuration_t const *config,
 	}
 
 	snapshot->garbage_collections = ubench_atomic_get(&counter_gc_total);
+
+	if ((config->used_backends & UBENCH_EVENT_BACKEND_SYS_THREADTIME) > 0) {
+		store_threadtime(&(snapshot->threadtime));
+	}
 
 #ifdef HAS_PAPI
 	if ((config->used_backends & UBENCH_EVENT_BACKEND_PAPI) > 0) {
@@ -96,6 +114,10 @@ void ubench_measure_stop(const benchmark_configuration_t const *config,
 	}
 #endif
 
+	if ((config->used_backends & UBENCH_EVENT_BACKEND_SYS_THREADTIME) > 0) {
+		store_threadtime(&(snapshot->threadtime));
+	}
+
 	if ((config->used_backends & UBENCH_EVENT_BACKEND_JVM_COMPILATIONS) > 0) {
 		snapshot->compilations = ubench_atomic_get(&counter_compilation_total);
 	}
@@ -104,7 +126,7 @@ void ubench_measure_stop(const benchmark_configuration_t const *config,
 
 #ifdef HAS_GETRUSAGE
 	if ((config->used_backends & UBENCH_EVENT_BACKEND_RESOURCE_USAGE) > 0) {
-		getrusage(RUSAGE_SELF, &(snapshot->resource_usage));
+		getrusage(RUSAGE_THREAD, &(snapshot->resource_usage));
 	}
 #endif
 }
