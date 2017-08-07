@@ -1,7 +1,5 @@
 language: java
-install:
- - ant
- - gcc
+install: ant
 script:
  - ant print-config
  - ant print-properties
