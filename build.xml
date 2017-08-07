@@ -317,7 +317,7 @@
 			if="agent.gcc.recompilation.necessary"
 		>
 		<apply
-				executable="gcc"
+				executable="${agent.cc}"
 				failonerror="true"
 				dest="${agent.build.dir}"
 				parallel="false"
@@ -339,7 +339,7 @@
 			<mapper type="glob" from="*.c" to="*.o" />
 		</apply>
 		<apply
-				executable="ld"
+				executable="${agent.cc}"
 				failonerror="true"
 				parallel="true"
 				verbose="true">
