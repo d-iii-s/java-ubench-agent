@@ -29,6 +29,10 @@
 
 #include "myatomic.h"
 
+#ifdef _MSC_VER
+#define snprintf _snprintf
+#endif
+
 #ifdef __GNUC__
 #define UNUSED_PARAMETER(name) name __attribute__((unused))
 #else
@@ -165,6 +169,14 @@ static inline char *ubench_str_dup(const char *str) {
 	strcpy(result, str);
 
 	return result;
+}
+
+static inline int ubench_str_is_icase_equal(const char *a, const char *b) {
+#ifdef _MSC_VER
+  return _stricmp(a, b) == 0;
+#else
+  return strcasecmp(a, b) == 0
+#endif
 }
 
 #endif

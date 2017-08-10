@@ -133,17 +133,17 @@ int ubench_event_resolve(const char *event, ubench_event_info_t *info) {
 		return 0;
 	}
 
-	if (strcasecmp(event, "SYS:wallclock-time") == 0) {
+	if (ubench_str_is_icase_equal(event, "SYS:wallclock-time")) {
 		info->backend = UBENCH_EVENT_BACKEND_SYS_WALLCLOCK;
 		info->op_get = getter_wall_clock_time;
 		info->name = ubench_str_dup(event);
 		return 1;
-	} else if (strcasecmp(event, "SYS:thread-time") == 0) {
+	} else if (ubench_str_is_icase_equal(event, "SYS:thread-time")) {
 		info->backend = UBENCH_EVENT_BACKEND_SYS_THREADTIME;
 		info->op_get = getter_thread_time;
 		info->name = ubench_str_dup(event);
 		return 1;
-	} else if (strcasecmp(event, "SYS:thread-time-rusage") == 0) {
+	} else if (ubench_str_is_icase_equal(event, "SYS:thread-time-rusage")) {
 #ifdef HAS_GETRUSAGE
 		info->backend = UBENCH_EVENT_BACKEND_RESOURCE_USAGE;
 		info->op_get = getter_thread_time_rusage;
@@ -152,7 +152,7 @@ int ubench_event_resolve(const char *event, ubench_event_info_t *info) {
 #else
 		return 0;
 #endif
-	} else if (strcasecmp(event, "SYS:forced-context-switches") == 0) {
+	} else if (ubench_str_is_icase_equal(event, "SYS:forced-context-switches")) {
 #ifdef HAS_GETRUSAGE
 		info->backend = UBENCH_EVENT_BACKEND_RESOURCE_USAGE;
 		info->op_get = getter_context_switch_forced;
@@ -161,7 +161,7 @@ int ubench_event_resolve(const char *event, ubench_event_info_t *info) {
 #else
 		return 0;
 #endif
-	} else if (strcasecmp(event, "JVM:compilations") == 0) {
+	} else if (ubench_str_is_icase_equal(event, "JVM:compilations")) {
 		info->backend = UBENCH_EVENT_BACKEND_JVM_COMPILATIONS;
 		info->op_get = getter_jvm_compilations;
 		info->name = ubench_str_dup(event);
