@@ -33,4 +33,6 @@ public final class Measurement {
 	public static native void reset(final int ... eventSet);
 	
 	public static native BenchmarkResults getResults(final int eventSet);
+	
+	public static native boolean isEventSupported(final String event);
 }

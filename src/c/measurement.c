@@ -596,3 +596,21 @@ jobject JNICALL Java_cz_cuni_mff_d3s_perf_Measurement_getResults(JNIEnv *env,
 
 	return jresults;
 }
+
+jboolean JNICALL Java_cz_cuni_mff_d3s_perf_Measurement_isEventSupported(JNIEnv *env,
+		jclass UNUSED_PARAMETER(klass), jstring jevent) {
+	const char *event = (*env)->GetStringUTFChars(env, jevent, 0);
+
+	ubench_event_info_t info;
+	info.name = NULL;
+
+	int result = ubench_event_resolve(event, &info);
+
+	if (info.name != NULL) {
+		free(info.name);
+	}
+	(*env)->ReleaseStringUTFChars(env, jevent, event);
+
+	return result ? JNI_TRUE : JNI_FALSE;
+}
+
