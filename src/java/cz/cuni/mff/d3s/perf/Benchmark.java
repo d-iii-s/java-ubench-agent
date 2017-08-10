@@ -25,6 +25,7 @@ public final class Benchmark {
 	public static void init(final int measurements, final String[] events, int... options) {
 		if (defaultEventSet != -1) {
 			Measurement.destroyEventSet(defaultEventSet);
+			defaultEventSet = -1;
 		}
 		defaultEventSet = Measurement.createEventSet(measurements, events, options);
 	}
