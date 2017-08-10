@@ -184,7 +184,7 @@ static inline int ubench_str_is_icase_equal(const char *a, const char *b) {
 #ifdef _MSC_VER
   return _stricmp(a, b) == 0;
 #else
-  return strcasecmp(a, b) == 0
+  return strcasecmp(a, b) == 0;
 #endif
 }
 
