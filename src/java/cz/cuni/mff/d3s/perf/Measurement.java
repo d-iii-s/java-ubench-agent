@@ -17,6 +17,9 @@
 
 package cz.cuni.mff.d3s.perf;
 
+import java.util.ArrayList;
+import java.util.List;
+
 public final class Measurement {
 	public static final int THREAD_INHERIT = 1;
 	public static native int createEventSet(final int measurementCount, final String[] events, int ... options);
@@ -35,4 +38,16 @@ public final class Measurement {
 	public static native BenchmarkResults getResults(final int eventSet);
 	
 	public static native boolean isEventSupported(final String event);
+	
+	private static final String[] STRING_ARRAY_TYPE = new String[0];
+	
+	public static String[] filterSupportedEvents(final String[] events) {
+		List<String> result = new ArrayList<>(events.length);
+		for (String ev : events) {
+			if (Measurement.isEventSupported(ev)) {
+				result.add(ev);
+			}
+		}
+		return result.toArray(STRING_ARRAY_TYPE);
+	}
 }

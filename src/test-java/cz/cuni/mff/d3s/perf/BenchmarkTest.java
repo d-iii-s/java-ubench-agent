@@ -22,7 +22,7 @@ import org.junit.*;
 
 
 public class BenchmarkTest {
-	private static final String[] SMOKE_TEST_EVENTS = { "SYS_WALLCLOCK" };
+	private static final String[] SMOKE_TEST_EVENTS = { "SYS:wallclock-time" };
 	private static final int SMOKE_TEST_SLEEP_MILLIS = 100;
 	private static final int LOOPS = 5;
 	
@@ -78,22 +78,24 @@ public class BenchmarkTest {
 		Assert.assertEquals(LOOPS / 2, data.size());
 	}
 	
-	private static final String[] columns = {
-		"SYS_WALLCLOCK",
-		"JVM_COMPILATIONS",
-		"forced-context-switch",
+	private static final String[] EVENTS = {
+		"SYS:wallclock-time",
+		"SYS:forced-context-switches",
+		"JVM:compilations",
 		"PAPI_L1_DCM",
 		"PAPI_L1_DCM",
 	};
+	private static final String[] SUPPORTED_EVENTS = Measurement.filterSupportedEvents(EVENTS);
 	
 	public static void main(String[] args) {
-		Benchmark.init(LOOPS, columns);
+		
+		Benchmark.init(LOOPS, SUPPORTED_EVENTS);
 		for (int i = 0; i < LOOPS; i++) {
 			Benchmark.start();
 			Benchmark.stop();
 		}
 		
-		Benchmark.init(LOOPS, columns);	
+		Benchmark.init(LOOPS, SUPPORTED_EVENTS);	
 		
 		for (int i = 0; i < LOOPS; i++) {
 			long before = System.nanoTime();

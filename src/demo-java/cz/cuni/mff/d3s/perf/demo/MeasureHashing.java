@@ -20,10 +20,13 @@ import java.io.FileInputStream;
 import java.io.IOException;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
+import java.util.ArrayList;
+import java.util.List;
 
 import cz.cuni.mff.d3s.perf.Benchmark;
 import cz.cuni.mff.d3s.perf.BenchmarkResults;
 import cz.cuni.mff.d3s.perf.BenchmarkResultsPrinter;
+import cz.cuni.mff.d3s.perf.Measurement;
 
 public class MeasureHashing {
 
@@ -38,8 +41,9 @@ public class MeasureHashing {
 	
 	/** Events to measure. */
 	private static final String[] EVENTS = {
-		"SYS_WALLCLOCK",
-		"JVM_COMPILATIONS",
+		"SYS:wallclock-time",
+		"SYS:thread-time",
+		"JVM:compilations",
 		"PAPI_TOT_INS",
 		"PAPI_L1_DCM"
 	};
@@ -67,7 +71,7 @@ public class MeasureHashing {
 		 * Initialize all the data, that is the digest engine, benchmarking
 		 * and the input file.
 		 */
-		Benchmark.init(loops, EVENTS);
+		Benchmark.init(loops, Measurement.filterSupportedEvents(EVENTS));
 		MessageDigest hash = MessageDigest.getInstance("md5");
 		FileInputStream input = new FileInputStream(filename);
 		byte[] buffer = new byte[BUFFER_SIZE];
