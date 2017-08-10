@@ -62,6 +62,14 @@ static void store_wallclock(timestamp_t *ts) {
 static void store_threadtime(threadtime_t *ts) {
 #ifdef HAS_TIMESPEC
 	clock_gettime(CLOCK_THREAD_CPUTIME_ID, ts);
+#elif defined(HAS_GET_THREAD_TIMES)
+  FILETIME t_creation, t_exit, t_kernel, t_user;
+  HANDLE thr = GetCurrentThread();
+  // For reasons yet unknown, directly passing &(ts->kernel), &(ts->user))
+  // causes segfault. Thus, we use a temporary variable.
+  GetThreadTimes(thr, &t_creation, &t_exit, &t_kernel, &t_user);
+  ts->kernel = t_kernel;
+  ts->user = t_user;
 #else
 	*ts = -1;
 #endif

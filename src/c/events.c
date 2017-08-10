@@ -73,11 +73,22 @@ static long long getter_wall_clock_time(const benchmark_run_t *bench, const uben
 	return timestamp_diff_ns(&bench->start.timestamp, &bench->end.timestamp);
 }
 
+#ifdef HAS_GET_THREAD_TIMES
+static long long get_filetime_diff_in_us(const FILETIME *a, const FILETIME *b) {
+  long long result = ((LARGE_INTEGER*)b)->QuadPart - ((LARGE_INTEGER*)a)->QuadPart;
+  return result / 10;
+}
+#endif
+
 static long long getter_thread_time(const benchmark_run_t *bench, const ubench_event_info_t *UNUSED_PARAMETER(info)) {
 #ifdef HAS_TIMESPEC
 	long long result = timespec_diff_as_ns(&bench->start.threadtime, &bench->end.threadtime);
 	// fprintf(stderr, "getter_thread_time(%lld:%lld, %lld:%lld) = %lld\n", (long long) bench->start.threadtime.tv_sec, (long long) bench->start.threadtime.tv_nsec, (long long) bench->end.threadtime.tv_sec, (long long) bench->end.threadtime.tv_nsec, result);
 	return result;
+#elif defined(HAS_GET_THREAD_TIMES)
+  long long kernel_us = get_filetime_diff_in_us(&bench->start.threadtime.kernel, &bench->end.threadtime.kernel);
+  long long user_us = get_filetime_diff_in_us(&bench->start.threadtime.user, &bench->end.threadtime.user);
+  return (user_us + kernel_us) * 1000;
 #else
 	return 0;
 #endif

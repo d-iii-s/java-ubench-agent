@@ -162,7 +162,7 @@
 	<condition property="agent.link.librt" value="-lrt" else="">
 		<os name="Linux" />
 	</condition>
-	<condition property="agent.cc.native.windows" value="-DHAS_QUERY_PERFORMANCE_COUNTER" else="">
+	<condition property="agent.cc.native.windows" value="-DHAS_QUERY_PERFORMANCE_COUNTER -DHAS_GET_THREAD_TIMES" else="">
 		<isset property="agent.features.has.native.windows" />
 	</condition>
 	

@@ -66,7 +66,6 @@
 
 #ifdef HAS_TIMESPEC
 typedef struct timespec timestamp_t;
-typedef struct timespec threadtime_t;
 #elif defined(HAS_QUERY_PERFORMANCE_COUNTER)
 #pragma warning(push, 0)
 #include <windows.h>
@@ -74,6 +73,16 @@ typedef struct timespec threadtime_t;
 typedef LARGE_INTEGER timestamp_t;
 #else
 typedef int timestamp_t;
+#endif
+
+#ifdef HAS_TIMESPEC
+typedef struct timespec threadtime_t;
+#elif defined(HAS_GET_THREAD_TIMES)
+#pragma warning(push, 0)
+#include <windows.h>
+#pragma warning(pop)
+typedef struct { FILETIME kernel; FILETIME user; } threadtime_t;
+#else
 typedef int threadtime_t;
 #endif
 
