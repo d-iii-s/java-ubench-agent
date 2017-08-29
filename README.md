@@ -100,3 +100,25 @@ demo:
      [java] Hash is d41d8cd98f00b204e9800998ecf8427e.
 ```
 
+Supported events
+----------------
+
+* `SYS:wallclock-time`
+  * The most precise clock available.
+    `clock_gettime(CLOCK_MONOTONIC)` on Linux,
+    `QueryPerformanceCounter()` on Windows.
+* `SYS:thread-time`
+  * CPU thread time (i.e. not counting when thread is waiting).
+* `SYS:thread-time-rusage`
+  * Same as `SYS:thread-time` but uses data from `getrusage()` call on Linux.
+    Seems to be much less precise but it may save you one extra call if you
+    also query `SYS:forced-context-switches`. Linux only.
+* `SYS:forced-context-switches`
+  * Number of forced context switches (i.e. quantum was exhausted).
+    Linux only.
+* `JVM:compilations`
+  * Number of JIT compilation events.
+* `PAPI_*`
+  * When built on Linux with libpapi available, the agent can collect any
+    event supported by PAPI (note that you can use all the events reported
+    by `papi_avail` and `papi_native_avail`).
