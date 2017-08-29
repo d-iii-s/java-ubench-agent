@@ -14,9 +14,11 @@ Usage
 ```java
 private static final int LOOPS = 10;
 private static final String[] EVENTS = {
-	"SYS_WALLCLOCK",
-	"JVM_COMPILATIONS",
-	/* Only on Linux with PAPI installed */
+	/* The most precise clock available. */
+	"SYS:wallclock-time",
+	/* Number of JIT compilation events. */
+	"JVM:compilations",
+	/* L1 cache misses (only Linux with PAPI). */
 	"PAPI_L1_DCM"
 };
 	
@@ -51,6 +53,10 @@ your classpath and start JVM with the C-agent:
 `-agentpath:libubench-agent.so` (GNU/Linux)
 or `-agentpath:ubench-agent.dll` (Windows).
 
+A more generic interface `Measurement` is available if you wish to
+bind the measurement to a specific thread or if you need to measure
+more things at once (though internal limitations of Linux perf
+subsystem may apply).
 
 Compilation
 -----------
