@@ -157,8 +157,8 @@ extern jint ubench_benchmark_init(void);
 extern int ubench_event_init(void);
 extern int ubench_event_resolve(const char *, ubench_event_info_t *);
 
-extern void ubench_measure_start(const benchmark_configuration_t const*, ubench_events_snapshot_t *);
-extern void ubench_measure_stop(const benchmark_configuration_t const*, ubench_events_snapshot_t *);
+extern void ubench_measure_start(const benchmark_configuration_t *, ubench_events_snapshot_t *);
+extern void ubench_measure_stop(const benchmark_configuration_t *, ubench_events_snapshot_t *);
 
 extern ubench_atomic_t counter_compilation;
 extern ubench_atomic_t counter_compilation_total;

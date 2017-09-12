@@ -75,7 +75,7 @@ static void store_threadtime(threadtime_t *ts) {
 #endif
 }
 
-void ubench_measure_start(const benchmark_configuration_t const *config,
+void ubench_measure_start(const benchmark_configuration_t *config,
 		ubench_events_snapshot_t *snapshot) {
 #ifdef HAS_GETRUSAGE
 	if ((config->used_backends & UBENCH_EVENT_BACKEND_RESOURCE_USAGE) > 0) {
@@ -108,7 +108,7 @@ void ubench_measure_start(const benchmark_configuration_t const *config,
 	}
 }
 
-void ubench_measure_stop(const benchmark_configuration_t const *config,
+void ubench_measure_stop(const benchmark_configuration_t *config,
 		ubench_events_snapshot_t *snapshot) {
 	if ((config->used_backends & UBENCH_EVENT_BACKEND_SYS_WALLCLOCK) > 0) {
 		store_wallclock(&(snapshot->timestamp));
