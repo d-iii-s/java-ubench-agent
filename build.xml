@@ -388,11 +388,11 @@
 			<arg value="-shared" />
 			<arg value="-pthread" />
 			<arg value="-fPIC" />
-			<arg line="${agent.link.papi}" />
-			<arg line="${agent.link.librt}" />
 			<arg value="-o" />
 			<arg file="${agent.path}" />
 			<srcfile />
+			<arg line="${agent.link.papi}" />
+			<arg line="${agent.link.librt}" />
 			<fileset dir="${agent.build.dir}" includes="*.o" />
 		</apply>
 	</target>
@@ -472,10 +472,10 @@
                 parallel="true"
                 verbose="true">
             <arg value="-pthread" />
-            <arg line="${agent.link.librt}" />
             <arg value="-o" />
             <arg file="${barrier.path}" />
             <srcfile />
+            <arg line="${agent.link.librt}" />
             <fileset dir="${barrier.build.dir}" includes="*.o" />
         </apply>
     </target>
