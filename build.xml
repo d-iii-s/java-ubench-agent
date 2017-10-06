@@ -24,6 +24,7 @@
 
 	<property name="java.src.dir" value="src/java" />
 	<property name="agent.src.dir" value="src/c" />
+	<property name="barrier.src.dir" value="src/c-barrier" />
 	<property name="demo.src.dir" value="src/demo-java" />
 	<property name="java.test.src.dir" value="src/test-java" />
 
@@ -33,6 +34,7 @@
 	<property name="test.classes.build.dir" location="${build.dir}/test-classes" />
 	<property name="test.results.dir" value="${build.dir}/test-results" />
 	<property name="agent.build.dir" location="${build.dir}/agent/" />
+	<property name="barrier.build.dir" location="${build.dir}/barrier/" />
 	<property name="lib.build.dir" location="${build.dir}/lib/" />
 	
 	<property name="junit.jar.path" value="lib/junit-4.11.jar" />
@@ -95,6 +97,17 @@
 	</condition>
 	<property name="agent.path"
 		location="${agent.build.dir}${file.separator}${agent.filename}" />
+	
+	<!-- Barrier file naming -->
+    <condition property="barrier.filename" value="ubench-barrier">
+        <os family="unix" />
+    </condition>
+    <condition property="barrier.filename" value="ubench-barrier.exe">
+        <os family="windows" />
+    </condition>
+    <property name="barrier.path"
+        location="${barrier.build.dir}${file.separator}${barrier.filename}" />
+    
 	
 	<!-- Java include paths -->
 	<pathconvert property="agent.cc.java.jni.h.path" setonempty="false">
@@ -247,7 +260,34 @@
 			/>
 		</or>
 	</condition>
-	
+	<condition property="barrier.gcc.recompilation.necessary">
+        <or>
+            <and>
+                <isset property="agent.cc.is.gcc" />
+                <not><and>
+                    <uptodate targetfile="${barrier.path}">
+                        <srcfiles
+                            dir="${barrier.build.dir}"
+                            includes="*.o"
+                        />
+                    </uptodate>
+                    <uptodate>
+                        <srcfiles
+                            dir="${barrier.src.dir}"
+                            includes="*.c"
+                        />
+                        <mapper type="glob"
+                            from="*.c"
+                            to="${barrier.build.dir}${file.separator}*.o" />
+                    </uptodate>
+                </and></not>
+            </and>
+            <contains
+                string="${ant.project.invoked-targets}"
+                substring="clean"
+            />
+        </or>
+    </condition>
 	
 	
 	
@@ -270,7 +310,7 @@
 	</target>
 
 	<target name="compile"
-			depends="compile-java,compile-agent"
+			depends="compile-java,compile-agent,compile-barrier"
 			description="Compile everything."
 		>
 	</target>
@@ -302,6 +342,7 @@
 		<javah
 				destdir="${agent.build.dir}"
 				classpath="${classes.build.dir}">
+			<class name="cz.cuni.mff.d3s.perf.Barrier" />
 			<class name="cz.cuni.mff.d3s.perf.CompilationCounter" />
 			<class name="cz.cuni.mff.d3s.perf.OverheadEstimations" />
 			<class name="cz.cuni.mff.d3s.perf.Measurement" />
@@ -327,6 +368,7 @@
 			<arg value="-I${agent.cc.java.include}" />
 			<arg value="-I${agent.cc.java.os.include}" />
 			<arg value="-fPIC" />
+			<arg value="-pthread" />
 			<arg value="-std=gnu99" />
 			<arg line="${agent.cc.papi}" />
 			<arg line="${agent.cc.getrusage}" />
@@ -344,6 +386,7 @@
 				parallel="true"
 				verbose="true">
 			<arg value="-shared" />
+			<arg value="-pthread" />
 			<arg value="-fPIC" />
 			<arg line="${agent.link.papi}" />
 			<arg line="${agent.link.librt}" />
@@ -393,6 +436,50 @@
 		</apply>
 	</target>
 	
+   <target name="compile-barrier"
+           depends="compile-barrier-maybe-gcc"
+           description="Compile the barrier initialization tool."
+        >
+    </target>
+    
+    <target name="compile-barrier-maybe-gcc" if="agent.cc.is.gcc">
+        <antcall target="compile-barrier-gcc" />
+    </target>
+    
+    <target name="compile-barrier-gcc"
+            if="barrier.gcc.recompilation.necessary"
+        >
+    	<mkdir dir="${barrier.build.dir}" />
+    	<apply
+	                executable="${agent.cc}"
+	                failonerror="true"
+	                dest="${barrier.build.dir}"
+	                parallel="false"
+	                verbose="true">
+	            <arg value="-c" />
+	            <arg value="-pthread" />
+	            <arg value="-std=gnu99" />
+	            <arg line="${agent.gcc.warn.flags}" />
+	            <arg value="-o"/>
+	            <targetfile />
+	            <srcfile />
+	            <fileset dir="${barrier.src.dir}" includes="*.c" />
+	            <mapper type="glob" from="*.c" to="*.o" />
+	        </apply>
+        <apply
+                executable="${agent.cc}"
+                failonerror="true"
+                parallel="true"
+                verbose="true">
+            <arg value="-pthread" />
+            <arg line="${agent.link.librt}" />
+            <arg value="-o" />
+            <arg file="${barrier.path}" />
+            <srcfile />
+            <fileset dir="${barrier.build.dir}" includes="*.o" />
+        </apply>
+    </target>
+	
 	<target name="lib"
 			description="Create the library, that is JAR and C-agent."
 			depends="compile"
@@ -404,6 +491,13 @@
 			>
 		</jar>
 		<copy file="${agent.path}" todir="${lib.build.dir}" />
+		<copy file="${barrier.path}" todir="${lib.build.dir}" />
+		<!-- Because copy task ignores file mode -->
+		<chmod perm="+x">
+			<fileset dir="${lib.build.dir}">
+			    <exclude name="*.jar" />
+			</fileset>
+		</chmod>
 	</target>
 	
 	<target name="compile-demo"
