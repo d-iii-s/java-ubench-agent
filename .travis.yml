@@ -5,6 +5,6 @@ script:
  - ant print-config
  - ant print-properties
  - gcc --version
- - ant test-junit
+ - ant -v test-junit
 os:
  - linux
