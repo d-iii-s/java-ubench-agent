@@ -428,6 +428,7 @@ int JNICALL Java_cz_cuni_mff_d3s_perf_Measurement_createAttachedEventSetNative(
 		if (papi_id == THREAD_ID_INVALID) {
 			Java_cz_cuni_mff_d3s_perf_Measurement_destroyEventSet(env, klass, eventset_index);
 			do_throw(env, "Unknown thread (not registered with PAPI).");
+			return -1;
 		}
 
 		DEBUG_PRINTF("Trying to attach %d to %lu (%ld).", eventset_index, papi_id, jthread_id);
