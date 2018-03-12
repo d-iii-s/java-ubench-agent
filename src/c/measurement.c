@@ -420,17 +420,24 @@ int JNICALL Java_cz_cuni_mff_d3s_perf_Measurement_createAttachedEventSetNative(
 	int eventset_index = Java_cz_cuni_mff_d3s_perf_Measurement_createEventSet(env, klass, jmeasurements, jeventNames, joptions);
 
 #ifdef HAS_PAPI
-	unsigned long papi_id = ubench_get_thread_id_mapping(jthread_id);
+	if  ((all_eventsets[ eventset_index ].config.used_backends & UBENCH_EVENT_BACKEND_PAPI) > 0) {
+		unsigned long papi_id = ubench_get_thread_id_mapping(jthread_id);
 
-	DEBUG_PRINTF("Trying to attach %d to %lu (%ld).\n", eventset_index, papi_id, jthread_id);
+		if (papi_id == THREAD_ID_INVALID) {
+			Java_cz_cuni_mff_d3s_perf_Measurement_destroyEventSet(env, klass, eventset_index);
+			do_throw(env, "Unknown thread (not registered with PAPI).");
+		}
 
-	int rc = PAPI_attach(all_eventsets[ eventset_index ].config.papi_eventset, papi_id);
-	if (rc != PAPI_OK) {
-		Java_cz_cuni_mff_d3s_perf_Measurement_destroyEventSet(env, klass, eventset_index);
-		do_papi_error_throw(env, rc, "PAPI_attach");
-		return -1;
+		DEBUG_PRINTF("Trying to attach %d to %lu (%ld).\n", eventset_index, papi_id, jthread_id);
+
+		int rc = PAPI_attach(all_eventsets[ eventset_index ].config.papi_eventset, papi_id);
+		if (rc != PAPI_OK) {
+			Java_cz_cuni_mff_d3s_perf_Measurement_destroyEventSet(env, klass, eventset_index);
+			do_papi_error_throw(env, rc, "PAPI_attach");
+			return -1;
+		}
+		DEBUG_PRINTF("Attached %d to %lu (%ld).\n", all_eventsets[ eventset_index ].config.papi_eventset, papi_id, jthread_id);
 	}
-	DEBUG_PRINTF("Attached %d to %lu (%ld).\n", all_eventsets[ eventset_index ].config.papi_eventset, papi_id, jthread_id);
 #else
 	UNUSED_VARIABLE(joptions);
 	UNUSED_VARIABLE(jthread_id);
