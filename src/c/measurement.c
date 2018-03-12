@@ -119,7 +119,7 @@ void ubench_register_this_thread(jthread thread, JNIEnv* jni_env) {
 	thread_mappings[thread_mapping_count].java_id = java_id;
 	thread_mapping_count++;
 
-	DEBUG_PRINTF("Registered thread mapping %ld => %lu.\n", java_id, papi_id);
+	DEBUG_PRINTF("Registered thread mapping %ld => %lu.", java_id, papi_id);
 
 	PAPI_unlock(PAPI_LOCK_USR1);
 #else
@@ -364,6 +364,8 @@ jint JNICALL Java_cz_cuni_mff_d3s_perf_Measurement_createEventSet(
 			return -1;
 		}
 
+		DEBUG_PRINTF("Created event set %d.", eventset->config.papi_eventset);
+
 		// TODO: find out why setting the component and inherit flag
 		// *before* adding the individual events work
 		rc = PAPI_assign_eventset_component(eventset->config.papi_eventset, 0);
@@ -428,7 +430,7 @@ int JNICALL Java_cz_cuni_mff_d3s_perf_Measurement_createAttachedEventSetNative(
 			do_throw(env, "Unknown thread (not registered with PAPI).");
 		}
 
-		DEBUG_PRINTF("Trying to attach %d to %lu (%ld).\n", eventset_index, papi_id, jthread_id);
+		DEBUG_PRINTF("Trying to attach %d to %lu (%ld).", eventset_index, papi_id, jthread_id);
 
 		int rc = PAPI_attach(all_eventsets[ eventset_index ].config.papi_eventset, papi_id);
 		if (rc != PAPI_OK) {
@@ -436,7 +438,7 @@ int JNICALL Java_cz_cuni_mff_d3s_perf_Measurement_createAttachedEventSetNative(
 			do_papi_error_throw(env, rc, "PAPI_attach");
 			return -1;
 		}
-		DEBUG_PRINTF("Attached %d to %lu (%ld).\n", all_eventsets[ eventset_index ].config.papi_eventset, papi_id, jthread_id);
+		DEBUG_PRINTF("Attached %d to %lu (%ld).", all_eventsets[ eventset_index ].config.papi_eventset, papi_id, jthread_id);
 	}
 #else
 	UNUSED_VARIABLE(joptions);

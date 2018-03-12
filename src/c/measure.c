@@ -97,9 +97,9 @@ void ubench_measure_start(const benchmark_configuration_t *config,
 	if ((config->used_backends & UBENCH_EVENT_BACKEND_PAPI) > 0) {
 		// TODO: check for errors
 		snapshot->papi_rc1 = PAPI_start(config->papi_eventset);
-		DEBUG_PRINTF("PAPI_start(%d) = %d\n", config->papi_eventset, snapshot->papi_rc1);
+		DEBUG_PRINTF("PAPI_start(%d) = %d", config->papi_eventset, snapshot->papi_rc1);
 		snapshot->papi_rc2 = PAPI_read(config->papi_eventset, snapshot->papi_events);
-		DEBUG_PRINTF("PAPI_read(%d) = %d\n", config->papi_eventset, snapshot->papi_rc2);
+		DEBUG_PRINTF("PAPI_read(%d) = %d", config->papi_eventset, snapshot->papi_rc2);
 	}
 #endif
 
@@ -118,7 +118,7 @@ void ubench_measure_stop(const benchmark_configuration_t *config,
 	// TODO: check for errors
 	if ((config->used_backends & UBENCH_EVENT_BACKEND_PAPI) > 0) {
 		snapshot->papi_rc1 = PAPI_stop(config->papi_eventset, snapshot->papi_events);
-		DEBUG_PRINTF("PAPI_stop(%d) = %d\n", config->papi_eventset, snapshot->papi_rc1);
+		DEBUG_PRINTF("PAPI_stop(%d) = %d", config->papi_eventset, snapshot->papi_rc1);
 	}
 #endif
 
