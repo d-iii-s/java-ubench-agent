@@ -430,7 +430,7 @@ int JNICALL Java_cz_cuni_mff_d3s_perf_Measurement_createAttachedEventSetNative(
 		do_papi_error_throw(env, rc, "PAPI_attach");
 		return -1;
 	}
-	DEBUG_PRINTF("Attached %d to %lu (%ld).\n", eventsets[ eventSet ].config.papi_eventset, papi_id, jthread_id);
+	DEBUG_PRINTF("Attached %d to %lu (%ld).\n", all_eventsets[ eventSet ].config.papi_eventset, papi_id, jthread_id);
 #else
 	UNUSED_VARIABLE(joptions);
 	UNUSED_VARIABLE(jthread_id);
