@@ -419,7 +419,7 @@ int JNICALL Java_cz_cuni_mff_d3s_perf_Measurement_createAttachedEventSetNative(
 		jlong jthread_id, jint jmeasurements, jobjectArray jeventNames, jintArray joptions) {
 	int eventSet = Java_cz_cuni_mff_d3s_perf_Measurement_createEventSet(env, klass, jmeasurements, jeventNames, joptions);
 
-	#ifdef HAS_PAPI
+#ifdef HAS_PAPI
 	unsigned long papi_id = ubench_get_thread_id_mapping(jthread_id);
 
 	DEBUG_PRINTF("Trying to attach %d to %lu (%ld).\n", eventSet, papi_id, jthread_id);
