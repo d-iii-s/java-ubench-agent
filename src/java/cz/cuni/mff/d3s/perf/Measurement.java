@@ -24,11 +24,17 @@ public final class Measurement {
 	public static final int THREAD_INHERIT = 1;
 	public static native int createEventSet(final int measurementCount, final String[] events, int ... options);
 	
-	private static native int createAttachedEventSetNative(final long threadId, final int measurementCount, final String[] events, int ... options);
+	private static native int createAttachedEventSetWithJavaThread(final long threadId, final int measurementCount, final String[] events, int ... options);
+	private static native int createAttachedEventSetWithNativeThread(final long threadId, final int measurementCount, final String[] events, int ... options);
 	
 	public static int createAttachedEventSet(final Thread thread, final int measurementCount, final String[] events, int ... options) {
-		return createAttachedEventSetNative(thread.getId(), measurementCount, events, options);
+		return createAttachedEventSetWithJavaThread(thread.getId(), measurementCount, events, options);
 	}
+	
+	public static int createAttachedEventSetOnNativeThread(final long thread, final int measurementCount, final String[] events, int ... options) {
+		return createAttachedEventSetWithNativeThread(thread, measurementCount, events, options);
+	}
+	
 	public static native void destroyEventSet(final int eventSet);
 	
 	public static native void start(final int ... eventSet);
