@@ -468,7 +468,7 @@ int JNICALL Java_cz_cuni_mff_d3s_perf_Measurement_createAttachedEventSetWithNati
 	}
 #else
 	UNUSED_VARIABLE(joptions);
-	UNUSED_VARIABLE(jthread_id);
+	UNUSED_VARIABLE(thread_id);
 #endif
 
 	return eventset_index;
