@@ -160,9 +160,9 @@ extern int ubench_event_resolve(const char *, ubench_event_info_t *);
 extern void ubench_measure_start(const benchmark_configuration_t *, ubench_events_snapshot_t *);
 extern void ubench_measure_stop(const benchmark_configuration_t *, ubench_events_snapshot_t *);
 
-extern ubench_atomic_uint_t counter_compilation;
-extern ubench_atomic_uint_t counter_compilation_total;
-extern ubench_atomic_uint_t counter_gc_total;
+extern ubench_atomic_int_t counter_compilation;
+extern ubench_atomic_int_t counter_compilation_total;
+extern ubench_atomic_int_t counter_gc_total;
 
 static inline char *ubench_str_dup(const char *str) {
 	char *result = malloc(sizeof(char) * strlen(str) + 1);
