@@ -24,11 +24,17 @@
 #ifdef _MSC_VER
 /* MSVC offers inline only for C++ code. */
 #define inline __inline
+#pragma warning(push, 0)
 #include <Windows.h>
+#pragma warning(pop)
 #endif
 
 typedef struct {
+#ifdef _MSC_VER
+	LONG atomic_value;
+#else
 	int atomic_value;
+#endif
 } ubench_atomic_int_t;
 
 static inline int ubench_atomic_int_get(ubench_atomic_int_t *atomic) {
