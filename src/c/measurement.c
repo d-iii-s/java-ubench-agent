@@ -416,10 +416,10 @@ jint JNICALL Java_cz_cuni_mff_d3s_perf_Measurement_createEventSet(
 	return eventset_id;
 }
 
-int JNICALL Java_cz_cuni_mff_d3s_perf_Measurement_createAttachedEventSetWithJavaThread(
+jint JNICALL Java_cz_cuni_mff_d3s_perf_Measurement_createAttachedEventSetWithJavaThread(
 		JNIEnv *env, jclass klass,
 		jlong jthread_id, jint jmeasurements, jobjectArray jeventNames, jintArray joptions) {
-	int eventset_index = Java_cz_cuni_mff_d3s_perf_Measurement_createEventSet(env, klass, jmeasurements, jeventNames, joptions);
+	jint eventset_index = Java_cz_cuni_mff_d3s_perf_Measurement_createEventSet(env, klass, jmeasurements, jeventNames, joptions);
 
 #ifdef HAS_PAPI
 	if  ((all_eventsets[ eventset_index ].config.used_backends & UBENCH_EVENT_BACKEND_PAPI) > 0) {
@@ -449,10 +449,10 @@ int JNICALL Java_cz_cuni_mff_d3s_perf_Measurement_createAttachedEventSetWithJava
 	return eventset_index;
 }
 
-int JNICALL Java_cz_cuni_mff_d3s_perf_Measurement_createAttachedEventSetWithNativeThread(
+jint JNICALL Java_cz_cuni_mff_d3s_perf_Measurement_createAttachedEventSetWithNativeThread(
 		JNIEnv *env, jclass klass,
 		jlong thread_id, jint jmeasurements, jobjectArray jeventNames, jintArray joptions) {
-	int eventset_index = Java_cz_cuni_mff_d3s_perf_Measurement_createEventSet(env, klass, jmeasurements, jeventNames, joptions);
+	jint eventset_index = Java_cz_cuni_mff_d3s_perf_Measurement_createEventSet(env, klass, jmeasurements, jeventNames, joptions);
 
 #ifdef HAS_PAPI
 	if  ((all_eventsets[ eventset_index ].config.used_backends & UBENCH_EVENT_BACKEND_PAPI) > 0) {
