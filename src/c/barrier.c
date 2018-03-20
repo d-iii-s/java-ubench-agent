@@ -19,17 +19,19 @@
 
 #pragma warning(push, 0)
 #include "cz_cuni_mff_d3s_perf_Barrier.h"
-
+#ifdef __unix__
 #include <sys/mman.h>
 #include <sys/stat.h>
 #include <fcntl.h>
 #include <pthread.h>
 #include <errno.h>
+#endif
 #pragma warning(pop)
 
-
+#ifdef __unix__
 static int shared_mem_id = -1;
 static pthread_barrier_t *shared_mem_barrier = NULL;
+#endif
 
 void JNICALL
 Java_cz_cuni_mff_d3s_perf_Barrier_init_1(
@@ -52,6 +54,8 @@ Java_cz_cuni_mff_d3s_perf_Barrier_init_1(
 		return;
 	}
 #else
+	fprintf(stderr, "Platform not yet supported.\n");
+	return;
 	// TODO: throw Java exception about unsupported platform
 #endif
 }
@@ -59,5 +63,7 @@ Java_cz_cuni_mff_d3s_perf_Barrier_init_1(
 void JNICALL
 Java_cz_cuni_mff_d3s_perf_Barrier_barrier(
 		JNIEnv *UNUSED_PARAMETER(env), jclass UNUSED_PARAMETER(klass)) {
+#ifdef __unix__
 	pthread_barrier_wait(shared_mem_barrier);
+#endif
 }
