@@ -84,10 +84,10 @@ void ubench_measure_start(const benchmark_configuration_t *config,
 #endif
 
 	if ((config->used_backends & UBENCH_EVENT_BACKEND_JVM_COMPILATIONS) > 0) {
-		snapshot->compilations = ubench_atomic_get(&counter_compilation_total);
+		snapshot->compilations = ubench_atomic_uint_get(&counter_compilation_total);
 	}
 
-	snapshot->garbage_collections = ubench_atomic_get(&counter_gc_total);
+	snapshot->garbage_collections = ubench_atomic_uint_get(&counter_gc_total);
 
 	if ((config->used_backends & UBENCH_EVENT_BACKEND_SYS_THREADTIME) > 0) {
 		store_threadtime(&(snapshot->threadtime));
@@ -127,10 +127,10 @@ void ubench_measure_stop(const benchmark_configuration_t *config,
 	}
 
 	if ((config->used_backends & UBENCH_EVENT_BACKEND_JVM_COMPILATIONS) > 0) {
-		snapshot->compilations = ubench_atomic_get(&counter_compilation_total);
+		snapshot->compilations = ubench_atomic_uint_get(&counter_compilation_total);
 	}
 
-	snapshot->garbage_collections = ubench_atomic_get(&counter_gc_total);
+	snapshot->garbage_collections = ubench_atomic_uint_get(&counter_gc_total);
 
 #ifdef HAS_GETRUSAGE
 	if ((config->used_backends & UBENCH_EVENT_BACKEND_RESOURCE_USAGE) > 0) {

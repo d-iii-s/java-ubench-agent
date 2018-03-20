@@ -26,9 +26,9 @@
 static jvmtiEnv *agent_env;
 
 
-ubench_atomic_t counter_compilation;
-ubench_atomic_t counter_compilation_total;
-ubench_atomic_t counter_gc_total;
+ubench_atomic_uint_t counter_compilation = { 0 };
+ubench_atomic_uint_t counter_compilation_total = { 0 };
+ubench_atomic_uint_t counter_gc_total = { 0 };
 
 static void report_error(const char *line_prefix,
 		jvmtiError error, const char *operation_description) {
@@ -73,15 +73,15 @@ static void JNICALL on_compiled_method_load(jvmtiEnv* UNUSED_PARAMETER(jvmti),
 	 *
 	 * We increment the counter only.
 	 */
-	ubench_atomic_add(&counter_compilation, 1);
-	ubench_atomic_add(&counter_compilation_total, 1);
+	ubench_atomic_uint_inc(&counter_compilation);
+	ubench_atomic_uint_inc(&counter_compilation_total);
 }
 
 // static void JNICALL on_gc_start(jvmtiEnv *UNUSED_PARAMETER(jvmti_env)) {
 // }
 
 static void JNICALL on_gc_finish(jvmtiEnv *UNUSED_PARAMETER(jvmti_env)) {
-	ubench_atomic_add(&counter_gc_total, 1);
+	ubench_atomic_uint_inc(&counter_gc_total);
 }
 
 
@@ -137,16 +137,9 @@ static jint register_and_enable_callback(void) {
 	return JNI_OK;
 }
 
-static void prepare_counters(void) {
-	ubench_atomic_init(&counter_compilation, 0);
-	ubench_atomic_init(&counter_compilation_total, 0);
-}
-
 
 jint ubench_counters_init(jvmtiEnv *jvmti) {
 	DEBUG_PRINTF("initializing counters");
-
-	prepare_counters();
 
 	agent_env = jvmti;
 

@@ -24,30 +24,38 @@
 #ifdef _MSC_VER
 /* MSVC offers inline only for C++ code. */
 #define inline __inline
+#include <Windows.h>
 #endif
 
-/*
- * FIXME: properly implement
- */
+typedef struct {
+	unsigned int atomic_value;
+} ubench_atomic_uint_t;
 
-typedef struct ubench_atomic {
-	int atomic_value;
-} ubench_atomic_t;
-
-static inline void ubench_atomic_init(ubench_atomic_t *atomic, int new_value) {
-	atomic->atomic_value = new_value;
-}
-
-static inline int ubench_atomic_get(ubench_atomic_t *atomic) {
+static inline unsigned int ubench_atomic_uint_get(ubench_atomic_uint_t *atomic) {
 	return atomic->atomic_value;
 }
 
-static inline void ubench_atomic_add(ubench_atomic_t *atomic, int how_much_to_add) {
-	atomic->atomic_value += how_much_to_add;
+// return old value
+static inline unsigned int ubench_atomic_uint_inc(ubench_atomic_uint_t *atomic) {
+#if defined(_MSC_VER)
+	return InterlockedIncrement(&atomic->atomic_value) - 1;
+#elif defined(__GNUC__)
+	return __sync_fetch_and_add(&atomic->atomic_value, 1);
+#else
+#error "Atomic operations not supported on this platform/compiler."
+	atomic->atomic_value++;
+#endif
 }
 
-static inline int ubench_atomic_get_and_set(ubench_atomic_t *atomic, int new_value) {
+static inline unsigned int ubench_atomic_uint_reset(ubench_atomic_uint_t *atomic) {
+#if defined(_MSC_VER)
+	return InterlockedAnd(&atomic->atomic_value, 0);
+#elif defined(__GNUC__)
+	return __sync_fetch_and_and(&atomic->atomic_value, 0);
+#else
+#error "Atomic operations not supported on this platform/compiler."
 	int result = atomic->atomic_value;
-	atomic->atomic_value = new_value;
+	atomic->atomic_value = 0;
 	return result;
+#endif
 }
