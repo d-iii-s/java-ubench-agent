@@ -581,7 +581,7 @@
 			description="Run JUnit tests, generate HTML report."
 		>
 		<mkdir dir="${test.results.dir}"/>
-		<junit printsummary="withOutAndErr" haltonfailure="no">
+		<junit printsummary="withOutAndErr" failureproperty="junit.failed" haltonfailure="no">
 			<classpath>
 				<pathelement path="${junit.jar.path}"/>
 				<pathelement path="${hamcrest.jar.path}" />
@@ -611,6 +611,8 @@
 			</fileset>
 			<report format="frames" todir="${test.results.dir}/html"/>
 		</junitreport>
+		
+		<fail message="JUnit test(s) failed." if="junit.failed" />
 	</target>
 	
 	
