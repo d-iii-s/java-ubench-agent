@@ -137,6 +137,20 @@ static long long getter_papi(const benchmark_run_t *bench, const ubench_event_in
 		return result;
 	}
 }
+
+static int resolve_papi_event(const char *name, ubench_event_info_t *info) {
+	int papi_event_id = 0;
+	int ok = PAPI_event_name_to_code((char *) name, &papi_event_id);
+	if (ok != PAPI_OK) {
+		return 0;
+	}
+
+	info->backend = UBENCH_EVENT_BACKEND_PAPI;
+	info->id = papi_event_id;
+	info->op_get = getter_papi;
+	info->name = ubench_str_dup(name);
+	return 1;
+}
 #endif
 
 int ubench_event_resolve(const char *event, ubench_event_info_t *info) {
@@ -208,14 +222,11 @@ int ubench_event_resolve(const char *event, ubench_event_info_t *info) {
 
 
 #ifdef HAS_PAPI
-	/* Let's try PAPI */
-	int papi_event_id = 0;
-	int ok = PAPI_event_name_to_code((char *) event, &papi_event_id);
-	if (ok == PAPI_OK) {
-		info->backend = UBENCH_EVENT_BACKEND_PAPI;
-		info->id = papi_event_id;
-		info->op_get = getter_papi;
-		info->name = ubench_str_dup(event);
+	/*
+	 * Let's try PAPI as fallback for any other event name.
+	 */
+	int papi_event_ok = resolve_papi_event(event, info);
+	if (papi_event_ok) {
 		return 1;
 	}
 #endif
