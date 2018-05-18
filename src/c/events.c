@@ -147,9 +147,27 @@ static int resolve_papi_event(const char *name, ubench_event_info_t *info) {
 
 	info->backend = UBENCH_EVENT_BACKEND_PAPI;
 	info->id = papi_event_id;
+	info->papi_component = 0;
 	info->op_get = getter_papi;
 	info->name = ubench_str_dup(name);
 	return 1;
+}
+
+static int resolve_papi_component(const char *name_or_number) {
+	int component_index = PAPI_get_component_index((char *)name_or_number);
+	if (component_index >= 0) {
+		return component_index;
+	}
+
+	char *end_of_number = NULL;
+	component_index = (int) strtol(name_or_number, &end_of_number, 0);
+	if (*end_of_number == 0) {
+		if (PAPI_get_component_info(component_index) != NULL) {
+			return component_index;
+		}
+	}
+
+	return PAPI_ENOCMP;
 }
 #endif
 
@@ -194,6 +212,42 @@ int ubench_event_resolve(const char *event, ubench_event_info_t *info) {
 	} else if (ubench_str_starts_with_icase(event, "PAPI:")) {
 #ifdef HAS_PAPI
 		return resolve_papi_event(event + 5, info);
+#else
+		return 0;
+#endif
+	} else if (ubench_str_starts_with_icase(event, "PAPI/")) {
+#ifdef HAS_PAPI
+		// Parse PAPI component name.
+		char *component_name = ubench_str_dup(event + 5);
+		if (component_name == NULL) {
+			return 0;
+		}
+
+		char *colon_position = strchr(component_name, ':');
+		if (colon_position == NULL) {
+			free(component_name);
+			return 0;
+		}
+		*colon_position = 0;
+		int component_index = resolve_papi_component(component_name);
+
+		if (component_index < 0) {
+			free(component_name);
+			return 0;
+		}
+
+		colon_position++;
+
+		int ok = resolve_papi_event(colon_position, info);
+		free(component_name);
+
+		if (!ok) {
+			return 0;
+		}
+
+		info->papi_component = component_index;
+
+		return 1;
 #else
 		return 0;
 #endif

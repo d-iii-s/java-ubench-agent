@@ -28,12 +28,4 @@ public class MeasurementTest {
 	public void nonsenseEventCannotBeSupported() {
 		Assert.assertFalse(Measurement.isEventSupported("THIS:IS:COMPLETELY:NONSENSE:EVENT"));
 	}
-	
-	@Test
-	public void papiWithExplicitPrefix() {
-		Assume.assumeTrue(Measurement.isEventSupported("PAPI_TOT_INS"));
-		
-		Assert.assertTrue(Measurement.isEventSupported("PAPI:PAPI_TOT_INS"));
-	}
-	
 }

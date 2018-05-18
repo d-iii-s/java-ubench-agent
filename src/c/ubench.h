@@ -127,6 +127,7 @@ typedef long long (*event_getter_func_t)(const benchmark_run_t *, const ubench_e
 struct ubench_event_info {
 	unsigned int backend;
 	int id;
+	int papi_component;
 	size_t papi_index;
 	event_getter_func_t op_get;
 	char *name;
@@ -142,6 +143,7 @@ typedef struct {
 	int used_papi_events[UBENCH_MAX_PAPI_EVENTS];
 	size_t used_papi_events_count;
 	int papi_eventset;
+	int papi_component;
 #endif
 
 	benchmark_run_t *data;

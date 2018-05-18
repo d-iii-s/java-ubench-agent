@@ -298,6 +298,7 @@ jint JNICALL Java_cz_cuni_mff_d3s_perf_Measurement_createEventSet(
 
 #ifdef HAS_PAPI
 	eventset->config.papi_eventset = PAPI_NULL;
+	eventset->config.papi_component = 0;
 	eventset->config.used_papi_events_count = 0;
 #endif
 
@@ -343,6 +344,18 @@ jint JNICALL Java_cz_cuni_mff_d3s_perf_Measurement_createEventSet(
 				}
 				// FIXME: inform user that there are way to many PAPI events
 			}
+
+			/* Check that the component is the same for all events. */
+			if (eventset->config.used_papi_events_count > 1) {
+				if (eventset->config.papi_component != event_info->papi_component) {
+					fprintf(stderr, "so far %d,  new one %d (events %d)\n", eventset->config.papi_component, event_info->papi_component, eventset->config.used_papi_events_count);
+					// FIXME: release memory
+					do_throw(env, "PAPI components are not the same in the event set.");
+					return -1;
+				}
+			}
+
+			eventset->config.papi_component = event_info->papi_component;
 		}
 #endif
 
@@ -368,7 +381,7 @@ jint JNICALL Java_cz_cuni_mff_d3s_perf_Measurement_createEventSet(
 
 		// TODO: find out why setting the component and inherit flag
 		// *before* adding the individual events work
-		rc = PAPI_assign_eventset_component(eventset->config.papi_eventset, 0);
+		rc = PAPI_assign_eventset_component(eventset->config.papi_eventset, eventset->config.papi_component);
 		if (rc != PAPI_OK) {
 			(*env)->ReleaseIntArrayElements(env, joptions, options, JNI_ABORT);
 			free(eventset->config.used_events);
