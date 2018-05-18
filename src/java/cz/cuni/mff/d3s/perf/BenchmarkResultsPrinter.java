@@ -48,26 +48,57 @@ public class BenchmarkResultsPrinter {
 	}
 	
 	public static void table(BenchmarkResults results, PrintStream stream) {
-		table(results, stream, 15, true);
+		table(results, stream, getOptimalColumnWidths(results), true);
 	}
 	
-	public static void table(BenchmarkResults results, PrintStream stream, int columnWidth, boolean printHeader) {
+	public static void table(BenchmarkResults results, PrintStream stream, int[] columnWidths, boolean printHeader) {
 		if (printHeader) {
-			String format = String.format("%%%ds", columnWidth);
+			int index = 0;
 			for (String name : results.getEventNames()) {
-				String nameBeginning = name.substring(0, Math.min(name.length(), columnWidth - 1));
+				int width = columnWidths[index % columnWidths.length];
+				String format = String.format("%%%ds", width);
+				String nameBeginning = name.substring(0, Math.min(name.length(), width - 1));
 				stream.append(String.format(format, nameBeginning));
+				index++;
 			}
 			stream.append("\n");
 		}
 		
-		String format = String.format("%%%dd", columnWidth);
+		String[] formats = new String[columnWidths.length];
+		for (int i = 0; i < formats.length; i++) {
+			formats[i] = String.format("%%%dd", columnWidths[i]);
+		}
+		
 		for (long[] row : results.getData()) {
+			int index = 0;
 			for (long r : row) {
-				stream.append(String.format(format, r));
+				stream.append(String.format(formats[index % formats.length], r));
+				index++;
 			}
 			stream.append("\n");
 		}
+	}
+	
+	public static int[] getOptimalColumnWidths(BenchmarkResults results) {
+		long maxValue = 0;
+		for (long[] row : results.getData()) {
+			for (long r : row) {
+				if (r > maxValue) {
+					maxValue = r;
+				}
+			}
+		}
+		
+		int minWidth = String.format("%d", maxValue).length();
+		
+		String names[] = results.getEventNames();
+		
+		int[] widths = new int[names.length];
+		for (int i = 0; i < widths.length; i++) {
+			widths[i] = Math.max(names[i].length(), minWidth) + 1;
+		}
+		
+		return widths;
 	}
 	
 }
