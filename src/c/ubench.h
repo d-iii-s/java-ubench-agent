@@ -188,4 +188,8 @@ static inline int ubench_str_is_icase_equal(const char *a, const char *b) {
 #endif
 }
 
+static inline int ubench_str_starts_with_icase(const char *str, const char *prefix) {
+	return strncasecmp(str, prefix, strlen(prefix)) == 0;
+}
+
 #endif

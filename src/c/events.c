@@ -191,6 +191,12 @@ int ubench_event_resolve(const char *event, ubench_event_info_t *info) {
 		info->op_get = getter_jvm_compilations;
 		info->name = ubench_str_dup(event);
 		return 1;
+	} else if (ubench_str_starts_with_icase(event, "PAPI:")) {
+#ifdef HAS_PAPI
+		return resolve_papi_event(event + 5, info);
+#else
+		return 0;
+#endif
 	}
 
 	/*

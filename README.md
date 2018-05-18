@@ -118,7 +118,7 @@ Supported events
     Linux only.
 * `JVM:compilations`
   * Number of JIT compilation events.
-* `PAPI_*`
+* `PAPI:*` or `PAPI_*`
   * When built on Linux with libpapi available, the agent can collect any
     event supported by PAPI (note that you can use all the events reported
     by `papi_avail` and `papi_native_avail`).
