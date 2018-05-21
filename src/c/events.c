@@ -41,6 +41,16 @@
 static LARGE_INTEGER windows_timer_frequency;
 #endif
 
+typedef int (*resolve_event_func_t)(const char *, ubench_event_info_t *);
+
+typedef struct {
+	const char *name;
+	resolve_event_func_t resolver;
+	unsigned int backend;
+	event_getter_func_t getter;
+} known_event_t;
+
+
 int ubench_event_init(void) {
 #ifdef HAS_QUERY_PERFORMANCE_COUNTER
 	 QueryPerformanceFrequency(&windows_timer_frequency);
@@ -144,118 +154,131 @@ static int resolve_papi_event(const char *name, ubench_event_info_t *info) {
 	if (ok != PAPI_OK) {
 		return 0;
 	}
+	PAPI_event_info_t event_info;
+	ok = PAPI_get_event_info(papi_event_id, &event_info);
+	if (ok != PAPI_OK) {
+		return 0;
+	}
 
-	info->backend = UBENCH_EVENT_BACKEND_PAPI;
 	info->id = papi_event_id;
-	info->papi_component = 0;
-	info->op_get = getter_papi;
-	info->name = ubench_str_dup(name);
+	info->papi_component = event_info.component_index;
 	return 1;
 }
 
-static int resolve_papi_component(const char *name_or_number) {
-	int component_index = PAPI_get_component_index((char *)name_or_number);
-	if (component_index >= 0) {
-		return component_index;
-	}
-
-	char *end_of_number = NULL;
-	component_index = (int) strtol(name_or_number, &end_of_number, 0);
-	if (*end_of_number == 0) {
-		if (PAPI_get_component_info(component_index) != NULL) {
-			return component_index;
-		}
-	}
-
-	return PAPI_ENOCMP;
+static int resolve_papi_event_with_prefix(const char *name, ubench_event_info_t *info) {
+	return resolve_papi_event(name + 5, info);
 }
 #endif
+
+
+static known_event_t known_events[] = {
+	/* Legacy names first. */
+	{
+		.name = "JVM_COMPILATIONS",
+		.resolver = NULL,
+		.backend = UBENCH_EVENT_BACKEND_JVM_COMPILATIONS,
+		.getter = getter_jvm_compilations
+	},
+	{
+		.name = "SYS_WALLCLOCK",
+		.resolver = NULL,
+		.backend = UBENCH_EVENT_BACKEND_SYS_WALLCLOCK,
+		.getter = getter_wall_clock_time
+	},
+#ifdef HAS_GETRUSAGE
+	{
+		.name = "forced-context-switch",
+		.resolver = NULL,
+		.backend = UBENCH_EVENT_BACKEND_RESOURCE_USAGE,
+		.getter = getter_context_switch_forced
+	},
+#endif
+
+
+	/* New naming. */
+	{
+		.name = "JVM:compilations",
+		.resolver = NULL,
+		.backend = UBENCH_EVENT_BACKEND_JVM_COMPILATIONS,
+		.getter = getter_jvm_compilations
+	},
+	{
+		.name = "SYS:wallclock-time",
+		.resolver = NULL,
+		.backend = UBENCH_EVENT_BACKEND_SYS_WALLCLOCK,
+		.getter = getter_wall_clock_time
+	},
+	{
+		.name = "SYS:thread-time",
+		.resolver = NULL,
+		.backend = UBENCH_EVENT_BACKEND_SYS_THREADTIME,
+		.getter = getter_thread_time
+	},
+#ifdef HAS_PAPI
+	{
+		.name = "PAPI:",
+		.resolver = resolve_papi_event_with_prefix,
+		.backend = UBENCH_EVENT_BACKEND_PAPI,
+		.getter = getter_papi
+	},
+#endif
+#ifdef HAS_GETRUSAGE
+	{
+		.name = "SYS:thread-time-rusage",
+		.resolver = NULL,
+		.backend = UBENCH_EVENT_BACKEND_RESOURCE_USAGE,
+		.getter = getter_thread_time_rusage
+	},
+	{
+		.name = "SYS:forced-context-switches",
+		.resolver = NULL,
+		.backend = UBENCH_EVENT_BACKEND_RESOURCE_USAGE,
+		.getter = getter_context_switch_forced
+	},
+#endif
+#ifdef HAS_PAPI
+	{
+		.name = "",
+		.resolver = resolve_papi_event,
+		.backend = UBENCH_EVENT_BACKEND_PAPI,
+		.getter = getter_papi
+	},
+#endif
+	{
+		.name = NULL,
+		.resolver = NULL,
+		.backend = 0,
+		.getter = NULL
+	}
+};
+
 
 int ubench_event_resolve(const char *event, ubench_event_info_t *info) {
 	if (event == NULL) {
 		return 0;
 	}
 
-	if (ubench_str_is_icase_equal(event, "SYS:wallclock-time")) {
-		info->backend = UBENCH_EVENT_BACKEND_SYS_WALLCLOCK;
-		info->op_get = getter_wall_clock_time;
-		info->name = ubench_str_dup(event);
-		return 1;
-	} else if (ubench_str_is_icase_equal(event, "SYS:thread-time")) {
-		info->backend = UBENCH_EVENT_BACKEND_SYS_THREADTIME;
-		info->op_get = getter_thread_time;
-		info->name = ubench_str_dup(event);
-		return 1;
-	} else if (ubench_str_is_icase_equal(event, "SYS:thread-time-rusage")) {
-#ifdef HAS_GETRUSAGE
-		info->backend = UBENCH_EVENT_BACKEND_RESOURCE_USAGE;
-		info->op_get = getter_thread_time_rusage;
-		info->name = ubench_str_dup(event);
-		return 1;
-#else
-		return 0;
-#endif
-	} else if (ubench_str_is_icase_equal(event, "SYS:forced-context-switches")) {
-#ifdef HAS_GETRUSAGE
-		info->backend = UBENCH_EVENT_BACKEND_RESOURCE_USAGE;
-		info->op_get = getter_context_switch_forced;
-		info->name = ubench_str_dup(event);
-		return 1;
-#else
-		return 0;
-#endif
-	} else if (ubench_str_is_icase_equal(event, "JVM:compilations")) {
-		info->backend = UBENCH_EVENT_BACKEND_JVM_COMPILATIONS;
-		info->op_get = getter_jvm_compilations;
-		info->name = ubench_str_dup(event);
-		return 1;
-	} else if (ubench_str_starts_with_icase(event, "PAPI:")) {
-#ifdef HAS_PAPI
-		return resolve_papi_event(event + 5, info);
-#else
-		return 0;
-#endif
-	} else if (ubench_str_starts_with_icase(event, "PAPI/")) {
-#ifdef HAS_PAPI
-		// Parse PAPI component name.
-		char *component_name = ubench_str_dup(event + 5);
-		if (component_name == NULL) {
-			return 0;
+	for (known_event_t *it = known_events; it->name != NULL; it++) {
+		if (it->resolver == NULL) {
+			if (!ubench_str_is_icase_equal(event, it->name)) {
+				continue;
+			}
+		} else {
+			if (!ubench_str_starts_with_icase(event, it->name)) {
+				continue;
+			}
+			if (!it->resolver(event, info)) {
+				continue;
+			}
 		}
-
-		char *colon_position = strchr(component_name, ':');
-		if (colon_position == NULL) {
-			free(component_name);
-			return 0;
-		}
-		*colon_position = 0;
-		int component_index = resolve_papi_component(component_name);
-
-		if (component_index < 0) {
-			free(component_name);
-			return 0;
-		}
-
-		colon_position++;
-
-		int ok = resolve_papi_event(colon_position, info);
-		free(component_name);
-
-		if (!ok) {
-			return 0;
-		}
-
-		info->papi_component = component_index;
-
+		info->backend = it->backend;
+		info->op_get = it->getter;
+		info->name = ubench_str_dup(event);
 		return 1;
-#else
-		return 0;
-#endif
 	}
 
-	/*
-	 * Legacy names.
-	 */
+	return 0;
+#if 0
 	if (strcmp(event, "SYS_WALLCLOCK") == 0) {
 		info->backend = UBENCH_EVENT_BACKEND_SYS_WALLCLOCK;
 		info->op_get = getter_wall_clock_time;
@@ -270,7 +293,6 @@ int ubench_event_resolve(const char *event, ubench_event_info_t *info) {
 		return 1;
 	}
 
-#ifdef HAS_GETRUSAGE
 	if (strcmp(event, "forced-context-switch") == 0) {
 		info->backend = UBENCH_EVENT_BACKEND_RESOURCE_USAGE;
 		info->op_get = getter_context_switch_forced;
@@ -278,18 +300,4 @@ int ubench_event_resolve(const char *event, ubench_event_info_t *info) {
 		return 1;
 	}
 #endif
-
-
-
-#ifdef HAS_PAPI
-	/*
-	 * Let's try PAPI as fallback for any other event name.
-	 */
-	int papi_event_ok = resolve_papi_event(event, info);
-	if (papi_event_ok) {
-		return 1;
-	}
-#endif
-
-	return 0;
 }

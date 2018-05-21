@@ -118,11 +118,10 @@ Supported events
     Linux only.
 * `JVM:compilations`
   * Number of JIT compilation events.
-* `PAPI:*` or `PAPI_*`
+* `PAPI:*`
   * When built on Linux with libpapi available, the agent can collect any
     event supported by PAPI (note that you can use all the events reported
     by `papi_avail` and `papi_native_avail`).
-  * To specify PAPI component, use the following syntax:
-    `PAPI/component_name:event_name`
-    (e.g. `PAPI/rapl:rapl:::PACKAGE_ENERGY:PACKAGE0`).
+  * Note that to use different components (e.g. `perf` and `rapl`), different
+    event sets has to be created.
 

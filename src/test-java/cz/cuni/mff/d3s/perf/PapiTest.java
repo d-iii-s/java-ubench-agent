@@ -31,16 +31,11 @@ public class PapiTest {
 	
 	@Test
 	public void withComponentNamePrefix() {
-		Assert.assertTrue(Measurement.isEventSupported("PAPI/perf_event:perf::INSTRUCTIONS"));
+		Assert.assertTrue(Measurement.isEventSupported("PAPI:perf::INSTRUCTIONS"));
 	}
 	
 	@Test
-	public void withComponentNumberPrefix() {
-		Assert.assertTrue(Measurement.isEventSupported("PAPI/0:perf::INSTRUCTIONS"));
-	}
-	
-	@Test
-	public void invalidComponentName() {
-		Assert.assertFalse(Measurement.isEventSupported("PAPI/xxxx:perf::INSTRUCTIONS"));	
+	public void invalidEventName() {
+		Assert.assertFalse(Measurement.isEventSupported("PAPI:perf::COMPLETE_NONSENSE_COUNTER"));	
 	}
 }
