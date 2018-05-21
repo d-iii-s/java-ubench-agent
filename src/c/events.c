@@ -278,26 +278,4 @@ int ubench_event_resolve(const char *event, ubench_event_info_t *info) {
 	}
 
 	return 0;
-#if 0
-	if (strcmp(event, "SYS_WALLCLOCK") == 0) {
-		info->backend = UBENCH_EVENT_BACKEND_SYS_WALLCLOCK;
-		info->op_get = getter_wall_clock_time;
-		info->name = ubench_str_dup(event);
-		return 1;
-	}
-
-	if (strcmp(event, "JVM_COMPILATIONS") == 0) {
-		info->backend = UBENCH_EVENT_BACKEND_JVM_COMPILATIONS;
-		info->op_get = getter_jvm_compilations;
-		info->name = ubench_str_dup(event);
-		return 1;
-	}
-
-	if (strcmp(event, "forced-context-switch") == 0) {
-		info->backend = UBENCH_EVENT_BACKEND_RESOURCE_USAGE;
-		info->op_get = getter_context_switch_forced;
-		info->name = ubench_str_dup(event);
-		return 1;
-	}
-#endif
 }
