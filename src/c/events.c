@@ -46,6 +46,7 @@ typedef int (*event_lister_func_t)(event_info_iterator_callback_t, void *);
 
 typedef struct {
 	const char *name;
+	int obsolete;
 	resolve_event_func_t resolver;
 	event_lister_func_t lister;
 	unsigned int backend;
@@ -222,6 +223,7 @@ static known_event_t known_events[] = {
 	/* Legacy names first. */
 	{
 		.name = "JVM_COMPILATIONS",
+		.obsolete = 1,
 		.resolver = NULL,
 		.lister = NULL,
 		.backend = UBENCH_EVENT_BACKEND_JVM_COMPILATIONS,
@@ -229,6 +231,7 @@ static known_event_t known_events[] = {
 	},
 	{
 		.name = "SYS_WALLCLOCK",
+		.obsolete = 1,
 		.resolver = NULL,
 		.lister = NULL,
 		.backend = UBENCH_EVENT_BACKEND_SYS_WALLCLOCK,
@@ -237,6 +240,7 @@ static known_event_t known_events[] = {
 #ifdef HAS_GETRUSAGE
 	{
 		.name = "forced-context-switch",
+		.obsolete = 1,
 		.resolver = NULL,
 		.lister = NULL,
 		.backend = UBENCH_EVENT_BACKEND_RESOURCE_USAGE,
@@ -248,6 +252,7 @@ static known_event_t known_events[] = {
 	/* New naming. */
 	{
 		.name = "JVM:compilations",
+		.obsolete = 0,
 		.resolver = NULL,
 		.lister = NULL,
 		.backend = UBENCH_EVENT_BACKEND_JVM_COMPILATIONS,
@@ -255,6 +260,7 @@ static known_event_t known_events[] = {
 	},
 	{
 		.name = "SYS:wallclock-time",
+		.obsolete = 0,
 		.resolver = NULL,
 		.lister = NULL,
 		.backend = UBENCH_EVENT_BACKEND_SYS_WALLCLOCK,
@@ -262,6 +268,7 @@ static known_event_t known_events[] = {
 	},
 	{
 		.name = "SYS:thread-time",
+		.obsolete = 0,
 		.resolver = NULL,
 		.lister = NULL,
 		.backend = UBENCH_EVENT_BACKEND_SYS_THREADTIME,
@@ -270,6 +277,7 @@ static known_event_t known_events[] = {
 #ifdef HAS_PAPI
 	{
 		.name = "PAPI:",
+		.obsolete = 0,
 		.resolver = resolve_papi_event_with_prefix,
 		.lister = list_papi_events,
 		.backend = UBENCH_EVENT_BACKEND_PAPI,
@@ -279,6 +287,7 @@ static known_event_t known_events[] = {
 #ifdef HAS_GETRUSAGE
 	{
 		.name = "SYS:thread-time-rusage",
+		.obsolete = 0,
 		.resolver = NULL,
 		.lister = NULL,
 		.backend = UBENCH_EVENT_BACKEND_RESOURCE_USAGE,
@@ -286,6 +295,7 @@ static known_event_t known_events[] = {
 	},
 	{
 		.name = "SYS:forced-context-switches",
+		.obsolete = 0,
 		.resolver = NULL,
 		.lister = NULL,
 		.backend = UBENCH_EVENT_BACKEND_RESOURCE_USAGE,
@@ -295,6 +305,7 @@ static known_event_t known_events[] = {
 #ifdef HAS_PAPI
 	{
 		.name = "",
+		.obsolete = 1,
 		.resolver = resolve_papi_event,
 		.lister = NULL,
 		.backend = UBENCH_EVENT_BACKEND_PAPI,
@@ -344,6 +355,9 @@ void ubench_event_iterate(event_info_iterator_callback_t iterator_callback, void
 	}
 
 	for (known_event_t *it = known_events; it->name != NULL; it++) {
+		if (it->obsolete) {
+			continue;
+		}
 		if (it->lister != NULL) {
 			int terminate = it->lister(iterator_callback, arg);
 			if (terminate) {
