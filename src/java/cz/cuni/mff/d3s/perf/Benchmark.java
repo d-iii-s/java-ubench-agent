@@ -17,6 +17,9 @@
 
 package cz.cuni.mff.d3s.perf;
 
+import java.util.ArrayList;
+import java.util.List;
+
 public final class Benchmark {
 	public static final int THREAD_INHERIT = Measurement.THREAD_INHERIT;
 	
@@ -43,5 +46,13 @@ public final class Benchmark {
 	
 	public static BenchmarkResults getResults() {
 		return Measurement.getResults(defaultEventSet);
+	}
+	
+	public static List<String> getSupportedEvents() {
+		List<String> result = Measurement.getSupportedEvents();
+		if (result == null) {
+			return new ArrayList<>(0);
+		}
+		return result;
 	}
 }

@@ -123,6 +123,7 @@ typedef struct {
 
 typedef struct ubench_event_info ubench_event_info_t;
 typedef long long (*event_getter_func_t)(const benchmark_run_t *, const ubench_event_info_t *);
+typedef int (*event_info_iterator_callback_t)(const char *, void *);
 
 struct ubench_event_info {
 	unsigned int backend;
@@ -158,6 +159,7 @@ extern void ubench_unregister_this_thread(jthread, JNIEnv*);
 extern jint ubench_benchmark_init(void);
 extern int ubench_event_init(void);
 extern int ubench_event_resolve(const char *, ubench_event_info_t *);
+extern void ubench_event_iterate(event_info_iterator_callback_t, void *);
 
 extern void ubench_measure_start(const benchmark_configuration_t *, ubench_events_snapshot_t *);
 extern void ubench_measure_stop(const benchmark_configuration_t *, ubench_events_snapshot_t *);

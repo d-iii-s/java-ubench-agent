@@ -16,6 +16,8 @@
  */
 package cz.cuni.mff.d3s.perf;
 
+import java.util.List;
+
 import org.junit.*;
 
 public class MeasurementTest {
@@ -27,5 +29,19 @@ public class MeasurementTest {
 	@Test
 	public void nonsenseEventCannotBeSupported() {
 		Assert.assertFalse(Measurement.isEventSupported("THIS:IS:COMPLETELY:NONSENSE:EVENT"));
+	}
+	
+	@Test
+	public void listingEventsWorks() {
+		List<String> events = Measurement.getSupportedEvents();
+		Assert.assertTrue("SYS:wallclock-time must be present", events.contains("SYS:wallclock-time"));
+	}
+	
+	@Test
+	public void listingPapiEventsWorks() {
+		Assume.assumeTrue(Measurement.isEventSupported("PAPI_TOT_INS"));
+		
+		List<String> events = Measurement.getSupportedEvents();
+		Assert.assertTrue("PAPI_TOT_INS must be present", events.contains("PAPI:PAPI_TOT_INS"));
 	}
 }

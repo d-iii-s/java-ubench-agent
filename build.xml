@@ -632,7 +632,22 @@
 			<arg value="build.xml" />
 		</java>
 	</target>
-
+	
+	<target name="list-events"
+		depends="compile-demo"
+		description="List available events."
+		>
+		<java
+				classname="cz.cuni.mff.d3s.perf.demo.ListEvents"
+				fork="true"
+				failonerror="true">
+			<classpath>
+				<pathelement path="${classes.build.dir}" />
+				<pathelement path="${demo.classes.build.dir}" />
+			</classpath>
+			<jvmarg value="-agentpath:${agent.path}" />
+		</java>
+	</target>
 
 	<target name="dist"
 			description="Create distributable ZIP with all sources."

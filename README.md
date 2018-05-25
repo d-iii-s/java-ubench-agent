@@ -103,6 +103,9 @@ demo:
 Supported events
 ----------------
 
+To list supported events, run the `ListEvents` demo program or execute
+`ant list-events`.
+
 * `SYS:wallclock-time`
   * The most precise clock available.
     `clock_gettime(CLOCK_MONOTONIC)` on Linux,

@@ -42,10 +42,12 @@ static LARGE_INTEGER windows_timer_frequency;
 #endif
 
 typedef int (*resolve_event_func_t)(const char *, ubench_event_info_t *);
+typedef int (*event_lister_func_t)(event_info_iterator_callback_t, void *);
 
 typedef struct {
 	const char *name;
 	resolve_event_func_t resolver;
+	event_lister_func_t lister;
 	unsigned int backend;
 	event_getter_func_t getter;
 } known_event_t;
@@ -168,6 +170,51 @@ static int resolve_papi_event(const char *name, ubench_event_info_t *info) {
 static int resolve_papi_event_with_prefix(const char *name, ubench_event_info_t *info) {
 	return resolve_papi_event(name + 5, info);
 }
+
+static int list_papi_events(event_info_iterator_callback_t callback, void *arg) {
+	char event_name_full[PAPI_MAX_STR_LEN + 7 ];
+	strcpy(event_name_full, "PAPI:");
+	char *event_name = event_name_full + strlen(event_name_full);
+
+	int rc;
+	int event_code;
+
+	// First, retrieve available preset events
+	event_code = 0 | PAPI_PRESET_MASK;
+
+	for (rc = PAPI_enum_event(&event_code, PAPI_ENUM_FIRST);
+			rc == PAPI_OK;
+			rc = PAPI_enum_event(&event_code, PAPI_PRESET_ENUM_AVAIL)) {
+		rc = PAPI_event_code_to_name(event_code, event_name);
+		if (rc != PAPI_OK) {
+			continue;
+		}
+		int terminate = callback(event_name_full, arg);
+		if (terminate) {
+			return 1;
+		}
+	}
+
+	// Next, iterate over all components and print their events
+	int component_count = PAPI_num_components();
+	for (int component = 0; component < component_count; component++) {
+		event_code = 0 | PAPI_NATIVE_MASK;
+		for (rc = PAPI_enum_cmp_event(&event_code, PAPI_ENUM_FIRST, component);
+				rc == PAPI_OK;
+				rc = PAPI_enum_cmp_event(&event_code, PAPI_ENUM_EVENTS, component)) {
+			rc = PAPI_event_code_to_name(event_code, event_name);
+			if (rc != PAPI_OK) {
+				continue;
+			}
+			int terminate = callback(event_name_full, arg);
+			if (terminate) {
+				return 1;
+			}
+		}
+	}
+
+	return 0;
+}
 #endif
 
 
@@ -176,12 +223,14 @@ static known_event_t known_events[] = {
 	{
 		.name = "JVM_COMPILATIONS",
 		.resolver = NULL,
+		.lister = NULL,
 		.backend = UBENCH_EVENT_BACKEND_JVM_COMPILATIONS,
 		.getter = getter_jvm_compilations
 	},
 	{
 		.name = "SYS_WALLCLOCK",
 		.resolver = NULL,
+		.lister = NULL,
 		.backend = UBENCH_EVENT_BACKEND_SYS_WALLCLOCK,
 		.getter = getter_wall_clock_time
 	},
@@ -189,6 +238,7 @@ static known_event_t known_events[] = {
 	{
 		.name = "forced-context-switch",
 		.resolver = NULL,
+		.lister = NULL,
 		.backend = UBENCH_EVENT_BACKEND_RESOURCE_USAGE,
 		.getter = getter_context_switch_forced
 	},
@@ -199,18 +249,21 @@ static known_event_t known_events[] = {
 	{
 		.name = "JVM:compilations",
 		.resolver = NULL,
+		.lister = NULL,
 		.backend = UBENCH_EVENT_BACKEND_JVM_COMPILATIONS,
 		.getter = getter_jvm_compilations
 	},
 	{
 		.name = "SYS:wallclock-time",
 		.resolver = NULL,
+		.lister = NULL,
 		.backend = UBENCH_EVENT_BACKEND_SYS_WALLCLOCK,
 		.getter = getter_wall_clock_time
 	},
 	{
 		.name = "SYS:thread-time",
 		.resolver = NULL,
+		.lister = NULL,
 		.backend = UBENCH_EVENT_BACKEND_SYS_THREADTIME,
 		.getter = getter_thread_time
 	},
@@ -218,6 +271,7 @@ static known_event_t known_events[] = {
 	{
 		.name = "PAPI:",
 		.resolver = resolve_papi_event_with_prefix,
+		.lister = list_papi_events,
 		.backend = UBENCH_EVENT_BACKEND_PAPI,
 		.getter = getter_papi
 	},
@@ -226,12 +280,14 @@ static known_event_t known_events[] = {
 	{
 		.name = "SYS:thread-time-rusage",
 		.resolver = NULL,
+		.lister = NULL,
 		.backend = UBENCH_EVENT_BACKEND_RESOURCE_USAGE,
 		.getter = getter_thread_time_rusage
 	},
 	{
 		.name = "SYS:forced-context-switches",
 		.resolver = NULL,
+		.lister = NULL,
 		.backend = UBENCH_EVENT_BACKEND_RESOURCE_USAGE,
 		.getter = getter_context_switch_forced
 	},
@@ -240,6 +296,7 @@ static known_event_t known_events[] = {
 	{
 		.name = "",
 		.resolver = resolve_papi_event,
+		.lister = NULL,
 		.backend = UBENCH_EVENT_BACKEND_PAPI,
 		.getter = getter_papi
 	},
@@ -247,6 +304,7 @@ static known_event_t known_events[] = {
 	{
 		.name = NULL,
 		.resolver = NULL,
+		.lister = NULL,
 		.backend = 0,
 		.getter = NULL
 	}
@@ -278,4 +336,26 @@ int ubench_event_resolve(const char *event, ubench_event_info_t *info) {
 	}
 
 	return 0;
+}
+
+void ubench_event_iterate(event_info_iterator_callback_t iterator_callback, void *arg) {
+	if (iterator_callback == NULL) {
+		return;
+	}
+
+	for (known_event_t *it = known_events; it->name != NULL; it++) {
+		if (it->lister != NULL) {
+			int terminate = it->lister(iterator_callback, arg);
+			if (terminate) {
+				return;
+			}
+		} else if (it->resolver == NULL) {
+			int terminate = iterator_callback(it->name, arg);
+			if (terminate) {
+				return;
+			}
+		} else {
+			// No listing but resolver set: skipping
+		}
+	}
 }

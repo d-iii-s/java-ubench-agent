@@ -56,4 +56,6 @@ public final class Measurement {
 		}
 		return result.toArray(STRING_ARRAY_TYPE);
 	}
+
+	public static native List<String> getSupportedEvents();
 }

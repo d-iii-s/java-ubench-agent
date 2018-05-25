@@ -662,3 +662,52 @@ jboolean JNICALL Java_cz_cuni_mff_d3s_perf_Measurement_isEventSupported(JNIEnv *
 	return result ? JNI_TRUE : JNI_FALSE;
 }
 
+struct adding_supported_events_data {
+	JNIEnv *env;
+	jobject event_list;
+	jmethodID add_method;
+};
+
+static int adding_supported_events_callback(const char *name, void *arg) {
+	struct adding_supported_events_data *j = arg;
+
+	jstring jname = (*j->env)->NewStringUTF(j->env, name);
+
+	(*j->env)->CallBooleanMethod(j->env, j->event_list, j->add_method, jname);
+
+	return 0;
+}
+
+jobject JNICALL Java_cz_cuni_mff_d3s_perf_Measurement_getSupportedEvents(JNIEnv *env,
+		jclass UNUSED_PARAMETER(klass)) {
+	jclass array_list_class = (*env)->FindClass(env, "java/util/ArrayList");
+	if (array_list_class == NULL) {
+		return NULL;
+	}
+	jclass string_class = (*env)->FindClass(env, "java/lang/String");
+	if (string_class == NULL) {
+		return NULL;
+	}
+	jmethodID constructor = (*env)->GetMethodID(env, array_list_class, "<init>", "()V");
+	if (constructor == NULL) {
+		return NULL;
+	}
+	jmethodID add_method = (*env)->GetMethodID(env, array_list_class, "add", "(Ljava/lang/Object;)Z");
+	if (add_method == NULL) {
+		return NULL;
+	}
+
+	jobject jresults = (*env)->NewObject(env, array_list_class, constructor);
+	if (jresults == NULL) {
+		return NULL;
+	}
+
+	struct adding_supported_events_data callback_data = {
+			env, jresults, add_method
+	};
+
+	ubench_event_iterate(adding_supported_events_callback, &callback_data);
+
+	return jresults;
+}
+
