@@ -348,7 +348,7 @@ jint JNICALL Java_cz_cuni_mff_d3s_perf_Measurement_createEventSet(
 			/* Check that the component is the same for all events. */
 			if (eventset->config.used_papi_events_count > 1) {
 				if (eventset->config.papi_component != event_info->papi_component) {
-					fprintf(stderr, "so far %d,  new one %d (events %d)\n", eventset->config.papi_component, event_info->papi_component, eventset->config.used_papi_events_count);
+					//fprintf(stderr, "so far %d,  new one %d (events %d)\n", eventset->config.papi_component, event_info->papi_component, eventset->config.used_papi_events_count);
 					// FIXME: release memory
 					do_throw(env, "PAPI components are not the same in the event set.");
 					return -1;
