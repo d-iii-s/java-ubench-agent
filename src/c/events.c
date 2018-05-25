@@ -258,22 +258,6 @@ static known_event_t known_events[] = {
 		.backend = UBENCH_EVENT_BACKEND_JVM_COMPILATIONS,
 		.getter = getter_jvm_compilations
 	},
-	{
-		.name = "SYS:wallclock-time",
-		.obsolete = 0,
-		.resolver = NULL,
-		.lister = NULL,
-		.backend = UBENCH_EVENT_BACKEND_SYS_WALLCLOCK,
-		.getter = getter_wall_clock_time
-	},
-	{
-		.name = "SYS:thread-time",
-		.obsolete = 0,
-		.resolver = NULL,
-		.lister = NULL,
-		.backend = UBENCH_EVENT_BACKEND_SYS_THREADTIME,
-		.getter = getter_thread_time
-	},
 #ifdef HAS_PAPI
 	{
 		.name = "PAPI:",
@@ -286,14 +270,6 @@ static known_event_t known_events[] = {
 #endif
 #ifdef HAS_GETRUSAGE
 	{
-		.name = "SYS:thread-time-rusage",
-		.obsolete = 0,
-		.resolver = NULL,
-		.lister = NULL,
-		.backend = UBENCH_EVENT_BACKEND_RESOURCE_USAGE,
-		.getter = getter_thread_time_rusage
-	},
-	{
 		.name = "SYS:forced-context-switches",
 		.obsolete = 0,
 		.resolver = NULL,
@@ -302,6 +278,32 @@ static known_event_t known_events[] = {
 		.getter = getter_context_switch_forced
 	},
 #endif
+	{
+		.name = "SYS:thread-time",
+		.obsolete = 0,
+		.resolver = NULL,
+		.lister = NULL,
+		.backend = UBENCH_EVENT_BACKEND_SYS_THREADTIME,
+		.getter = getter_thread_time
+	},
+#ifdef HAS_GETRUSAGE
+	{
+		.name = "SYS:thread-time-rusage",
+		.obsolete = 0,
+		.resolver = NULL,
+		.lister = NULL,
+		.backend = UBENCH_EVENT_BACKEND_RESOURCE_USAGE,
+		.getter = getter_thread_time_rusage
+	},
+#endif
+	{
+		.name = "SYS:wallclock-time",
+		.obsolete = 0,
+		.resolver = NULL,
+		.lister = NULL,
+		.backend = UBENCH_EVENT_BACKEND_SYS_WALLCLOCK,
+		.getter = getter_wall_clock_time
+	},
 #ifdef HAS_PAPI
 	{
 		.name = "",
