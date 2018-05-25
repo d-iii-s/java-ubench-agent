@@ -581,7 +581,7 @@
 			description="Run JUnit tests, generate HTML report."
 		>
 		<mkdir dir="${test.results.dir}"/>
-		<junit printsummary="withOutAndErr" failureproperty="junit.failed" haltonfailure="no">
+		<junit printsummary="no" failureproperty="junit.failed" haltonfailure="no">
 			<classpath>
 				<pathelement path="${junit.jar.path}"/>
 				<pathelement path="${hamcrest.jar.path}" />
@@ -596,7 +596,7 @@
 				<enable/>
 			</assertions>
 			
-			<formatter type="plain" />
+			<formatter type="brief" usefile="false" />
 			<formatter type="xml" />
 			
 			<batchtest fork="yes" todir="${test.results.dir}">

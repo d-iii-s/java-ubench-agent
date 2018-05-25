@@ -4,7 +4,8 @@ before_install:
 script:
  - ant print-config
  - ant print-properties
+ - ant list-events
  - gcc --version
- - ant -v test-junit
+ - ant test-junit
 os:
  - linux
