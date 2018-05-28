@@ -7,6 +7,7 @@ before_install:
  - sudo apt-get install ant-optional
  - if $WITH_PAPI; then sudo apt-get install libpapi-dev; fi
 script:
+ - "echo 'agent.cc.warnings = aserror' >local-settings.ini"
  - ant print-config
  - ant print-properties
  - ant list-events
