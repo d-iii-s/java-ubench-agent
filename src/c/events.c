@@ -190,6 +190,10 @@ static int list_papi_events(event_info_iterator_callback_t callback, void *arg) 
 	for (rc = PAPI_enum_event(&event_code, PAPI_ENUM_FIRST);
 			rc == PAPI_OK;
 			rc = PAPI_enum_event(&event_code, PAPI_PRESET_ENUM_AVAIL)) {
+		rc = PAPI_event_code_to_name(event_code, event_name);
+		if (rc != PAPI_OK) {
+			continue;
+		}
 		PAPI_event_info_t event_info;
 		rc = PAPI_get_event_info(event_code, &event_info);
 		if (rc != PAPI_OK) {
