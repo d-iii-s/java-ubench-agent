@@ -30,8 +30,8 @@ Agent_OnLoad(JavaVM *vm, char *UNUSED_PARAMETER(options), void *UNUSED_PARAMETER
 	rc = (*vm)->GetEnv(vm, (void **) &env, JVMTI_VERSION);
 	if (rc != JNI_OK) {
 		fprintf(stderr,
-				"Unable to create JVMTI environment, JavaVM->GetEnv failed, error %d.\n",
-				rc);
+				"Unable to create JVMTI environment, JavaVM->GetEnv failed, error %ld.\n",
+				(long) rc);
 		return JNI_ERR;
 	}
 

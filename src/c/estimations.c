@@ -27,13 +27,13 @@
 #endif
 #pragma warning(pop)
 
-void JNICALL Java_cz_cuni_mff_d3s_perf_OverheadEstimations_emptyNativeCall(
+DLL_EXPORT void JNICALL Java_cz_cuni_mff_d3s_perf_OverheadEstimations_emptyNativeCall(
 		JNIEnv *UNUSED_PARAMETER(env), jclass UNUSED_PARAMETER(klass)) {
 	return;
 }
 
 
-void JNICALL Java_cz_cuni_mff_d3s_perf_OverheadEstimations_resourceUsageCall(
+DLL_EXPORT void JNICALL Java_cz_cuni_mff_d3s_perf_OverheadEstimations_resourceUsageCall(
 		JNIEnv *UNUSED_PARAMETER(env), jclass UNUSED_PARAMETER(klass)) {
 #ifdef HAS_GETRUSAGE
 	struct rusage resource_usage;

@@ -78,6 +78,15 @@
 		Prepare some compiler/linker settings.
 	-->
 	<property name="agent.cc.warnings" value="diagnostic" />
+	<property name="agent.cc.extra.flags" value="" />
+	<!--
+	  4100 - unreferenced formal parameter
+	  4710 - function not inlined (had 'inline' directive)
+	  4711 - function inlined (no 'inline' directive)
+	  4820 - padding added
+	  5045 - Spectre mitigation
+	-->
+	<property name="agent.cc.msvc.ignored.warnings" value="/wd4100 /wd4710 /wd4711 /wd4820 /wd5045" />
 	
 	<!-- Helper properties to check for compiler -->
 	<condition property="agent.cc.is.gcc">
@@ -192,13 +201,13 @@
 	</condition>
 	<property name="agent.gcc.warn.flags" value="" />
 	
-	<condition property="agent.msvc.warn.flags" value="/Wall /wd4100 /wd4820">
+	<condition property="agent.msvc.warn.flags" value="/Wall ${agent.cc.msvc.ignored.warnings}">
 		<equals arg1="${agent.cc.warnings}" arg2="diagnostic" />
 	</condition>
 	<condition property="agent.msvc.warn.flags" value="/W3">
 		<equals arg1="${agent.cc.warnings}" arg2="default" />
 	</condition>
-	<condition property="agent.msvc.warn.flags" value="/Wall /WX /wd4100 /wd4820">
+	<condition property="agent.msvc.warn.flags" value="/Wall /WX ${agent.cc.msvc.ignored.warnings}">
 		<equals arg1="${agent.cc.warnings}" arg2="aserror" />
 	</condition>
 	<property name="agent.msvc.warn.flags" value="" />
@@ -294,9 +303,10 @@
 	<target name="print-config"
 			description="Print current configuration (include paths, compiler, ...)."
 		>
-		<echo message="Used Java version: ${ant.java.version}" />
-		<echo message="Java C headers in: ${agent.cc.java.include}" />
-		<echo message="  Used C compiler: ${agent.cc}" />
+		<echo message="  Used Java version: ${ant.java.version}" />
+		<echo message="  Java C headers in: ${agent.cc.java.include}" />
+		<echo message="    Used C compiler: ${agent.cc}" />
+		<echo message="C compiler warnings: ${agent.cc.warnings}" />
 	</target>
 	
 	<target name="print-properties">
@@ -369,11 +379,13 @@
 			<arg value="-I${agent.cc.java.os.include}" />
 			<arg value="-fPIC" />
 			<arg value="-pthread" />
+			<arg value="-O3" />
 			<arg value="-std=gnu99" />
 			<arg line="${agent.cc.papi}" />
 			<arg line="${agent.cc.getrusage}" />
 			<arg line="${agent.cc.timespec}" />
 			<arg line="${agent.gcc.warn.flags}" />
+			<arg line="${agent.cc.extra.flags}" />
 			<arg value="-o"/>
 			<targetfile />
 			<srcfile />
@@ -415,6 +427,8 @@
 			<arg value="/I${agent.build.dir}" />
 			<arg value="/I${agent.cc.java.include}" />
 			<arg value="/I${agent.cc.java.os.include}" />
+			<arg value="/O2" />
+			<arg line="${agent.cc.extra.flags}" />
 			<arg line="${agent.msvc.warn.flags}" />
 			<arg line="${agent.cc.native.windows}" />
 			<arg value="/Fo${agent.build.dir}${file.separator}"/>
@@ -429,7 +443,6 @@
 				parallel="true"
 				verbose="true">
 			<arg value="/DLL" />
-			<arg line="/DEF:${agent.src.dir}${file.separator}agent.def" />
 			<arg value="/OUT:${agent.path}" />
 			<srcfile />
 			<fileset dir="${agent.build.dir}" includes="*.obj" />

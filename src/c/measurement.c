@@ -230,7 +230,7 @@ static void do_papi_error_throw(JNIEnv *env, int rc, const char *function_that_f
 	do_throw(env, "Out of memory (" message ").")
 
 
-jint JNICALL Java_cz_cuni_mff_d3s_perf_Measurement_createEventSet(
+DLL_EXPORT jint JNICALL Java_cz_cuni_mff_d3s_perf_Measurement_createEventSet(
 		JNIEnv *env, jclass UNUSED_PARAMETER(klass),
 		jint jmeasurements, jobjectArray jeventNames, jintArray joptions) {
 #ifndef HAS_PAPI
@@ -311,7 +311,11 @@ jint JNICALL Java_cz_cuni_mff_d3s_perf_Measurement_createEventSet(
 		int event_ok = ubench_event_resolve(event_name, event_info);
 		if (!event_ok) {
 			char buf[512];
+#ifdef _MSC_VER
+			_snprintf_s(buf, 510, _TRUNCATE, "Unrecognized event %s.", event_name);
+#else
 			snprintf(buf, 510, "Unrecognized event %s.", event_name);
+#endif
 			buf[511] = 0;
 			(*env)->ReleaseStringUTFChars(env, jevent_name, event_name);
 			free(eventset->config.used_events);
@@ -429,7 +433,7 @@ jint JNICALL Java_cz_cuni_mff_d3s_perf_Measurement_createEventSet(
 	return eventset_id;
 }
 
-jint JNICALL Java_cz_cuni_mff_d3s_perf_Measurement_createAttachedEventSetWithJavaThread(
+DLL_EXPORT jint JNICALL Java_cz_cuni_mff_d3s_perf_Measurement_createAttachedEventSetWithJavaThread(
 		JNIEnv *env, jclass klass,
 		jlong jthread_id, jint jmeasurements, jobjectArray jeventNames, jintArray joptions) {
 	jint eventset_index = Java_cz_cuni_mff_d3s_perf_Measurement_createEventSet(env, klass, jmeasurements, jeventNames, joptions);
@@ -462,7 +466,7 @@ jint JNICALL Java_cz_cuni_mff_d3s_perf_Measurement_createAttachedEventSetWithJav
 	return eventset_index;
 }
 
-jint JNICALL Java_cz_cuni_mff_d3s_perf_Measurement_createAttachedEventSetWithNativeThread(
+DLL_EXPORT jint JNICALL Java_cz_cuni_mff_d3s_perf_Measurement_createAttachedEventSetWithNativeThread(
 		JNIEnv *env, jclass klass,
 		jlong thread_id, jint jmeasurements, jobjectArray jeventNames, jintArray joptions) {
 	jint eventset_index = Java_cz_cuni_mff_d3s_perf_Measurement_createEventSet(env, klass, jmeasurements, jeventNames, joptions);
@@ -487,7 +491,7 @@ jint JNICALL Java_cz_cuni_mff_d3s_perf_Measurement_createAttachedEventSetWithNat
 	return eventset_index;
 }
 
-void JNICALL Java_cz_cuni_mff_d3s_perf_Measurement_destroyEventSet(
+DLL_EXPORT void JNICALL Java_cz_cuni_mff_d3s_perf_Measurement_destroyEventSet(
 		JNIEnv *UNUSED_PARAMETER(env), jclass UNUSED_PARAMETER(klass), jint jid) {
 	if ((jid < 0) || (jid >= all_eventset_count) || !all_eventsets[jid].valid) {
 		do_throw(env, "Invalid event set id.");
@@ -501,7 +505,7 @@ void JNICALL Java_cz_cuni_mff_d3s_perf_Measurement_destroyEventSet(
 
 
 
-void JNICALL Java_cz_cuni_mff_d3s_perf_Measurement_start(
+DLL_EXPORT void JNICALL Java_cz_cuni_mff_d3s_perf_Measurement_start(
 		JNIEnv *env, jclass UNUSED_PARAMETER(klass), jintArray jids) {
 	size_t jids_count = (*env)->GetArrayLength(env, jids);
 	if (jids_count == 0) {
@@ -533,7 +537,7 @@ void JNICALL Java_cz_cuni_mff_d3s_perf_Measurement_start(
 	(*env)->ReleaseIntArrayElements(env, jids, ids, JNI_ABORT);
 }
 
-void JNICALL Java_cz_cuni_mff_d3s_perf_Measurement_stop(
+DLL_EXPORT void JNICALL Java_cz_cuni_mff_d3s_perf_Measurement_stop(
 		JNIEnv *UNUSED_PARAMETER(env), jclass UNUSED_PARAMETER(klass), jintArray jids) {
 	size_t jids_count = (*env)->GetArrayLength(env, jids);
 	if (jids_count == 0) {
@@ -559,7 +563,7 @@ void JNICALL Java_cz_cuni_mff_d3s_perf_Measurement_stop(
 	(*env)->ReleaseIntArrayElements(env, jids, ids, JNI_ABORT);
 }
 
-void JNICALL Java_cz_cuni_mff_d3s_perf_Measurement_reset(
+DLL_EXPORT void JNICALL Java_cz_cuni_mff_d3s_perf_Measurement_reset(
 		JNIEnv *UNUSED_PARAMETER(env), jclass UNUSED_PARAMETER(klass), jintArray jids) {
 	size_t jids_count = (*env)->GetArrayLength(env, jids);
 	if (jids_count == 0) {
@@ -582,7 +586,7 @@ void JNICALL Java_cz_cuni_mff_d3s_perf_Measurement_reset(
 }
 
 
-jobject JNICALL Java_cz_cuni_mff_d3s_perf_Measurement_getResults(JNIEnv *env,
+DLL_EXPORT jobject JNICALL Java_cz_cuni_mff_d3s_perf_Measurement_getResults(JNIEnv *env,
 		jclass UNUSED_PARAMETER(klass), jint jid) {
 	if ((jid < 0) || (jid >= all_eventset_count) || !all_eventsets[jid].valid) {
 		do_throw(env, "Invalid event set id.");
@@ -645,7 +649,7 @@ jobject JNICALL Java_cz_cuni_mff_d3s_perf_Measurement_getResults(JNIEnv *env,
 	return jresults;
 }
 
-jboolean JNICALL Java_cz_cuni_mff_d3s_perf_Measurement_isEventSupported(JNIEnv *env,
+DLL_EXPORT jboolean JNICALL Java_cz_cuni_mff_d3s_perf_Measurement_isEventSupported(JNIEnv *env,
 		jclass UNUSED_PARAMETER(klass), jstring jevent) {
 	const char *event = (*env)->GetStringUTFChars(env, jevent, 0);
 
@@ -678,7 +682,7 @@ static int adding_supported_events_callback(const char *name, void *arg) {
 	return 0;
 }
 
-jobject JNICALL Java_cz_cuni_mff_d3s_perf_Measurement_getSupportedEvents(JNIEnv *env,
+DLL_EXPORT jobject JNICALL Java_cz_cuni_mff_d3s_perf_Measurement_getSupportedEvents(JNIEnv *env,
 		jclass UNUSED_PARAMETER(klass)) {
 	jclass array_list_class = (*env)->FindClass(env, "java/util/ArrayList");
 	if (array_list_class == NULL) {
@@ -702,9 +706,10 @@ jobject JNICALL Java_cz_cuni_mff_d3s_perf_Measurement_getSupportedEvents(JNIEnv 
 		return NULL;
 	}
 
-	struct adding_supported_events_data callback_data = {
-			env, jresults, add_method
-	};
+	struct adding_supported_events_data callback_data;
+	callback_data.env = env;
+	callback_data.event_list = jresults;
+	callback_data.add_method = add_method;
 
 	ubench_event_iterate(adding_supported_events_callback, &callback_data);
 

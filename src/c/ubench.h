@@ -40,6 +40,12 @@
 #endif
 #define UNUSED_VARIABLE(name) (void) name
 
+#ifdef _MSC_VER
+#define DLL_EXPORT __declspec(dllexport)
+#else
+#define DLL_EXPORT
+#endif
+
 /*
  * Prevent condition expression is constant warning in wrappers around
  * multi-statement macros (the do { ... } while (0) construct).
@@ -193,7 +199,11 @@ static inline int ubench_str_is_icase_equal(const char *a, const char *b) {
 }
 
 static inline int ubench_str_starts_with_icase(const char *str, const char *prefix) {
+#ifdef _MSC_VER
+	return _strnicmp(str, prefix, strlen(prefix)) == 0;
+#else
 	return strncasecmp(str, prefix, strlen(prefix)) == 0;
+#endif
 }
 
 #endif
