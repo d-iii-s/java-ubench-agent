@@ -163,6 +163,10 @@ static int resolve_papi_event(const char *name, ubench_event_info_t *info) {
 		return 0;
 	}
 
+	if (IS_PRESET(papi_event_id) && !event_info.count) {
+		return 0;
+	}
+
 	info->id = papi_event_id;
 	info->papi_component = event_info.component_index;
 	return 1;
