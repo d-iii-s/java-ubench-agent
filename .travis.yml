@@ -5,7 +5,7 @@ env:
    - WITH_PAPI=false
 before_install:
  - sudo apt-get install ant-optional
- - "$WITH_PAPI && sudo apt-get install libpapi-dev"
+ - if $WITH_PAPI; then sudo apt-get install libpapi-dev; fi
 script:
  - ant print-config
  - ant print-properties
