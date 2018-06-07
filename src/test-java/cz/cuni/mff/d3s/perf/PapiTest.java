@@ -19,23 +19,23 @@ package cz.cuni.mff.d3s.perf;
 import org.junit.*;
 
 public class PapiTest {
-	@Before
-	public void papiWithExplicitPrefix() {
-		Assume.assumeTrue(Measurement.isEventSupported("PAPI_TOT_INS"));
-	}
-	
-	@Test
-	public void withExplicitPrefix() {
-		Assert.assertTrue(Measurement.isEventSupported("PAPI:PAPI_TOT_INS"));
-	}
-	
-	@Test
-	public void withComponentNamePrefix() {
-		Assert.assertTrue(Measurement.isEventSupported("PAPI:perf::INSTRUCTIONS"));
-	}
-	
-	@Test
-	public void invalidEventName() {
-		Assert.assertFalse(Measurement.isEventSupported("PAPI:perf::COMPLETE_NONSENSE_COUNTER"));	
-	}
+    @Before
+    public void papiWithExplicitPrefix() {
+        Assume.assumeTrue(Measurement.isEventSupported("PAPI_TOT_INS"));
+    }
+
+    @Test
+    public void withExplicitPrefix() {
+        Assert.assertTrue(Measurement.isEventSupported("PAPI:PAPI_TOT_INS"));
+    }
+
+    @Test
+    public void withComponentNamePrefix() {
+        Assert.assertTrue(Measurement.isEventSupported("PAPI:perf::INSTRUCTIONS"));
+    }
+
+    @Test
+    public void invalidEventName() {
+        Assert.assertFalse(Measurement.isEventSupported("PAPI:perf::COMPLETE_NONSENSE_COUNTER"));
+    }
 }

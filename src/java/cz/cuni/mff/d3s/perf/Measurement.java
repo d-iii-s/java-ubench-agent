@@ -1,7 +1,7 @@
 /*
  * Copyright 2017 Charles University in Prague
  * Copyright 2017 Vojtech Horky
- * 
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -21,41 +21,41 @@ import java.util.ArrayList;
 import java.util.List;
 
 public final class Measurement {
-	public static final int THREAD_INHERIT = 1;
-	public static native int createEventSet(final int measurementCount, final String[] events, int ... options);
-	
-	private static native int createAttachedEventSetWithJavaThread(final long threadId, final int measurementCount, final String[] events, int ... options);
-	private static native int createAttachedEventSetWithNativeThread(final long threadId, final int measurementCount, final String[] events, int ... options);
-	
-	public static int createAttachedEventSet(final Thread thread, final int measurementCount, final String[] events, int ... options) {
-		return createAttachedEventSetWithJavaThread(thread.getId(), measurementCount, events, options);
-	}
-	
-	public static int createAttachedEventSetOnNativeThread(final long thread, final int measurementCount, final String[] events, int ... options) {
-		return createAttachedEventSetWithNativeThread(thread, measurementCount, events, options);
-	}
-	
-	public static native void destroyEventSet(final int eventSet);
-	
-	public static native void start(final int ... eventSet);
-	public static native void stop(final int ... eventSet);
-	public static native void reset(final int ... eventSet);
-	
-	public static native BenchmarkResults getResults(final int eventSet);
-	
-	public static native boolean isEventSupported(final String event);
-	
-	private static final String[] STRING_ARRAY_TYPE = new String[0];
-	
-	public static String[] filterSupportedEvents(final String[] events) {
-		List<String> result = new ArrayList<>(events.length);
-		for (String ev : events) {
-			if (Measurement.isEventSupported(ev)) {
-				result.add(ev);
-			}
-		}
-		return result.toArray(STRING_ARRAY_TYPE);
-	}
+    public static final int THREAD_INHERIT = 1;
+    public static native int createEventSet(final int measurementCount, final String[] events, int ... options);
 
-	public static native List<String> getSupportedEvents();
+    private static native int createAttachedEventSetWithJavaThread(final long threadId, final int measurementCount, final String[] events, int ... options);
+    private static native int createAttachedEventSetWithNativeThread(final long threadId, final int measurementCount, final String[] events, int ... options);
+
+    public static int createAttachedEventSet(final Thread thread, final int measurementCount, final String[] events, int ... options) {
+        return createAttachedEventSetWithJavaThread(thread.getId(), measurementCount, events, options);
+    }
+
+    public static int createAttachedEventSetOnNativeThread(final long thread, final int measurementCount, final String[] events, int ... options) {
+        return createAttachedEventSetWithNativeThread(thread, measurementCount, events, options);
+    }
+
+    public static native void destroyEventSet(final int eventSet);
+
+    public static native void start(final int ... eventSet);
+    public static native void stop(final int ... eventSet);
+    public static native void reset(final int ... eventSet);
+
+    public static native BenchmarkResults getResults(final int eventSet);
+
+    public static native boolean isEventSupported(final String event);
+
+    private static final String[] STRING_ARRAY_TYPE = new String[0];
+
+    public static String[] filterSupportedEvents(final String[] events) {
+        List<String> result = new ArrayList<>(events.length);
+        for (String ev : events) {
+            if (Measurement.isEventSupported(ev)) {
+                result.add(ev);
+            }
+        }
+        return result.toArray(STRING_ARRAY_TYPE);
+    }
+
+    public static native List<String> getSupportedEvents();
 }

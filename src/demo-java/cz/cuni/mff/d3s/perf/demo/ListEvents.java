@@ -1,7 +1,7 @@
 /*
  * Copyright 2018 Charles University in Prague
  * Copyright 2018 Vojtech Horky
- * 
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -21,13 +21,13 @@ import java.util.List;
 import cz.cuni.mff.d3s.perf.Benchmark;
 
 public class ListEvents {
-	public static void main(String[] args) {
-		List<String> events = Benchmark.getSupportedEvents();
-		
-		for (String event : events) {
-			System.out.println(event);
-		}
-		
-		System.out.printf("Found %d events.\n", events.size());
-	}
+    public static void main(String[] args) {
+        List<String> events = Benchmark.getSupportedEvents();
+
+        for (String event : events) {
+            System.out.println(event);
+        }
+
+        System.out.printf("Found %d events.\n", events.size());
+    }
 }

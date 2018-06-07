@@ -1,7 +1,7 @@
 /*
  * Copyright 2017 Charles University in Prague
  * Copyright 2017 Vojtech Horky
- * 
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -18,9 +18,9 @@
 package cz.cuni.mff.d3s.perf;
 
 public class MeasurementException extends RuntimeException {
-	private static final long serialVersionUID = 1L;
-	
-	public MeasurementException(String message) {
-		super(message);
-	}
+    private static final long serialVersionUID = 1L;
+
+    public MeasurementException(String message) {
+        super(message);
+    }
 }

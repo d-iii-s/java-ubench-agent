@@ -1,7 +1,7 @@
 /*
  * Copyright 2014 Charles University in Prague
  * Copyright 2014 Vojtech Horky
- * 
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -20,26 +20,26 @@ package cz.cuni.mff.d3s.perf;
 import java.util.*;
 
 class BenchmarkResultsImpl implements BenchmarkResults {
-	private final String[] events;
-	private final List<long[]> data;
-	
-	public BenchmarkResultsImpl(String[] eventNames) {
-		events = eventNames;
-		data = new ArrayList<>();
-	}
-	
-	void addDataRow(long[] row) {
-		/* Need to create the copy. */
-		data.add(Arrays.copyOf(row, row.length));
-	}
-	
-	@Override
-	public String[] getEventNames() {
-		return events;
-	}
-	
-	@Override
-	public List<long[]> getData() {
-		return Collections.unmodifiableList(data);
-	}
+    private final String[] events;
+    private final List<long[]> data;
+
+    public BenchmarkResultsImpl(String[] eventNames) {
+        events = eventNames;
+        data = new ArrayList<>();
+    }
+
+    void addDataRow(long[] row) {
+        /* Need to create the copy. */
+        data.add(Arrays.copyOf(row, row.length));
+    }
+
+    @Override
+    public String[] getEventNames() {
+        return events;
+    }
+
+    @Override
+    public List<long[]> getData() {
+        return Collections.unmodifiableList(data);
+    }
 }

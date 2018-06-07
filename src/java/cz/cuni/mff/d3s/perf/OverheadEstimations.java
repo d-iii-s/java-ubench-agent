@@ -1,7 +1,7 @@
 /*
  * Copyright 2014 Charles University in Prague
  * Copyright 2014 Vojtech Horky
- * 
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -18,6 +18,6 @@
 package cz.cuni.mff.d3s.perf;
 
 public final class OverheadEstimations {
-	public static native void emptyNativeCall();
-	public static native void resourceUsageCall();
+    public static native void emptyNativeCall();
+    public static native void resourceUsageCall();
 }
