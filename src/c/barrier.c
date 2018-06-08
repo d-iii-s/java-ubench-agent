@@ -34,7 +34,7 @@ static pthread_barrier_t *shared_mem_barrier = NULL;
 #endif
 
 DLL_EXPORT void JNICALL
-Java_cz_cuni_mff_d3s_perf_Barrier_init_1(
+Java_cz_cuni_mff_d3s_perf_Barrier_initNative(
 		JNIEnv *env, jclass UNUSED_PARAMETER(klass),
 		jstring jname) {
 #ifdef __unix__

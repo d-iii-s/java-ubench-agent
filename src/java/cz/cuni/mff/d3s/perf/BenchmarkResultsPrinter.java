@@ -20,14 +20,16 @@ package cz.cuni.mff.d3s.perf;
 import java.io.PrintStream;
 
 /** Helper class for printing measurement results. */
-public class BenchmarkResultsPrinter {
+public final class BenchmarkResultsPrinter {
+    /** Prevent instantiation. */
+    private BenchmarkResultsPrinter() {}
     
     /** Prints results as CSV with tab separator and header.
      *
      * @param results Benchmark results.
      * @param stream Stream to print to.
      */
-    public static void toCsv(BenchmarkResults results, PrintStream stream) {
+    public static void toCsv(final BenchmarkResults results, final PrintStream stream) {
         toCsv(results, stream, "\t", true);
     }
 
@@ -38,7 +40,7 @@ public class BenchmarkResultsPrinter {
      * @param separator Field separator.
      * @param printHeader Whether to print header fields.
      */
-    public static void toCsv(BenchmarkResults results, PrintStream stream, String separator, boolean printHeader) {
+    public static void toCsv(final BenchmarkResults results, final PrintStream stream, final String separator, final boolean printHeader) {
         if (printHeader) {
             String[] eventNames = results.getEventNames();
             for (int i = 0; i < eventNames.length; i++) {
@@ -66,7 +68,7 @@ public class BenchmarkResultsPrinter {
      * @param results Benchmark results.
      * @param stream Stream to print to.
      */
-    public static void table(BenchmarkResults results, PrintStream stream) {
+    public static void table(final BenchmarkResults results, final PrintStream stream) {
         table(results, stream, getOptimalColumnWidths(results), true);
     }
 
@@ -77,7 +79,7 @@ public class BenchmarkResultsPrinter {
      * @param columnWidths Column widths (recycled if shorter than needed).
      * @param printHeader Whether to print header fields.
      */
-    public static void table(BenchmarkResults results, PrintStream stream, int[] columnWidths, boolean printHeader) {
+    public static void table(final BenchmarkResults results, final PrintStream stream, final int[] columnWidths, final boolean printHeader) {
         if (printHeader) {
             int index = 0;
             for (String name : results.getEventNames()) {
@@ -113,7 +115,7 @@ public class BenchmarkResultsPrinter {
      * @param results Benchmark results.
      * @return Array of optimal column widths (counting one character for separator).
      */
-    public static int[] getOptimalColumnWidths(BenchmarkResults results) {
+    public static int[] getOptimalColumnWidths(final BenchmarkResults results) {
         long maxValue = 0;
         for (long[] row : results.getData()) {
             for (long r : row) {
@@ -125,7 +127,7 @@ public class BenchmarkResultsPrinter {
 
         int minWidth = String.format("%d", maxValue).length();
 
-        String names[] = results.getEventNames();
+        String[] names = results.getEventNames();
 
         int[] widths = new int[names.length];
         for (int i = 0; i < widths.length; i++) {

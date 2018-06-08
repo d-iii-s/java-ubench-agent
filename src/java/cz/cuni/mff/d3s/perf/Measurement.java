@@ -29,6 +29,12 @@ public final class Measurement {
      * This is a flag for <code>create*EventSet*</code> calls.
      */
     public static final int THREAD_INHERIT = 1;
+
+    /** Generics' helper. */
+    private static final String[] STRING_ARRAY_TYPE = new String[0];
+    
+    /** Prevent instantiation. */
+    private Measurement() {}
     
     /** Create new event set.
      *
@@ -38,7 +44,7 @@ public final class Measurement {
      * @return Event set number (opaque identifier).
      * @throws cz.cuni.mff.d3s.perf.MeasurementException On any failure when setting-up the new event set.
      */
-    public static native int createEventSet(final int measurementCount, final String[] events, int ... options);
+    public static native int createEventSet(int measurementCount, String[] events, int... options);
 
     /** Create new event set attached to a Java thread.
      *
@@ -49,7 +55,7 @@ public final class Measurement {
      * @return Event set number (opaque identifier).
      * @throws cz.cuni.mff.d3s.perf.MeasurementException On any failure when setting-up the new event set.
      */
-    private static native int createAttachedEventSetWithJavaThread(final long threadId, final int measurementCount, final String[] events, int ... options);
+    private static native int createAttachedEventSetWithJavaThread(long threadId, int measurementCount, String[] events, int... options);
     
     /** Create new event set attached to a native thread.
      *
@@ -60,7 +66,7 @@ public final class Measurement {
      * @return Event set number (opaque identifier).
      * @throws cz.cuni.mff.d3s.perf.MeasurementException On any failure when setting-up the new event set.
      */
-    private static native int createAttachedEventSetWithNativeThread(final long threadId, final int measurementCount, final String[] events, int ... options);
+    private static native int createAttachedEventSetWithNativeThread(long threadId, int measurementCount, String[] events, int... options);
 
     /** Create new event set attached to a Java thread.
      *
@@ -71,7 +77,7 @@ public final class Measurement {
      * @return Event set number (opaque identifier).
      * @throws cz.cuni.mff.d3s.perf.MeasurementException On any failure when setting-up the new event set.
      */
-    public static int createAttachedEventSet(final Thread thread, final int measurementCount, final String[] events, int ... options) {
+    public static int createAttachedEventSet(final Thread thread, final int measurementCount, final String[] events, final int... options) {
         return createAttachedEventSetWithJavaThread(thread.getId(), measurementCount, events, options);
     }
 
@@ -84,7 +90,7 @@ public final class Measurement {
      * @return Event set number (opaque identifier).
      * @throws cz.cuni.mff.d3s.perf.MeasurementException On any failure when setting-up the new event set.
      */
-    public static int createAttachedEventSetOnNativeThread(final long thread, final int measurementCount, final String[] events, int ... options) {
+    public static int createAttachedEventSetOnNativeThread(final long thread, final int measurementCount, final String[] events, final int... options) {
         return createAttachedEventSetWithNativeThread(thread, measurementCount, events, options);
     }
 
@@ -93,42 +99,39 @@ public final class Measurement {
      * @param eventSet Event set to destroy.
      * @throws cz.cuni.mff.d3s.perf.MeasurementException Invalid event set identification.
      */
-    public static native void destroyEventSet(final int eventSet);
+    public static native void destroyEventSet(int eventSet);
 
     /** Start actual measurement.
      *
      * @param eventSet Array of event sets where the measurements are started.
      */
-    public static native void start(final int ... eventSet);
+    public static native void start(int... eventSet);
     
     /** Stop actual measurement.
      *
      * @param eventSet Array of event sets where the measurements are stopped.
      */
-    public static native void stop(final int ... eventSet);
+    public static native void stop(int... eventSet);
     
     /** Clear measurements.
      *
      * @param eventSet Array of event sets where the measurements are stopped.
      */
-    public static native void reset(final int ... eventSet);
+    public static native void reset(int... eventSet);
 
     /** Retrieve results for one event set.
      *
      * @param eventSet Event set identification.
      * @return Measurement results.
      */
-    public static native BenchmarkResults getResults(final int eventSet);
+    public static native BenchmarkResults getResults(int eventSet);
 
     /** Checks that event is supported.
      *
      * @param event Event name.
      * @return Whether event is supported on current platform.
      */
-    public static native boolean isEventSupported(final String event);
-
-    /** Templating helper. */
-    private static final String[] STRING_ARRAY_TYPE = new String[0];
+    public static native boolean isEventSupported(String event);
 
     /** Filter list of events to contain only events supported on current platform.
      *

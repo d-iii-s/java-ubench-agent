@@ -25,7 +25,7 @@ public interface BenchmarkResults {
      *
      * @return Event names.
      */
-    public String[] getEventNames();
+    String[] getEventNames();
     
     /** Get data of individual benchmark iterations.
      *

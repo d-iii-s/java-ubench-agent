@@ -32,6 +32,9 @@ public final class Benchmark {
     /** The one event set provided by this class. */
     private static int defaultEventSet = -1;
 
+    /** Prevent instantiation. */
+    private Benchmark() {}
+
     /** Initialize a new measurement.
      *
      * <p>
@@ -41,7 +44,7 @@ public final class Benchmark {
      * @param events Events to collect.
      * @param options Extra flags.
      */
-    public static void init(final int measurements, final String[] events, int... options) {
+    public static void init(final int measurements, final String[] events, final int... options) {
         if (defaultEventSet != -1) {
             Measurement.destroyEventSet(defaultEventSet);
             defaultEventSet = -1;

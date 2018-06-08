@@ -17,7 +17,10 @@
 
 package cz.cuni.mff.d3s.perf;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
 
 /** Helper class for merging multiple results. */
 public class BenchmarkResultsMerger implements BenchmarkResults {
@@ -37,13 +40,12 @@ public class BenchmarkResultsMerger implements BenchmarkResults {
      *
      * @param results New results.
      * @param prefix Prefix of new columns after adding.
+     * @throws IllegalArgumentException When row count differs.
      */
-    public void addColumns(BenchmarkResults results, String prefix) {
+    public void addColumns(final BenchmarkResults results, final String prefix) {
         List<long[]> newData = results.getData();
         if (events.size() != 0) {
-            if (newData.size() != data.size()) {
-                throw new IllegalArgumentException(String.format("Row number is different (wanted %d, but got %d).", data.size(), newData.size()));
-            }
+            checkSameRowSize(data.size(), newData.size());
         }
         for (String ev : results.getEventNames()) {
             events.add(prefix + ev);
@@ -66,12 +68,11 @@ public class BenchmarkResultsMerger implements BenchmarkResults {
      *
      * @param values Counter values.
      * @param name Column name.
+     * @throws IllegalArgumentException When row count differs.
      */
-    public void addColumn(long[] values, String name) {
+    public void addColumn(final long[] values, final String name) {
         if (events.size() != 0) {
-            if (values.length != data.size()) {
-                throw new IllegalArgumentException(String.format("Row number is different (wanted %d, but got %d).", data.size(), values.length));
-            }
+            checkSameRowSize(data.size(), values.length);
         }
         events.add(name);
 
@@ -99,5 +100,17 @@ public class BenchmarkResultsMerger implements BenchmarkResults {
     @Override
     public List<long[]> getData() {
         return Collections.unmodifiableList(data);
+    }
+    
+    /** Helper to ensure all rows has the same length.
+     *
+     * @param sizeSoFar Row length so far.
+     * @param newRowSize Length of the new row.
+     * @throws IllegalArgumentException When sizes differ.
+     */
+    private void checkSameRowSize(final int sizeSoFar, final int newRowSize) {
+        if (sizeSoFar != newRowSize) {
+            throw new IllegalArgumentException(String.format("Row lengths differ (wanted %d, but got %d).", sizeSoFar, newRowSize));
+        }
     }
 }

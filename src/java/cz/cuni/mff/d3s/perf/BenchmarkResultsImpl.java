@@ -17,7 +17,10 @@
 
 package cz.cuni.mff.d3s.perf;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
 
 /** Simplest implementation of BenchmarkResults used by C agent. */
 class BenchmarkResultsImpl implements BenchmarkResults {
@@ -31,7 +34,7 @@ class BenchmarkResultsImpl implements BenchmarkResults {
      *
      * @param eventNames Event names (column headers).
      */
-    public BenchmarkResultsImpl(String[] eventNames) {
+    BenchmarkResultsImpl(final String[] eventNames) {
         events = eventNames;
         data = new ArrayList<>();
     }
@@ -40,7 +43,7 @@ class BenchmarkResultsImpl implements BenchmarkResults {
      *
      * @param row Counter values.
      */
-    void addDataRow(long[] row) {
+    void addDataRow(final long[] row) {
         /* Need to create the copy. */
         data.add(Arrays.copyOf(row, row.length));
     }

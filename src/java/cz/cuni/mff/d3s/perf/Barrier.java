@@ -19,19 +19,22 @@ package cz.cuni.mff.d3s.perf;
 
 /** Process-wide barrier, Linux only now. */
 public final class Barrier {
+    /** Prevent instantiation. */
+    private Barrier() {}
+    
     /** Create a new barrier.
      *
      * @param name Barrier name.
      */
     public static synchronized void init(final String name) {
-        init_("java-ubench-agent" + name);
+        initNative("java-ubench-agent" + name);
     }
 
     /** Actual interface for creating the barrier in C agent.
      *
      * @param name Barrier name.
      */
-    private static native void init_(final String name);
+    private static native void initNative(String name);
     
     /** Waits on the barrier. */
     public static native void barrier();

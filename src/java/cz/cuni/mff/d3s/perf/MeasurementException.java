@@ -25,7 +25,7 @@ public class MeasurementException extends RuntimeException {
      *
      * @param message Exception message.
      */
-    public MeasurementException(String message) {
+    public MeasurementException(final String message) {
         super(message);
     }
 }
