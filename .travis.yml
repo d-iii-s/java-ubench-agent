@@ -13,5 +13,6 @@ script:
  - ant list-events
  - gcc --version
  - ant test-junit
+ - ant checkstyle
 os:
  - linux
