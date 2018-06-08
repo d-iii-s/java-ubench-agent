@@ -19,7 +19,17 @@ package cz.cuni.mff.d3s.perf;
 
 import java.util.List;
 
+/** Benchmark results storage. */
 public interface BenchmarkResults {
+    /** Get list of collected events.
+     *
+     * @return Event names.
+     */
     public String[] getEventNames();
+    
+    /** Get data of individual benchmark iterations.
+     *
+     * @return Actual benchmark scores.
+     */
     List<long[]> getData();
 }

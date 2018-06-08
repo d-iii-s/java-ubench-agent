@@ -17,7 +17,14 @@
 
 package cz.cuni.mff.d3s.perf;
 
+/** Helper class for estimating overhead of native calls. */
 public final class OverheadEstimations {
+    /** Prevent instantiation. */
+    private OverheadEstimations() { }
+
+    /** Native call with empty implementation. */
     public static native void emptyNativeCall();
+    
+    /** Native call that only calls getrusage syscall. */ 
     public static native void resourceUsageCall();
 }

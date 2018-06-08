@@ -19,25 +19,39 @@ package cz.cuni.mff.d3s.perf;
 
 import java.util.*;
 
+/** Simplest implementation of BenchmarkResults used by C agent. */
 class BenchmarkResultsImpl implements BenchmarkResults {
+    /** Collected events. */
     private final String[] events;
+    
+    /** Collected data (row-wise). */
     private final List<long[]> data;
 
+    /** Construct with given columns.
+     *
+     * @param eventNames Event names (column headers).
+     */
     public BenchmarkResultsImpl(String[] eventNames) {
         events = eventNames;
         data = new ArrayList<>();
     }
 
+    /** Add one data row.
+     *
+     * @param row Counter values.
+     */
     void addDataRow(long[] row) {
         /* Need to create the copy. */
         data.add(Arrays.copyOf(row, row.length));
     }
 
+    /** {@inheritDoc} */
     @Override
     public String[] getEventNames() {
         return events;
     }
 
+    /** {@inheritDoc} */
     @Override
     public List<long[]> getData() {
         return Collections.unmodifiableList(data);

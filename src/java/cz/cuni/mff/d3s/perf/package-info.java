@@ -1,6 +1,6 @@
 /*
- * Copyright 2017 Charles University in Prague
- * Copyright 2017 Vojtech Horky
+ * Copyright 2018 Charles University
+ * Copyright 2018 Vojtech Horky
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,24 +15,5 @@
  * limitations under the License.
  */
 
+/** D3S performance utilities. */
 package cz.cuni.mff.d3s.perf;
-
-/** Process-wide barrier, Linux only now. */
-public final class Barrier {
-    /** Create a new barrier.
-     *
-     * @param name Barrier name.
-     */
-    public static synchronized void init(final String name) {
-        init_("java-ubench-agent" + name);
-    }
-
-    /** Actual interface for creating the barrier in C agent.
-     *
-     * @param name Barrier name.
-     */
-    private static native void init_(final String name);
-    
-    /** Waits on the barrier. */
-    public static native void barrier();
-}

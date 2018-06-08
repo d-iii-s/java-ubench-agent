@@ -19,11 +19,25 @@ package cz.cuni.mff.d3s.perf;
 
 import java.io.PrintStream;
 
+/** Helper class for printing measurement results. */
 public class BenchmarkResultsPrinter {
+    
+    /** Prints results as CSV with tab separator and header.
+     *
+     * @param results Benchmark results.
+     * @param stream Stream to print to.
+     */
     public static void toCsv(BenchmarkResults results, PrintStream stream) {
         toCsv(results, stream, "\t", true);
     }
 
+    /** Prints results as CSV.
+     *
+     * @param results Benchmark results.
+     * @param stream Stream to print to.
+     * @param separator Field separator.
+     * @param printHeader Whether to print header fields.
+     */
     public static void toCsv(BenchmarkResults results, PrintStream stream, String separator, boolean printHeader) {
         if (printHeader) {
             String[] eventNames = results.getEventNames();
@@ -47,10 +61,22 @@ public class BenchmarkResultsPrinter {
         }
     }
 
+    /** Print results as a table with adaptive column widths.
+     *
+     * @param results Benchmark results.
+     * @param stream Stream to print to.
+     */
     public static void table(BenchmarkResults results, PrintStream stream) {
         table(results, stream, getOptimalColumnWidths(results), true);
     }
 
+    /** Print results as a table.
+     *
+     * @param results Benchmark results.
+     * @param stream Stream to print to.
+     * @param columnWidths Column widths (recycled if shorter than needed).
+     * @param printHeader Whether to print header fields.
+     */
     public static void table(BenchmarkResults results, PrintStream stream, int[] columnWidths, boolean printHeader) {
         if (printHeader) {
             int index = 0;
@@ -79,6 +105,14 @@ public class BenchmarkResultsPrinter {
         }
     }
 
+    /** Computes optimal width for each column of results.
+     *
+     * <p>
+     * Takes into account both biggest value and column header (event name).
+     * 
+     * @param results Benchmark results.
+     * @return Array of optimal column widths (counting one character for separator).
+     */
     public static int[] getOptimalColumnWidths(BenchmarkResults results) {
         long maxValue = 0;
         for (long[] row : results.getData()) {

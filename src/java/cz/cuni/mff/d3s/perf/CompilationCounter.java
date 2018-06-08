@@ -17,6 +17,12 @@
 
 package cz.cuni.mff.d3s.perf;
 
+/** Provides access to number of JIT compilations. */
 public final class CompilationCounter {
+
+    /** Get number of compilation counts since last call and resets the counter.
+     *
+     * @return Number of JIT compilations since last call.
+     */
     public static native int getCompilationCountAndReset();
 }

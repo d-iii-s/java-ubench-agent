@@ -19,15 +19,25 @@ package cz.cuni.mff.d3s.perf;
 
 import java.util.*;
 
+/** Helper class for merging multiple results. */
 public class BenchmarkResultsMerger implements BenchmarkResults {
+    /** Merged events. */
     private List<String> events;
+    
+    /** Merged data (row-wise). */
     private List<long[]> data;
 
+    /** Default constructor. */
     public BenchmarkResultsMerger() {
         events = new ArrayList<>();
         data = new ArrayList<>();
     }
 
+    /** Add extra results as new columns.
+     *
+     * @param results New results.
+     * @param prefix Prefix of new columns after adding.
+     */
     public void addColumns(BenchmarkResults results, String prefix) {
         List<long[]> newData = results.getData();
         if (events.size() != 0) {
@@ -52,6 +62,11 @@ public class BenchmarkResultsMerger implements BenchmarkResults {
         }
     }
 
+    /** Add a new column.
+     *
+     * @param values Counter values.
+     * @param name Column name.
+     */
     public void addColumn(long[] values, String name) {
         if (events.size() != 0) {
             if (values.length != data.size()) {
@@ -74,11 +89,13 @@ public class BenchmarkResultsMerger implements BenchmarkResults {
         }
     }
 
+    /** {@inheritDoc} */
     @Override
     public String[] getEventNames() {
         return events.toArray(new String[1]);
     }
 
+    /** {@inheritDoc} */
     @Override
     public List<long[]> getData() {
         return Collections.unmodifiableList(data);

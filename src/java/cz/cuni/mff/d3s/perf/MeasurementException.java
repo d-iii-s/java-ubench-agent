@@ -17,9 +17,14 @@
 
 package cz.cuni.mff.d3s.perf;
 
+/** Exception emitted from C part of the library. */
 public class MeasurementException extends RuntimeException {
     private static final long serialVersionUID = 1L;
 
+    /** Constructor with a message.
+     *
+     * @param message Exception message.
+     */
     public MeasurementException(String message) {
         super(message);
     }
