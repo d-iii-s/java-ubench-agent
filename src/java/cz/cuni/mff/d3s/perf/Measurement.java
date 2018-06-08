@@ -42,7 +42,8 @@ public final class Measurement {
      * @param events List of events.
      * @param options Extra options (flags).
      * @return Event set number (opaque identifier).
-     * @throws cz.cuni.mff.d3s.perf.MeasurementException On any failure when setting-up the new event set.
+     * @throws cz.cuni.mff.d3s.perf.MeasurementException On any failure when setting-up
+     *     the new event set.
      */
     public static native int createEventSet(int measurementCount, String[] events, int... options);
 
@@ -53,9 +54,11 @@ public final class Measurement {
      * @param events List of events.
      * @param options Extra options (flags).
      * @return Event set number (opaque identifier).
-     * @throws cz.cuni.mff.d3s.perf.MeasurementException On any failure when setting-up the new event set.
+     * @throws cz.cuni.mff.d3s.perf.MeasurementException On any failure when setting-up
+     *     the new event set.
      */
-    private static native int createAttachedEventSetWithJavaThread(long threadId, int measurementCount, String[] events, int... options);
+    private static native int createAttachedEventSetWithJavaThread(long threadId,
+            int measurementCount, String[] events, int... options);
     
     /** Create new event set attached to a native thread.
      *
@@ -64,9 +67,11 @@ public final class Measurement {
      * @param events List of events.
      * @param options Extra options (flags).
      * @return Event set number (opaque identifier).
-     * @throws cz.cuni.mff.d3s.perf.MeasurementException On any failure when setting-up the new event set.
+     * @throws cz.cuni.mff.d3s.perf.MeasurementException On any failure when setting-up
+     *     the new event set.
      */
-    private static native int createAttachedEventSetWithNativeThread(long threadId, int measurementCount, String[] events, int... options);
+    private static native int createAttachedEventSetWithNativeThread(long threadId,
+            int measurementCount, String[] events, int... options);
 
     /** Create new event set attached to a Java thread.
      *
@@ -75,10 +80,13 @@ public final class Measurement {
      * @param events List of events.
      * @param options Extra options (flags).
      * @return Event set number (opaque identifier).
-     * @throws cz.cuni.mff.d3s.perf.MeasurementException On any failure when setting-up the new event set.
+     * @throws cz.cuni.mff.d3s.perf.MeasurementException On any failure when setting-up
+     *     the new event set.
      */
-    public static int createAttachedEventSet(final Thread thread, final int measurementCount, final String[] events, final int... options) {
-        return createAttachedEventSetWithJavaThread(thread.getId(), measurementCount, events, options);
+    public static int createAttachedEventSet(final Thread thread, final int measurementCount,
+            final String[] events, final int... options) {
+        return createAttachedEventSetWithJavaThread(thread.getId(), measurementCount,
+                events, options);
     }
 
     /** Create new event set attached to a native thread.
@@ -88,9 +96,11 @@ public final class Measurement {
      * @param events List of events.
      * @param options Extra options (flags).
      * @return Event set number (opaque identifier).
-     * @throws cz.cuni.mff.d3s.perf.MeasurementException On any failure when setting-up the new event set.
+     * @throws cz.cuni.mff.d3s.perf.MeasurementException On any failure when setting-up
+     *     the new event set.
      */
-    public static int createAttachedEventSetOnNativeThread(final long thread, final int measurementCount, final String[] events, final int... options) {
+    public static int createAttachedEventSetOnNativeThread(final long thread,
+            final int measurementCount, final String[] events, final int... options) {
         return createAttachedEventSetWithNativeThread(thread, measurementCount, events, options);
     }
 

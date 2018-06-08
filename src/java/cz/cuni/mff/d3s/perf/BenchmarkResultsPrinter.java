@@ -40,7 +40,8 @@ public final class BenchmarkResultsPrinter {
      * @param separator Field separator.
      * @param printHeader Whether to print header fields.
      */
-    public static void toCsv(final BenchmarkResults results, final PrintStream stream, final String separator, final boolean printHeader) {
+    public static void toCsv(final BenchmarkResults results, final PrintStream stream,
+            final String separator, final boolean printHeader) {
         if (printHeader) {
             String[] eventNames = results.getEventNames();
             for (int i = 0; i < eventNames.length; i++) {
@@ -79,7 +80,8 @@ public final class BenchmarkResultsPrinter {
      * @param columnWidths Column widths (recycled if shorter than needed).
      * @param printHeader Whether to print header fields.
      */
-    public static void table(final BenchmarkResults results, final PrintStream stream, final int[] columnWidths, final boolean printHeader) {
+    public static void table(final BenchmarkResults results, final PrintStream stream,
+            final int[] columnWidths, final boolean printHeader) {
         if (printHeader) {
             int index = 0;
             for (String name : results.getEventNames()) {

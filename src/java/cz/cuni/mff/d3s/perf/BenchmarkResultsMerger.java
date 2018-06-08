@@ -110,7 +110,10 @@ public class BenchmarkResultsMerger implements BenchmarkResults {
      */
     private void checkSameRowSize(final int sizeSoFar, final int newRowSize) {
         if (sizeSoFar != newRowSize) {
-            throw new IllegalArgumentException(String.format("Row lengths differ (wanted %d, but got %d).", sizeSoFar, newRowSize));
+            throw new IllegalArgumentException(String.format(
+                    "Row lengths differ (wanted %d, but got %d).",
+                    sizeSoFar, newRowSize
+            ));
         }
     }
 }
