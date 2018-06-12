@@ -169,7 +169,7 @@ extern void ubench_jvm_callback_on_thread_end(jvmtiEnv *, JNIEnv*, jthread);
 extern jint ubench_counters_init(jvmtiEnv *);
 extern void ubench_register_this_thread(jthread, JNIEnv*);
 extern void ubench_unregister_this_thread(jthread, JNIEnv*);
-extern int ubench_register_thread_id_mapping(long, long long);
+extern int ubench_register_thread_id_mapping(jlong, long long);
 extern int ubench_unregister_thread_id_mapping_by_native_id(long long);
 extern long long ubench_get_native_thread_id(long);
 extern long long ubench_get_current_thread_native_id(void);

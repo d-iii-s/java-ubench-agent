@@ -47,7 +47,7 @@
 
 typedef struct {
 	long long native_id;
-	long java_id;
+	jlong java_id;
 } thread_mapping_t;
 
 static ubench_spinlock_t thread_mapping_guard = UBENCH_SPINLOCK_INITIALIZER;
@@ -84,7 +84,7 @@ void JNICALL ubench_jvm_callback_on_thread_start(jvmtiEnv *UNUSED_PARAMETER(jvmt
 		JNIEnv* jni_env, jthread thread) {
 	ensure_java_lang_Thread_resolved(jni_env);
 
-	long java_id = (*jni_env)->CallLongMethod(jni_env, thread, method_java_lang_Thread_getId);
+	jlong java_id = (*jni_env)->CallLongMethod(jni_env, thread, method_java_lang_Thread_getId);
 	long long native_id = ubench_get_current_thread_native_id();
 	ubench_register_thread_id_mapping(java_id, native_id);
 }
@@ -96,7 +96,7 @@ void JNICALL ubench_jvm_callback_on_thread_end(jvmtiEnv *UNUSED_PARAMETER(jvmti_
 }
 
 
-int ubench_register_thread_id_mapping(long java_thread_id, long long native_thread_id) {
+int ubench_register_thread_id_mapping(jlong java_thread_id, long long native_thread_id) {
 	int res = 0;
 
 	ubench_spinlock_lock(&thread_mapping_guard);
@@ -106,7 +106,7 @@ int ubench_register_thread_id_mapping(long java_thread_id, long long native_thre
 			res = 1;
 			goto leave;
 		}
-		if (thread_mappings[i].java_id == UBENCH_THREAD_ID_INVALID) {
+		if (thread_mappings[i].native_id == UBENCH_THREAD_ID_INVALID) {
 			thread_mappings[i].java_id = java_thread_id;
 			thread_mappings[i].native_id = native_thread_id;
 			res = 0;
@@ -138,7 +138,6 @@ int ubench_unregister_thread_id_mapping_by_native_id(long long native_thread_id)
 
 	for (int i = 0; i < thread_mapping_count; i++) {
 		if (thread_mappings[i].native_id == native_thread_id) {
-			thread_mappings[i].java_id = UBENCH_THREAD_ID_INVALID;
 			thread_mappings[i].native_id = UBENCH_THREAD_ID_INVALID;
 			res = 0;
 			break;
@@ -150,7 +149,7 @@ int ubench_unregister_thread_id_mapping_by_native_id(long long native_thread_id)
 	return res;
 }
 
-long long ubench_get_native_thread_id(long java_thread_id) {
+long long ubench_get_native_thread_id(jlong java_thread_id) {
 	ubench_spinlock_lock(&thread_mapping_guard);
 
 	for (int i = 0; i < thread_mapping_count; i++) {
@@ -168,7 +167,7 @@ long long ubench_get_native_thread_id(long java_thread_id) {
 	return UBENCH_THREAD_ID_INVALID;
 }
 
-long long ubench_get_current_thread_native_id() {
+long long ubench_get_current_thread_native_id(void) {
 #if defined(_MSC_VER)
 	return (long long) GetCurrentThreadId();
 #elif defined(__GNUC__)
