@@ -52,21 +52,6 @@
 #endif
 
 
-#ifdef HAS_PAPI
-
-static jclass class_java_lang_Thread = NULL;
-static jmethodID method_java_lang_Thread_getId = NULL;
-#define THREAD_ID_INVALID ((unsigned long) -1)
-typedef struct {
-	unsigned long papi_id;
-	long java_id;
-} thread_mapping_t;
-
-static thread_mapping_t *thread_mappings = NULL;
-static int thread_mapping_count = 0;
-
-#endif
-
 typedef struct {
 	benchmark_configuration_t config;
 	int valid;
@@ -76,92 +61,6 @@ static eventset_t *all_eventsets = NULL;
 /* We use jint as we compare the passed IDs with this value. */
 static jint all_eventset_count = 0;
 
-void ubench_register_this_thread(jthread thread, JNIEnv* jni_env) {
-#ifdef HAS_PAPI
-	PAPI_register_thread();
-
-	PAPI_lock(PAPI_LOCK_USR1);
-
-	if (class_java_lang_Thread == NULL) {
-		class_java_lang_Thread = (*jni_env)->FindClass(jni_env, "java/lang/Thread");
-		if (class_java_lang_Thread == NULL) {
-			fprintf(stderr, "Failed to find java.lang.Thread\n");
-			exit(1);
-		}
-		method_java_lang_Thread_getId = (*jni_env)->GetMethodID(jni_env, class_java_lang_Thread, "getId", "()J");
-		if (method_java_lang_Thread_getId == NULL) {
-			fprintf(stderr, "Failed to find java.lang.Thread.getId()\n");
-			exit(1);
-		}
-	}
-
-	unsigned long papi_id = PAPI_thread_id();
-
-	long java_id = (*jni_env)->CallLongMethod(jni_env, thread, method_java_lang_Thread_getId);
-
-	for (int i = 0; i < thread_mapping_count; i++) {
-		if ((thread_mappings[i].papi_id == papi_id) || (thread_mappings[i].papi_id == THREAD_ID_INVALID)) {
-			thread_mappings[i].java_id = java_id;
-			thread_mappings[i].papi_id = papi_id;
-			PAPI_unlock(PAPI_LOCK_USR1);
-			return;
-		}
-	}
-	thread_mapping_t *new_mapping = realloc(thread_mappings, sizeof(thread_mapping_t) * (thread_mapping_count + 1));
-	if (new_mapping == NULL) {
-		PAPI_unlock(PAPI_LOCK_USR1);
-		return;
-	}
-
-
-	thread_mappings = new_mapping;
-	thread_mappings[thread_mapping_count].papi_id = papi_id;
-	thread_mappings[thread_mapping_count].java_id = java_id;
-	thread_mapping_count++;
-
-	DEBUG_PRINTF("Registered thread mapping %ld => %lu.", java_id, papi_id);
-
-	PAPI_unlock(PAPI_LOCK_USR1);
-#else
-	UNUSED_VARIABLE(thread);
-	UNUSED_VARIABLE(jni_env);
-#endif
-}
-
-void ubench_unregister_this_thread(jthread UNUSED_PARAMETER(thread), JNIEnv* UNUSED_PARAMETER(jni_env)) {
-#ifdef HAS_PAPI
-	unsigned long papi_id = PAPI_thread_id();
-
-	PAPI_unregister_thread();
-
-	PAPI_lock(PAPI_LOCK_USR1);
-
-	for (int i = 0; i < thread_mapping_count; i++) {
-		if (thread_mappings[i].papi_id == papi_id) {
-			thread_mappings[i].java_id = -1;
-			thread_mappings[i].papi_id = THREAD_ID_INVALID;
-		}
-	}
-	PAPI_unlock(PAPI_LOCK_USR1);
-#endif
-}
-
-#ifdef HAS_PAPI
-static unsigned long ubench_get_thread_id_mapping(long java_id) {
-	unsigned long result = THREAD_ID_INVALID;
-
-	PAPI_lock(PAPI_LOCK_USR1);
-	for (int i = 0; i < thread_mapping_count; i++) {
-		if (thread_mappings[i].java_id == java_id) {
-			result = thread_mappings[i].papi_id;
-			break;
-		}
-	}
-	PAPI_unlock(PAPI_LOCK_USR1);
-
-	return result;
-}
-#endif
 
 #ifdef HAS_PAPI
 static void
@@ -440,23 +339,23 @@ DLL_EXPORT jint JNICALL Java_cz_cuni_mff_d3s_perf_Measurement_createAttachedEven
 
 #ifdef HAS_PAPI
 	if  ((all_eventsets[ eventset_index ].config.used_backends & UBENCH_EVENT_BACKEND_PAPI) > 0) {
-		unsigned long papi_id = ubench_get_thread_id_mapping(jthread_id);
+		long long native_id = ubench_get_native_thread_id(jthread_id);
 
-		if (papi_id == THREAD_ID_INVALID) {
+		if (native_id == UBENCH_THREAD_ID_INVALID) {
 			Java_cz_cuni_mff_d3s_perf_Measurement_destroyEventSet(env, klass, eventset_index);
 			do_throw(env, "Unknown thread (not registered with PAPI).");
 			return -1;
 		}
 
-		DEBUG_PRINTF("Trying to attach %d to %lu (%ld).", eventset_index, papi_id, jthread_id);
+		DEBUG_PRINTF("Trying to attach %d to %llu (%ld).", eventset_index, native_id, jthread_id);
 
-		int rc = PAPI_attach(all_eventsets[ eventset_index ].config.papi_eventset, papi_id);
+		int rc = PAPI_attach(all_eventsets[ eventset_index ].config.papi_eventset, (unsigned long) native_id);
 		if (rc != PAPI_OK) {
 			Java_cz_cuni_mff_d3s_perf_Measurement_destroyEventSet(env, klass, eventset_index);
 			do_papi_error_throw(env, rc, "PAPI_attach");
 			return -1;
 		}
-		DEBUG_PRINTF("Attached %d to %lu (%ld).", all_eventsets[ eventset_index ].config.papi_eventset, papi_id, jthread_id);
+		DEBUG_PRINTF("Attached %d to %llu (%ld).", all_eventsets[ eventset_index ].config.papi_eventset, native_id, jthread_id);
 	}
 #else
 	UNUSED_VARIABLE(joptions);

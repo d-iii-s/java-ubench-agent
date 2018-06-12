@@ -28,6 +28,7 @@
 #pragma warning(pop)
 
 #include "myatomic.h"
+#include "mylock.h"
 
 #ifdef _MSC_VER
 #define snprintf _snprintf
@@ -94,6 +95,8 @@ typedef int threadtime_t;
 
 #define UBENCH_MAX_PAPI_EVENTS 20
 
+#define UBENCH_THREAD_ID_INVALID ((long long) -1)
+
 /*
  * Backend bit masks.
  *
@@ -159,9 +162,17 @@ typedef struct {
 } benchmark_configuration_t;
 
 
+
+extern void ubench_jvm_callback_on_thread_start(jvmtiEnv *, JNIEnv*, jthread);
+extern void ubench_jvm_callback_on_thread_end(jvmtiEnv *, JNIEnv*, jthread);
+
 extern jint ubench_counters_init(jvmtiEnv *);
 extern void ubench_register_this_thread(jthread, JNIEnv*);
 extern void ubench_unregister_this_thread(jthread, JNIEnv*);
+extern int ubench_register_thread_id_mapping(long, long long);
+extern int ubench_unregister_thread_id_mapping_by_native_id(long long);
+extern long long ubench_get_native_thread_id(long);
+extern long long ubench_get_current_thread_native_id(void);
 extern jint ubench_benchmark_init(void);
 extern int ubench_event_init(void);
 extern int ubench_event_resolve(const char *, ubench_event_info_t *);
