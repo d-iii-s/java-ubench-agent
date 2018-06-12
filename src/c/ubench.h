@@ -171,7 +171,7 @@ extern void ubench_register_this_thread(jthread, JNIEnv*);
 extern void ubench_unregister_this_thread(jthread, JNIEnv*);
 extern int ubench_register_thread_id_mapping(jlong, long long);
 extern int ubench_unregister_thread_id_mapping_by_native_id(long long);
-extern long long ubench_get_native_thread_id(long);
+extern long long ubench_get_native_thread_id(jlong);
 extern long long ubench_get_current_thread_native_id(void);
 extern jint ubench_benchmark_init(void);
 extern int ubench_event_init(void);
