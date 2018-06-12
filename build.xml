@@ -359,6 +359,7 @@
 			<class name="cz.cuni.mff.d3s.perf.CompilationCounter" />
 			<class name="cz.cuni.mff.d3s.perf.OverheadEstimations" />
 			<class name="cz.cuni.mff.d3s.perf.Measurement" />
+			<class name="cz.cuni.mff.d3s.perf.NativeThreads" />
 		</javah>
 	</target>
 	
