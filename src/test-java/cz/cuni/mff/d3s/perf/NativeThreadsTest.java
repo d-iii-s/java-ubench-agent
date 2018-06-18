@@ -38,10 +38,12 @@ public class NativeThreadsTest {
     
     @After
     public void teardown() {
-        worker.terminate = true;
-        try {
-            thread.join();
-        } catch (InterruptedException e) {}
+        if (thread.isAlive()) {
+            worker.terminate = true;
+            try {
+                thread.join();
+            } catch (InterruptedException e) {}
+        }
     }
     
     @Test
