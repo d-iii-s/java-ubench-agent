@@ -61,7 +61,7 @@
 #define ONCE while (0)
 #endif
 
-#ifdef JITCOUNTER_DEBUG
+#ifdef UBENCH_DEBUG
 #define DEBUG_PRINTF(fmt, ...) printf("[ubench-agent]: " fmt "\n", ##__VA_ARGS__)
 #else
 #define DEBUG_PRINTF(fmt, ...) (void)0

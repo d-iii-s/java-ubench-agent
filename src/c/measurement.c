@@ -372,7 +372,7 @@ DLL_EXPORT jint JNICALL Java_cz_cuni_mff_d3s_perf_Measurement_createAttachedEven
 
 #ifdef HAS_PAPI
 	if  ((all_eventsets[ eventset_index ].config.used_backends & UBENCH_EVENT_BACKEND_PAPI) > 0) {
-		DEBUG_PRINTF("Trying to attach %d to %lu (%ld).", eventset_index, papi_id, thread_id);
+		DEBUG_PRINTF("Trying to attach %d to %lld.", eventset_index, (long long) thread_id);
 
 		int rc = PAPI_attach(all_eventsets[ eventset_index ].config.papi_eventset, (unsigned long) thread_id);
 		if (rc != PAPI_OK) {
@@ -380,7 +380,7 @@ DLL_EXPORT jint JNICALL Java_cz_cuni_mff_d3s_perf_Measurement_createAttachedEven
 			do_papi_error_throw(env, rc, "PAPI_attach");
 			return -1;
 		}
-		DEBUG_PRINTF("Attached %d to %lu (%ld).", all_eventsets[ eventset_index ].config.papi_eventset, papi_id, thread_id);
+		DEBUG_PRINTF("Attached %d to %lld.", all_eventsets[ eventset_index ].config.papi_eventset, (long long) thread_id);
 	}
 #else
 	UNUSED_VARIABLE(joptions);
