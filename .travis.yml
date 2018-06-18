@@ -5,6 +5,11 @@ language: java
 matrix:
   include:
     - jdk: oraclejdk8
+      env:
+        - CHECKSTYLE=yes
+    - jdk: oraclejdk8
+      env:
+        - WITH_PAPI=yes
       addons:
         apt:
           packages:
@@ -28,10 +33,10 @@ addons:
       - ant-optional
 
 script:
+  - '[ "$CHECKSTYLE" = "yes" ] && ant checkstyle && travis_terminate 0'
   - "echo 'agent.cc.warnings = aserror' >local-settings.ini"
   - ant print-config
   - ant print-properties
   - ant list-events
   - gcc --version
   - ant test-junit
-  - ant checkstyle
