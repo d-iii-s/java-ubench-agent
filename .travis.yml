@@ -30,6 +30,7 @@ addons:
 script:
   - 'if [ "$CHECKSTYLE" = "yes" ]; then ant checkstyle && travis_terminate 0; fi'
   - "echo 'agent.cc.warnings = aserror' >local-settings.ini"
+  - "echo 'agent.cc.extra.flags = -DUBENCH_DEBUG' >>local-settings.ini"
   - ant print-config
   - ant print-properties
   - ant list-events
