@@ -49,8 +49,10 @@ public class NativeThreadsTest {
     @Test
     public void newThreadsAreAutomaticallyRegistered() {
         thread.start();
-        long id = NativeThreads.getNativeId(thread);
+        while (!thread.isAlive()) {}
         
+        long id = NativeThreads.getNativeId(thread);
+
         // Getting here means the previous call has not thrown any
         // exception, thus the thread was registered.
         Assert.assertTrue(true);
