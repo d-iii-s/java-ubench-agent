@@ -162,7 +162,7 @@ long long ubench_get_native_thread_id(jlong java_thread_id) {
 		}
 	}
 
-	ubench_spinlock_lock(&thread_mapping_guard);
+	ubench_spinlock_unlock(&thread_mapping_guard);
 
 	return UBENCH_THREAD_ID_INVALID;
 }
