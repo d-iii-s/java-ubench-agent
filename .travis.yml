@@ -33,7 +33,7 @@ addons:
       - ant-optional
 
 script:
-  - '[ "$CHECKSTYLE" = "yes" ] && ant checkstyle && travis_terminate 0'
+  - 'if [ "$CHECKSTYLE" = "yes" ]; then ant checkstyle && travis_terminate 0; fi'
   - "echo 'agent.cc.warnings = aserror' >local-settings.ini"
   - ant print-config
   - ant print-properties
