@@ -42,6 +42,7 @@
 	
 	<property name="agent.cc" value="gcc" />
 	
+	<property name="agent.feature.want.papi" value="true" />
 	
 	<!--
 		Determine features (capabilities) of the agent based
@@ -50,6 +51,7 @@
 	-->
 	<condition property="agent.feature.has.papi">
 		<and>
+			<istrue value="${agent.feature.want.papi}" />
 			<os family="unix" />
 			<or>
 				<available file="libpapi.so" filepath="/usr/lib" />
