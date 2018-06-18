@@ -21,8 +21,10 @@ import org.junit.*;
 public class NativeThreadsTest {
     private static class SpinningWorker implements Runnable {
         public volatile boolean terminate = false;
+        public volatile boolean started = false;
         @Override
         public void run() {
+            started = true;
             while (!terminate) {}
         }
     }
@@ -49,7 +51,7 @@ public class NativeThreadsTest {
     @Test
     public void newThreadsAreAutomaticallyRegistered() {
         thread.start();
-        while (!thread.isAlive()) {}
+        while (!worker.started) {}
         
         long id = NativeThreads.getNativeId(thread);
 
