@@ -16,9 +16,6 @@
   - limitations under the License.
   -->
 <project basedir="." name="Microbenchmarking agent for Java" default="main">
-	<taskdef resource="com/puppycrawl/tools/checkstyle/ant/checkstyle-ant-task.properties"
-		classpath="lib/checkstyle-8.10-all.jar"/>
-
 	<property file="local-settings.ini" />
 	
 	<property environment="env" />
@@ -680,10 +677,11 @@
 	</target>
 
 	<target name="checkstyle">
-		<checkstyle config="checkstyle.xml">
-			<fileset dir="src/java" includes="**/*.java" />
-			<formatter type="plain" />
-		</checkstyle>
+		<java jar="lib/checkstyle-8.10-all.jar" fork="true">
+			<arg value="-c" />
+			<arg file="checkstyle.xml" />
+			<arg file="src/java" />
+		</java>
 	</target>
 
 	<target name="clean"
