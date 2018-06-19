@@ -15,7 +15,7 @@
   - See the License for the specific language governing permissions and
   - limitations under the License.
   -->
-<project basedir="." name="Microbenchmarking agent for Java" default="main">
+<project basedir="." name="Microbenchmarking agent for Java" default="main" xmlns:if="ant:if">
 	<property file="local-settings.ini" />
 	
 	<property environment="env" />
@@ -97,7 +97,25 @@
 	<condition property="agent.cc.is.msvc">
 		<equals arg1="${agent.cc}" arg2="msvc" />
 	</condition>
-		
+	
+	<!-- javah is deprecated since JDK 8 ... -->
+	<condition property="agent.generate.headers.javah">
+		<matches pattern="^1[.][67]" string="${ant.java.version}" />
+	</condition>
+	<condition property="agent.generate.headers.javac">
+		<and>
+			<antversion atleast="1.10.2" />
+			<matches pattern="^(1[.]8)|9|(1[0-9])" string="${ant.java.version}" />
+		</and>
+	</condition>
+	<condition property="agent.generate.headers.javac.manually">
+		<and>
+			<matches pattern="^(1[.]8)|9|(1[0-9])" string="${ant.java.version}" />
+			<not>
+				<antversion atleast="1.10.2" />
+			</not>
+		</and>
+	</condition>
 	
 	<!-- Agent file naming -->
 	<condition property="agent.filename" value="libubench-agent.so">
@@ -346,20 +364,48 @@
 		>
 	</target>
 	
+	<macrodef name="compile-header">
+		<attribute name="classname" />
+		<sequential>
+			<javah if:set="agent.generate.headers.javah"
+					destdir="${agent.build.dir}"
+					verbose="true"
+					classpath="${classes.build.dir}">
+				<class name="cz.cuni.mff.d3s.perf.@{classname}" />
+			</javah>
+			<javac if:set="agent.generate.headers.javac"
+					nativeheaderdir="${agent.build.dir}"
+					destdir="${classes.build.dir}"
+					includeantruntime="false"
+					srcdir="${java.src.dir}/cz/cuni/mff/d3s/perf/"
+					includes="@{classname}.java">
+				<classpath>
+					<pathelement path="${classes.build.dir}" />
+				</classpath>
+			</javac>
+			<exec if:set="agent.generate.headers.javac.manually"
+					executable="javac">
+				<arg value="-cp" />
+				<arg file="${classes.build.dir}"/>
+				<arg value="-d"/>
+				<arg file="${classes.build.dir}"/>
+				<arg value="-h"/>
+				<arg file="${agent.build.dir}"/>
+				<arg file="${java.src.dir}/cz/cuni/mff/d3s/perf/@{classname}.java" />
+			</exec>
+		</sequential>
+	</macrodef>
+	
 	<target name="compile-agent-prepare-headers"
 			depends="compile-java"
 			description="Generate JNI headers."
 		>
 		<mkdir dir="${agent.build.dir}" />
-		<javah
-				destdir="${agent.build.dir}"
-				classpath="${classes.build.dir}">
-			<class name="cz.cuni.mff.d3s.perf.Barrier" />
-			<class name="cz.cuni.mff.d3s.perf.CompilationCounter" />
-			<class name="cz.cuni.mff.d3s.perf.OverheadEstimations" />
-			<class name="cz.cuni.mff.d3s.perf.Measurement" />
-			<class name="cz.cuni.mff.d3s.perf.NativeThreads" />
-		</javah>
+		<compile-header classname="Barrier" />
+		<compile-header classname="CompilationCounter" />
+		<compile-header classname="OverheadEstimations" />
+		<compile-header classname="Measurement" />
+		<compile-header classname="NativeThreads" />
 	</target>
 	
 	<target name="compile-agent-maybe-gcc" if="agent.cc.is.gcc">
