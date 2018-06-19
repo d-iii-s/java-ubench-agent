@@ -327,6 +327,9 @@
 		>
 		<echo message="  Used Java version: ${ant.java.version}" />
 		<echo message="        Ant version: ${ant.version.bare}" />
+		<echo message="    JNI headers via: javah task" if:set="agent.generate.headers.javah" />
+		<echo message="    JNI headers via: javac task" if:set="agent.generate.headers.javac" />
+		<echo message="    JNI headers via: javac executable" if:set="agent.generate.headers.javac.manually" />
 		<echo message="  Java C headers in: ${agent.cc.java.include}" />
 		<echo message="    Used C compiler: ${agent.cc}" />
 		<echo message="C compiler warnings: ${agent.cc.warnings}" />
