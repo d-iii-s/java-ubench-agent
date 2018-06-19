@@ -102,17 +102,17 @@
 	
 	<!-- javah is deprecated since JDK 8 ... -->
 	<condition property="agent.generate.headers.javah">
-		<matches pattern="^1[.][67]" string="${ant.java.version}" />
+		<matches pattern="^1[.][678]" string="${ant.java.version}" />
 	</condition>
 	<condition property="agent.generate.headers.javac">
 		<and>
 			<antversion atleast="1.10.2" />
-			<matches pattern="^(1[.]8)|9|(1[0-9])" string="${ant.java.version}" />
+			<matches pattern="^(1[.]9)|9|(1[0-9])" string="${ant.java.version}" />
 		</and>
 	</condition>
 	<condition property="agent.generate.headers.javac.manually">
 		<and>
-			<matches pattern="^(1[.]8)|9|(1[0-9])" string="${ant.java.version}" />
+			<matches pattern="^(1[.]9)|9|(1[0-9])" string="${ant.java.version}" />
 			<not>
 				<antversion atleast="1.10.2" />
 			</not>
