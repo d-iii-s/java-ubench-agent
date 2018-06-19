@@ -15,7 +15,7 @@
   - See the License for the specific language governing permissions and
   - limitations under the License.
   -->
-<project basedir="." name="Microbenchmarking agent for Java" default="main" xmlns:if="ant:if">
+<project basedir="." name="Microbenchmarking agent for Java" default="main" xmlns:if="ant:if" xmlns:unless="ant:unless">
 	<property file="local-settings.ini" />
 	
 	<property environment="env" />
@@ -43,7 +43,9 @@
 	<property name="agent.cc" value="gcc" />
 	
 	<property name="agent.feature.want.papi" value="true" />
-	
+
+	<antversion property="ant.version.bare" />
+
 	<!--
 		Determine features (capabilities) of the agent based
 		on available libraries or on which platform we are
@@ -324,9 +326,14 @@
 			description="Print current configuration (include paths, compiler, ...)."
 		>
 		<echo message="  Used Java version: ${ant.java.version}" />
+		<echo message="        Ant version: ${ant.version.bare}" />
 		<echo message="  Java C headers in: ${agent.cc.java.include}" />
 		<echo message="    Used C compiler: ${agent.cc}" />
 		<echo message="C compiler warnings: ${agent.cc.warnings}" />
+		<echo message="       PAPI support: on" if:set="agent.feature.has.papi" />
+		<echo message="       PAPI support: off" unless:set="agent.feature.has.papi" />
+		<echo message="  getrusage support: on" if:set="agent.feature.has.getrusage" />
+		<echo message="  getrusage support: off" unless:set="agent.feature.has.getrusage" />
 	</target>
 	
 	<target name="print-properties">
