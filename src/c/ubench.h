@@ -25,6 +25,9 @@
 #include <stdlib.h>
 #include <string.h>
 #include <time.h>
+#ifndef _MSC_VER
+#include <strings.h>
+#endif
 #pragma warning(pop)
 
 #include "myatomic.h"
