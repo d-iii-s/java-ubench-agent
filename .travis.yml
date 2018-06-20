@@ -4,28 +4,35 @@ language: java
 
 matrix:
   include:
-    - jdk: oraclejdk8
+    - os: linux
+      jdk: oraclejdk8
       env:
         - CHECKSTYLE=yes
-    - jdk: oraclejdk8
+    - os: linux
+      jdk: oraclejdk8
       env:
         - WITH_PAPI=yes
       addons:
         apt:
           packages:
             - libpapi-dev
-    - jdk: oraclejdk8
-    - jdk: oraclejdk9
-    - jdk: openjdk8
-    - jdk: openjdk7
-
-os:
-  - linux
+    - os: linux
+      jdk: oraclejdk8
+    - os: linux
+      jdk: oraclejdk9
+    - os: linux
+      jdk: openjdk8
+    - os: linux
+      jdk: openjdk7
+    - os: osx
 
 addons:
   apt:
     packages:
       - ant-optional
+
+before_install:
+  - 'if [ "$TRAVIS_OS_NAME" == "osx" ]; then brew install ant; fi'
 
 script:
   - 'if [ "$CHECKSTYLE" = "yes" ]; then ant checkstyle && travis_terminate 0; fi'
