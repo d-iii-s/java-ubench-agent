@@ -54,6 +54,10 @@ Java_cz_cuni_mff_d3s_perf_Barrier_initNative(
 		return;
 	}
 #else
+	// Silence the compiler (unused variables).
+	(void) env;
+	(void) jname;
+
 	fprintf(stderr, "Platform not yet supported.\n");
 	return;
 	// TODO: throw Java exception about unsupported platform

@@ -32,10 +32,12 @@
 
 #define BARRIER_NAME_PREFIX "java-ubench-agent"
 
+#ifdef __unix__
 static void die(const char *message) {
 	perror(message);
 	exit(1);
 }
+#endif
 
 int main(int argc, char *argv[]) {
 #ifdef __unix__
@@ -73,7 +75,11 @@ int main(int argc, char *argv[]) {
 		die("pthread_barrier_init");
 	}
 #else
-	fprintf(stderr, "This program must be run on a Unix system.")
+	fprintf(stderr, "This program must be run on a Unix system.");
+	
+	// Silence the compiler (unused variables).
+	(void) argc;
+	(void) argv;
 #endif
 
 	return 0;
