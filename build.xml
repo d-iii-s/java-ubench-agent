@@ -325,6 +325,7 @@
 	<target name="print-config"
 			description="Print current configuration (include paths, compiler, ...)."
 		>
+		<echo message="                 OS: ${os.name} ${os.version} (${os.arch})" />
 		<echo message="  Used Java version: ${ant.java.version}" />
 		<echo message="        Ant version: ${ant.version.bare}" />
 		<echo message="    JNI headers via: javah task" if:set="agent.generate.headers.javah" />
