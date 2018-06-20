@@ -66,7 +66,7 @@
 		<os name="Linux" />
 	</condition>
 	<condition property="agent.feature.has.timespec">
-		<os name="Linux" />
+		<os family="unix" />
 	</condition>
 	<!-- Only MSVC on Windows -->
 	<condition property="agent.features.has.native.windows">
@@ -188,6 +188,10 @@
 	<condition property="agent.cc.java.os.include"
 			value="${agent.cc.java.include}${file.separator}win32">
 		<os family="windows" />
+	</condition>
+	<condition property="agent.cc.java.os.include"
+			value="${agent.cc.java.include}${file.separator}darwin">
+		<os family="mac" />
 	</condition>
 	
 	<!-- PAPI support and other has.* settings -->

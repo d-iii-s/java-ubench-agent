@@ -39,6 +39,13 @@
 #pragma warning(pop)
 #endif
 
+#ifdef __APPLE__
+#pragma warning(push, 0)
+#include <pthread.h>
+#pragma warning(pop)
+#endif
+
+
 #ifdef _MSC_VER
 #pragma warning(push, 0)
 #include <Windows.h>
@@ -176,6 +183,9 @@ long long ubench_get_native_thread_id(jlong java_thread_id) {
 long long ubench_get_current_thread_native_id(void) {
 #if defined(_MSC_VER)
 	return (long long) GetCurrentThreadId();
+#elif defined(__APPLE__)
+	pthread_t tid = pthread_self();
+	return (long long) tid;
 #elif defined(__GNUC__)
 	pid_t answer = syscall (__NR_gettid);
 	return (long long) answer;
