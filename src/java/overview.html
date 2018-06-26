@@ -1,0 +1,102 @@
+<html><head><title>Microbenchmarking agent for Java</title></head><body>
+<h1 id="microbenchmarking-agent-for-java">Microbenchmarking Agent for Java</h1>
+<p>A JVMTI agent to be used with microbenchmarks. Basic features:</p>
+<ul>
+<li>Reports major JVM events such as GC and JIT runs.</li>
+<li>Can collect performance counters through JNI.</li>
+<li>Can collect accurate time through JNI.</li>
+</ul>
+<p><a href="https://travis-ci.org/D-iii-S/java-ubench-agent"><img src="https://travis-ci.org/D-iii-S/java-ubench-agent.svg?branch=master" alt="Build Status" /></a></p>
+<h2 id="usage">Usage</h2>
+<pre class="java"><code>private static final int LOOPS = 10;
+private static final String[] EVENTS = {
+    /* The most precise clock available. */
+    &quot;SYS:wallclock-time&quot;,
+    /* Number of JIT compilation events. */
+    &quot;JVM:compilations&quot;,
+    /* L1 cache misses (only Linux with PAPI). */
+    &quot;PAPI_L1_DCM&quot;
+};
+
+public static void myBenchmark() {
+    /* We would have LOOPS measurements and we
+       want to record these EVENTS. */
+    Benchmark.init(LOOPS, EVENTS);
+
+    for (int i = 0; i &lt; LOOPS; i++) {
+        /* Start the measurement. */
+        Benchmark.start();
+
+        /* Here goes your code that ought to be measured. */
+
+        /* Stop the measurement. */
+        Benchmark.stop();
+    }
+
+    /* Get the results (available as Iterable&lt;long[]&gt;). */
+    BenchmarkResults results = Benchmark.getResults();
+
+    /* Either print them in CSV (to be later processed)... */
+    BenchmarkResultsPrinter.toCsv(results, System.out);
+
+    /* ... or as a space-padded table. */
+    BenchmarkResultsPrinter.table(results, System.out);
+}</code></pre>
+<p>To run your program with our agent, add the <code>ubench-agent.jar</code> to your classpath and start JVM with the C-agent: <code>-agentpath:libubench-agent.so</code> (GNU/Linux) or <code>-agentpath:ubench-agent.dll</code> (Windows).</p>
+<p>A more generic interface <code>Measurement</code> is available if you wish to bind the measurement to a specific thread or if you need to measure more things at once (though internal limitations of Linux perf subsystem may apply).</p>
+<h2 id="compilation">Compilation</h2>
+<p>You will need recent version of Ant and GCC. Then simple</p>
+<pre><code>ant &amp;&amp; ant test test-junit</code></pre>
+<p>shall compile the agent and run the built-in tests (you might need to set <code>JAVA_HOME</code> if you have JDK in non-standard location).</p>
+<p>You might also wish to execute</p>
+<pre><code>ant lib</code></pre>
+<p>to create a JAR with the agent class files (it also copies the C-agent to the same folder for easier use).</p>
+<h2 id="demo">Demo</h2>
+<p>Package <code>cz.cuni.mff.d3s.perf.demo</code> contains a small demo: the <code>MeasureHashing</code> class measures performance of a file hashing with Java built-in MD5. Run it with</p>
+<pre><code>ant demo</code></pre>
+<p>to produce results that could look like this:</p>
+<pre><code>demo:
+     [java]   SYS_WALLCLOCK JVM_COMPILATIO   PAPI_TOT_INS    PAPI_L1_DCM
+     [java]         1516055              9        5539366         107004
+     [java]         1082882              0        3994763          14362
+     [java]          983808              1        3690908          13472
+     [java]          258992              0        1551475           7049
+     [java]           69000              1         468639           1405
+     [java]           67542              0         470675           1296
+     ...
+     &lt;truncated&gt;
+     ...
+     [java]           67091              0         470675           1286
+     [java]           68760              1         469812           1295
+     [java] Hash is d41d8cd98f00b204e9800998ecf8427e.</code></pre>
+<h2 id="supported-events">Supported events</h2>
+<p>To list supported events, run the <code>ListEvents</code> demo program or execute <code>ant list-events</code>.</p>
+<ul>
+<li><code>SYS:wallclock-time</code>
+<ul>
+<li>The most precise clock available. <code>clock_gettime(CLOCK_MONOTONIC)</code> on Linux, <code>QueryPerformanceCounter()</code> on Windows.</li>
+</ul></li>
+<li><code>SYS:thread-time</code>
+<ul>
+<li>CPU thread time (i.e. not counting when thread is waiting).</li>
+</ul></li>
+<li><code>SYS:thread-time-rusage</code>
+<ul>
+<li>Same as <code>SYS:thread-time</code> but uses data from <code>getrusage()</code> call on Linux. Seems to be much less precise but it may save you one extra call if you also query <code>SYS:forced-context-switches</code>. Linux only.</li>
+</ul></li>
+<li><code>SYS:forced-context-switches</code>
+<ul>
+<li>Number of forced context switches (i.e. quantum was exhausted). Linux only.</li>
+</ul></li>
+<li><code>JVM:compilations</code>
+<ul>
+<li>Number of JIT compilation events.</li>
+</ul></li>
+<li><code>PAPI:*</code>
+<ul>
+<li>When built on Linux with libpapi available, the agent can collect any event supported by PAPI (note that you can use all the events reported by <code>papi_avail</code> and <code>papi_native_avail</code>).</li>
+<li>Note that to use different components (e.g. <code>perf</code> and <code>rapl</code>), different event sets has to be created.</li>
+</ul></li>
+</ul>
+
+</body></html>

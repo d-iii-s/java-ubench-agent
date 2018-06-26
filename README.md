@@ -21,7 +21,7 @@ private static final String[] EVENTS = {
 	/* L1 cache misses (only Linux with PAPI). */
 	"PAPI_L1_DCM"
 };
-	
+
 public static void myBenchmark() {
 	/* We would have LOOPS measurements and we
 	   want to record these EVENTS. */
@@ -30,9 +30,9 @@ public static void myBenchmark() {
 	for (int i = 0; i < LOOPS; i++) {
 		/* Start the measurement. */
 		Benchmark.start();
-    	
+
 		/* Here goes your code that ought to be measured. */
-    
+
 		/* Stop the measurement. */
 		Benchmark.stop();
 	}
