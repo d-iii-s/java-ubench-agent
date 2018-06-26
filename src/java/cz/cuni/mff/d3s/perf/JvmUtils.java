@@ -108,4 +108,17 @@ public final class JvmUtils {
             }
         }
     }
+
+    /** Checks that the native agent is actually attached to the JVM.
+     *
+     * @return Whether the native part of this library is available.
+     */
+    public static boolean isNativeAgentAvailable() {
+        try {
+            Measurement.isEventSupported("nonsense");
+            return true;
+        } catch (UnsatisfiedLinkError e) {
+            return false;
+        }
+    }
 }
