@@ -21,9 +21,11 @@ matrix:
     - os: linux
       jdk: oraclejdk9
     - os: linux
-      jdk: openjdk8
+      jdk: oraclejdk10
     - os: linux
       jdk: openjdk7
+    - os: linux
+      jdk: openjdk8
     - os: osx
 
 addons:
@@ -33,6 +35,7 @@ addons:
 
 before_install:
   - 'if [ "$TRAVIS_OS_NAME" == "osx" ]; then brew install ant; fi'
+  - 'if [ "$TRAVIS_OS_NAME" == "osx" ]; then export JAVA_HOME=$(/usr/libexec/java_home); fi'
 
 script:
   - 'if [ "$CHECKSTYLE" = "yes" ]; then ant checkstyle && travis_terminate 0; fi'
@@ -40,6 +43,7 @@ script:
   - "echo 'agent.cc.extra.flags = -DUBENCH_DEBUG' >>local-settings.ini"
   - ant print-config
   - ant print-properties
+  - ant lib
   - ant list-events
   - gcc --version
   - ant test-junit
