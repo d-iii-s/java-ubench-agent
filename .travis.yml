@@ -36,6 +36,9 @@ addons:
 before_install:
   - 'if [ "$TRAVIS_OS_NAME" == "osx" ]; then brew install ant; fi'
   - 'if [ "$TRAVIS_OS_NAME" == "osx" ]; then export JAVA_HOME=$(/usr/libexec/java_home); fi'
+  - 'if [ "$TRAVIS_OS_NAME" == "linux" ]; then export PATH="$JAVA_HOME/bin:$PATH"; fi'
+  - java -version
+  - javac -version
 
 script:
   - 'if [ "$CHECKSTYLE" = "yes" ]; then ant checkstyle && travis_terminate 0; fi'
