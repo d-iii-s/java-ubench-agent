@@ -39,6 +39,7 @@ before_install:
   - 'if [ "$TRAVIS_OS_NAME" == "linux" ]; then export PATH="$JAVA_HOME/bin:$PATH"; fi'
   - java -version
   - javac -version
+  - gcc --version
 
 script:
   - 'if [ "$CHECKSTYLE" = "yes" ]; then ant checkstyle && travis_terminate 0; fi'
@@ -48,5 +49,4 @@ script:
   - ant print-properties
   - ant lib
   - ant list-events
-  - gcc --version
   - ant test-junit
