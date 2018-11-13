@@ -21,7 +21,7 @@ matrix:
     - os: linux
       jdk: oraclejdk9
     - os: linux
-      jdk: oraclejdk10
+      jdk: oraclejdk11
     - os: linux
       jdk: openjdk7
     - os: linux
