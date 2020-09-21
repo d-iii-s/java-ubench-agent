@@ -125,7 +125,7 @@ public final class Measurement {
     
     /** Clear measurements.
      *
-     * @param eventSet Array of event sets where the measurements are stopped.
+     * @param eventSet Array of event sets where the measurements are removed.
      */
     public static native void reset(int... eventSet);
 
