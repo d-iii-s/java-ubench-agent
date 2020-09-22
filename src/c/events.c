@@ -82,8 +82,8 @@ static long long timestamp_diff_ns(const timestamp_t *a, const timestamp_t *b) {
 #endif
 }
 
-static long long getter_wall_clock_time(const benchmark_run_t *bench, const ubench_event_info_t *UNUSED_PARAMETER(info)) {
-	return timestamp_diff_ns(&bench->start.timestamp, &bench->end.timestamp);
+static long long getter_wall_clock_time(const ubench_events_snapshot_t *start, const ubench_events_snapshot_t *end, const ubench_event_info_t *UNUSED_PARAMETER(info)) {
+	return timestamp_diff_ns(&start->timestamp, &end->timestamp);
 }
 
 #ifdef HAS_GET_THREAD_TIMES
@@ -93,27 +93,27 @@ static long long get_filetime_diff_in_us(const FILETIME *a, const FILETIME *b) {
 }
 #endif
 
-static long long getter_thread_time(const benchmark_run_t *bench, const ubench_event_info_t *UNUSED_PARAMETER(info)) {
+static long long getter_thread_time(const ubench_events_snapshot_t *start, const ubench_events_snapshot_t *end, const ubench_event_info_t *UNUSED_PARAMETER(info)) {
 #ifdef HAS_TIMESPEC
-	long long result = timespec_diff_as_ns(&bench->start.threadtime, &bench->end.threadtime);
+	long long result = timespec_diff_as_ns(&start->threadtime, &end->threadtime);
 	// fprintf(stderr, "getter_thread_time(%lld:%lld, %lld:%lld) = %lld\n", (long long) bench->start.threadtime.tv_sec, (long long) bench->start.threadtime.tv_nsec, (long long) bench->end.threadtime.tv_sec, (long long) bench->end.threadtime.tv_nsec, result);
 	return result;
 #elif defined(HAS_GET_THREAD_TIMES)
-  long long kernel_us = get_filetime_diff_in_us(&bench->start.threadtime.kernel, &bench->end.threadtime.kernel);
-  long long user_us = get_filetime_diff_in_us(&bench->start.threadtime.user, &bench->end.threadtime.user);
+  long long kernel_us = get_filetime_diff_in_us(&start->threadtime.kernel, &end->threadtime.kernel);
+  long long user_us = get_filetime_diff_in_us(&start->threadtime.user, &end->threadtime.user);
   return (user_us + kernel_us) * 1000;
 #else
 	return 0;
 #endif
 }
 
-static long long getter_jvm_compilations(const benchmark_run_t *bench, const ubench_event_info_t *UNUSED_PARAMETER(info)) {
-	return bench->end.compilations - bench->start.compilations;
+static long long getter_jvm_compilations(const ubench_events_snapshot_t *start, const ubench_events_snapshot_t *end, const ubench_event_info_t *UNUSED_PARAMETER(info)) {
+	return end->compilations - start->compilations;
 }
 
 #ifdef HAS_GETRUSAGE
-static long long getter_context_switch_forced(const benchmark_run_t *bench, const ubench_event_info_t *UNUSED_PARAMETER(info)) {
-	return bench->end.resource_usage.ru_nivcsw - bench->start.resource_usage.ru_nivcsw;
+static long long getter_context_switch_forced(const ubench_events_snapshot_t *start, const ubench_events_snapshot_t *end, const ubench_event_info_t *UNUSED_PARAMETER(info)) {
+	return end->resource_usage.ru_nivcsw - start->resource_usage.ru_nivcsw;
 }
 
 static inline long long timeval_diff_as_us(const struct timeval *a, const struct timeval *b) {
@@ -124,25 +124,25 @@ static inline long long timeval_diff_as_us(const struct timeval *a, const struct
 	return sec_diff * 1000 * 1000 + usec_diff;
 }
 
-static long long getter_thread_time_rusage(const benchmark_run_t *bench, const ubench_event_info_t *UNUSED_PARAMETER(info)) {
-	long long user_us = timeval_diff_as_us(&bench->start.resource_usage.ru_utime, &bench->end.resource_usage.ru_utime);
-	long long system_us = timeval_diff_as_us(&bench->start.resource_usage.ru_stime, &bench->end.resource_usage.ru_stime);
+static long long getter_thread_time_rusage(const ubench_events_snapshot_t *start, const ubench_events_snapshot_t *end, const ubench_event_info_t *UNUSED_PARAMETER(info)) {
+	long long user_us = timeval_diff_as_us(&start->resource_usage.ru_utime, &end->resource_usage.ru_utime);
+	long long system_us = timeval_diff_as_us(&start->resource_usage.ru_stime, &end->resource_usage.ru_stime);
 	return (user_us + system_us) * (long long) 1000;
 }
 
 #endif
 
 #ifdef HAS_PAPI
-static long long getter_papi(const benchmark_run_t *bench, const ubench_event_info_t *info) {
-	if (bench->start.papi_rc1 != PAPI_OK) {
-		return bench->start.papi_rc1;
-	} else if (bench->start.papi_rc2 != PAPI_OK) {
-		return bench->start.papi_rc2;
-	} else if (bench->end.papi_rc1 != PAPI_OK) {
-		return bench->end.papi_rc1;
+static long long getter_papi(const ubench_events_snapshot_t *start, const ubench_events_snapshot_t *end, const ubench_event_info_t *info) {
+	if (start->papi_rc1 != PAPI_OK) {
+		return start->papi_rc1;
+	} else if (start->papi_rc2 != PAPI_OK) {
+		return start->papi_rc2;
+	} else if (end->papi_rc1 != PAPI_OK) {
+		return end->papi_rc1;
 	}
 
-	long long result = bench->end.papi_events[info->papi_index] - bench->start.papi_events[info->papi_index];
+	long long result = end->papi_events[info->papi_index] - start->papi_events[info->papi_index];
 	if (result < 0) {
 		// FIXME: can this happen?
 		return result;

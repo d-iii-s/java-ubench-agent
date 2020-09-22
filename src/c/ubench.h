@@ -113,6 +113,9 @@ typedef int threadtime_t;
 #define UBENCH_EVENT_BACKEND_JVM_COMPILATIONS 16
 #define UBENCH_EVENT_BACKEND_SYS_THREADTIME 32
 
+#define UBENCH_SNAPSHOT_TYPE_START 1
+#define UBENCH_SNAPSHOT_TYPE_END 2
+
 typedef struct {
 	timestamp_t timestamp;
 	threadtime_t threadtime;
@@ -126,15 +129,11 @@ typedef struct {
 	int papi_rc1;
 	int papi_rc2;
 #endif
+	int type;
 } ubench_events_snapshot_t;
 
-typedef struct {
-	ubench_events_snapshot_t start;
-	ubench_events_snapshot_t end;
-} benchmark_run_t;
-
 typedef struct ubench_event_info ubench_event_info_t;
-typedef long long (*event_getter_func_t)(const benchmark_run_t *, const ubench_event_info_t *);
+typedef long long (*event_getter_func_t)(const ubench_events_snapshot_t *, const ubench_events_snapshot_t *, const ubench_event_info_t *);
 typedef int (*event_info_iterator_callback_t)(const char *, void *);
 
 struct ubench_event_info {
@@ -159,7 +158,7 @@ typedef struct {
 	int papi_component;
 #endif
 
-	benchmark_run_t *data;
+	ubench_events_snapshot_t *data;
 	size_t data_size;
 	size_t data_index;
 } benchmark_configuration_t;

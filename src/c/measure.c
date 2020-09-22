@@ -115,6 +115,7 @@ void ubench_measure_start(const benchmark_configuration_t *config,
 	}
 #endif
 
+	snapshot->type = UBENCH_SNAPSHOT_TYPE_START;
 	do_snapshot(config, snapshot);
 }
 
@@ -147,4 +148,6 @@ void ubench_measure_stop(const benchmark_configuration_t *config,
 		getrusage(RUSAGE_THREAD, &(snapshot->resource_usage));
 	}
 #endif
+
+	snapshot->type = UBENCH_SNAPSHOT_TYPE_END;
 }
