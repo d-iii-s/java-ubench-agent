@@ -75,7 +75,7 @@ static void store_threadtime(threadtime_t *ts) {
 #endif
 }
 
-void ubench_measure_start(const benchmark_configuration_t *config,
+static inline void do_snapshot(const benchmark_configuration_t *config,
 		ubench_events_snapshot_t *snapshot) {
 #ifdef HAS_GETRUSAGE
 	if ((config->used_backends & UBENCH_EVENT_BACKEND_RESOURCE_USAGE) > 0) {
@@ -95,10 +95,7 @@ void ubench_measure_start(const benchmark_configuration_t *config,
 
 #ifdef HAS_PAPI
 	if ((config->used_backends & UBENCH_EVENT_BACKEND_PAPI) > 0) {
-		// TODO: check for errors
-		snapshot->papi_rc1 = PAPI_start(config->papi_eventset);
-		DEBUG_PRINTF("PAPI_start(%d) = %d", config->papi_eventset, snapshot->papi_rc1);
-		snapshot->papi_rc2 = PAPI_read(config->papi_eventset, snapshot->papi_events);
+		snapshot->papi_rc1 = PAPI_read(config->papi_eventset, snapshot->papi_events);
 		DEBUG_PRINTF("PAPI_read(%d) = %d", config->papi_eventset, snapshot->papi_rc2);
 	}
 #endif
@@ -106,6 +103,19 @@ void ubench_measure_start(const benchmark_configuration_t *config,
 	if ((config->used_backends & UBENCH_EVENT_BACKEND_SYS_WALLCLOCK) > 0) {
 		store_wallclock(&(snapshot->timestamp));
 	}
+}
+
+void ubench_measure_start(const benchmark_configuration_t *config,
+		ubench_events_snapshot_t *snapshot) {
+#ifdef HAS_PAPI
+	if ((config->used_backends & UBENCH_EVENT_BACKEND_PAPI) > 0) {
+		// TODO: check for errors
+		snapshot->papi_rc2 = PAPI_start(config->papi_eventset);
+		DEBUG_PRINTF("PAPI_start(%d) = %d", config->papi_eventset, snapshot->papi_rc1);
+	}
+#endif
+
+	do_snapshot(config, snapshot);
 }
 
 void ubench_measure_stop(const benchmark_configuration_t *config,
