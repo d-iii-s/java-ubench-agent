@@ -526,23 +526,23 @@ DLL_EXPORT jobject JNICALL Java_cz_cuni_mff_d3s_perf_Measurement_getResults(JNIE
 	if (event_values == NULL) {
 		return NULL;
 	}
-	jmethodID set_data_method = (*env)->GetMethodID(env, results_class, "addDataRow", "([J)V");
-	if (set_data_method == NULL) {
+	jmethodID add_data_method = (*env)->GetMethodID(env, results_class, "addDataRow", "([J)V");
+	if (add_data_method == NULL) {
 		return NULL;
 	}
 	for (bi = 0; bi < all_eventsets[ jid ].config.data_index; bi++) {
-		benchmark_run_t *benchmark = &all_eventsets[ jid ].config.data[bi];
+		benchmark_run_t *benchmark_run = &all_eventsets[ jid ].config.data[bi];
 
 		size_t ei;
 		for (ei = 0; ei < all_eventsets[ jid ].config.used_events_count; ei++) {
 			ubench_event_info_t *event = &all_eventsets[ jid ].config.used_events[ei];
-			long long value = event->op_get(benchmark, event);
+			long long value = event->op_get(benchmark_run, event);
 			jlong jvalue = (jlong) value;
 			// FIXME: report PAPI errors etc.
 			(*env)->SetLongArrayRegion(env, event_values, (jsize) ei, 1, &jvalue);
 		}
 
-		(*env)->CallVoidMethod(env, jresults, set_data_method, event_values);
+		(*env)->CallVoidMethod(env, jresults, add_data_method, event_values);
 	}
 
 	return jresults;
