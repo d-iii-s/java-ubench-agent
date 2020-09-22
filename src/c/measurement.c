@@ -136,6 +136,9 @@ DLL_EXPORT jint JNICALL Java_cz_cuni_mff_d3s_perf_Measurement_createEventSet(
 	UNUSED_VARIABLE(joptions);
 #endif
 
+	// FIXME: where to properly compute this number
+	jmeasurements *= 2;
+
 	if (jmeasurements <= 0) {
 		do_throw(env, "Number of measurements has to be positive.");
 		return -1;
@@ -179,7 +182,7 @@ DLL_EXPORT jint JNICALL Java_cz_cuni_mff_d3s_perf_Measurement_createEventSet(
 
 	eventset->config.used_backends = 0;
 
-	eventset->config.data = calloc(jmeasurements, sizeof(benchmark_run_t));
+	eventset->config.data = calloc(jmeasurements, sizeof(ubench_events_snapshot_t));
 	if (eventset->config.data == NULL) {
 		THROW_OOM(env, "allocating place for measurements");
 		return -1;
@@ -425,12 +428,13 @@ DLL_EXPORT void JNICALL Java_cz_cuni_mff_d3s_perf_Measurement_start(
 		}
 
 		if (all_eventsets[ id ].config.data_index >= all_eventsets[ id ].config.data_size) {
-			all_eventsets[ id ].config.data_index--;
+			all_eventsets[ id ].config.data_index -= 2;
 		}
 
-		ubench_events_snapshot_t *snapshot = &all_eventsets[ id ].config.data[ all_eventsets[ id ].config.data_index ].start;
+		ubench_events_snapshot_t *snapshot = &all_eventsets[ id ].config.data[ all_eventsets[ id ].config.data_index ];
 
 		ubench_measure_start(&all_eventsets[ id ].config, snapshot);
+		all_eventsets[ id ].config.data_index++;
 	}
 
 	(*env)->ReleaseIntArrayElements(env, jids, ids, JNI_ABORT);
@@ -452,7 +456,7 @@ DLL_EXPORT void JNICALL Java_cz_cuni_mff_d3s_perf_Measurement_stop(
 			return;
 		}
 
-		ubench_events_snapshot_t *snapshot = &all_eventsets[ id ].config.data[ all_eventsets[ id ].config.data_index ].end;
+		ubench_events_snapshot_t *snapshot = &all_eventsets[ id ].config.data[ all_eventsets[ id ].config.data_index ];
 
 		ubench_measure_stop(&all_eventsets[ id ].config, snapshot);
 
@@ -484,6 +488,20 @@ DLL_EXPORT void JNICALL Java_cz_cuni_mff_d3s_perf_Measurement_reset(
 	(*env)->ReleaseIntArrayElements(env, jids, ids, JNI_ABORT);
 }
 
+static size_t find_first_matching_snapshot_type(ubench_events_snapshot_t *snapshots,
+		size_t start_index, size_t max_index, int type) {
+	if (start_index == (size_t)-1) {
+		return (size_t)-1;
+	}
+	size_t i = start_index;
+	while (i < max_index) {
+		if (snapshots[i].type == type) {
+			return i;
+		}
+		i++;
+	}
+	return (size_t)-1;
+}
 
 DLL_EXPORT jobject JNICALL Java_cz_cuni_mff_d3s_perf_Measurement_getResults(JNIEnv *env,
 		jclass UNUSED_PARAMETER(klass), jint jid) {
@@ -521,7 +539,6 @@ DLL_EXPORT jobject JNICALL Java_cz_cuni_mff_d3s_perf_Measurement_getResults(JNIE
 		return NULL;
 	}
 
-	size_t bi;
 	jlongArray event_values = (*env)->NewLongArray(env, (jsize) all_eventsets[ jid ].config.used_events_count);
 	if (event_values == NULL) {
 		return NULL;
@@ -530,13 +547,24 @@ DLL_EXPORT jobject JNICALL Java_cz_cuni_mff_d3s_perf_Measurement_getResults(JNIE
 	if (add_data_method == NULL) {
 		return NULL;
 	}
-	for (bi = 0; bi < all_eventsets[ jid ].config.data_index; bi++) {
-		benchmark_run_t *benchmark_run = &all_eventsets[ jid ].config.data[bi];
+
+	i = 0;
+	size_t i_max = all_eventsets[ jid ].config.data_index;
+	while (i < i_max) {
+		ubench_events_snapshot_t *snapshots = all_eventsets[jid].config.data;
+		size_t start_index = find_first_matching_snapshot_type(snapshots, i, i_max, UBENCH_SNAPSHOT_TYPE_START);
+		size_t end_index = find_first_matching_snapshot_type(snapshots, start_index, i_max, UBENCH_SNAPSHOT_TYPE_END);
+
+		if (end_index == (size_t) -1) {
+			break;
+		}
+
+		i = end_index + 1;
 
 		size_t ei;
 		for (ei = 0; ei < all_eventsets[ jid ].config.used_events_count; ei++) {
 			ubench_event_info_t *event = &all_eventsets[ jid ].config.used_events[ei];
-			long long value = event->op_get(benchmark_run, event);
+			long long value = event->op_get(&snapshots[start_index], &snapshots[end_index], event);
 			jlong jvalue = (jlong) value;
 			// FIXME: report PAPI errors etc.
 			(*env)->SetLongArrayRegion(env, event_values, (jsize) ei, 1, &jvalue);
