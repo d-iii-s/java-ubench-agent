@@ -123,6 +123,20 @@ public final class Measurement {
      */
     public static native void stop(int... eventSet);
     
+    /** Sample the event counters.
+     *
+     * <p>
+     * Useful when you do not want to run stop-start in the middle of the
+     * execution to get counters state.
+     *
+     * <p>
+     * Use getRawResults() to obtain results including the sampling.
+     *
+     * @param sampleId User id to distinguish different calls.
+     * @param eventSet Array of event sets where the measurements should be sampled.
+     */
+    public static native void sample(int sampleId, int... eventSet);
+
     /** Clear measurements.
      *
      * @param eventSet Array of event sets where the measurements are removed.
@@ -135,6 +149,18 @@ public final class Measurement {
      * @return Measurement results.
      */
     public static native BenchmarkResults getResults(int eventSet);
+
+    /** Retrieve all results for one event set.
+     *
+     * <p>
+     * Note that the last column would always be TYPE with number -1 to
+     * denote call to start(), -2 call to stop() and positive numbers
+     * denoting parameters from sample() call.
+     *
+     * @param eventSet Event set identification.
+     * @return Measurement results.
+     */
+    public static native BenchmarkResults getRawResults(int eventSet);
 
     /** Checks that event is supported.
      *

@@ -674,6 +674,8 @@
 		<self-test
 			classname="cz.cuni.mff.d3s.perf.ThreadTimeTest"
 			progarg="4" />
+		<self-test
+			classname="cz.cuni.mff.d3s.perf.MeasurementSamplingTest" />
 
 		<echo level="info" message="All tests passed." />
 	</target>

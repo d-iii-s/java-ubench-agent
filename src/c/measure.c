@@ -119,6 +119,12 @@ void ubench_measure_start(const benchmark_configuration_t *config,
 	do_snapshot(config, snapshot);
 }
 
+void ubench_measure_sample(const benchmark_configuration_t *config,
+		ubench_events_snapshot_t *snapshot, int user_id) {
+	snapshot->type = user_id;
+	do_snapshot(config, snapshot);
+}
+
 void ubench_measure_stop(const benchmark_configuration_t *config,
 		ubench_events_snapshot_t *snapshot) {
 	if ((config->used_backends & UBENCH_EVENT_BACKEND_SYS_WALLCLOCK) > 0) {
