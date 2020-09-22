@@ -113,8 +113,8 @@ typedef int threadtime_t;
 #define UBENCH_EVENT_BACKEND_JVM_COMPILATIONS 16
 #define UBENCH_EVENT_BACKEND_SYS_THREADTIME 32
 
-#define UBENCH_SNAPSHOT_TYPE_START 1
-#define UBENCH_SNAPSHOT_TYPE_END 2
+#define UBENCH_SNAPSHOT_TYPE_START (-1)
+#define UBENCH_SNAPSHOT_TYPE_END (-2)
 
 typedef struct {
 	timestamp_t timestamp;
@@ -133,6 +133,7 @@ typedef struct {
 } ubench_events_snapshot_t;
 
 typedef struct ubench_event_info ubench_event_info_t;
+typedef long long (*event_getter_raw_func_t)(const ubench_events_snapshot_t *, const ubench_event_info_t *);
 typedef long long (*event_getter_func_t)(const ubench_events_snapshot_t *, const ubench_events_snapshot_t *, const ubench_event_info_t *);
 typedef int (*event_info_iterator_callback_t)(const char *, void *);
 
@@ -141,6 +142,7 @@ struct ubench_event_info {
 	int id;
 	int papi_component;
 	size_t papi_index;
+	event_getter_raw_func_t op_get_raw;
 	event_getter_func_t op_get;
 	char *name;
 };
@@ -181,6 +183,7 @@ extern int ubench_event_resolve(const char *, ubench_event_info_t *);
 extern void ubench_event_iterate(event_info_iterator_callback_t, void *);
 
 extern void ubench_measure_start(const benchmark_configuration_t *, ubench_events_snapshot_t *);
+extern void ubench_measure_sample(const benchmark_configuration_t *, ubench_events_snapshot_t *, int user_id);
 extern void ubench_measure_stop(const benchmark_configuration_t *, ubench_events_snapshot_t *);
 
 extern ubench_atomic_int_t counter_compilation;

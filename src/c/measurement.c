@@ -466,6 +466,39 @@ DLL_EXPORT void JNICALL Java_cz_cuni_mff_d3s_perf_Measurement_stop(
 	(*env)->ReleaseIntArrayElements(env, jids, ids, JNI_ABORT);
 }
 
+DLL_EXPORT void JNICALL Java_cz_cuni_mff_d3s_perf_Measurement_sample(
+		JNIEnv *env, jclass UNUSED_PARAMETER(klass), jint juser_id, jintArray jids) {
+	size_t jids_count = (*env)->GetArrayLength(env, jids);
+	if (jids_count == 0) {
+		return;
+	}
+
+	jint *ids = (*env)->GetIntArrayElements(env, jids, NULL);
+	for (size_t i = 0; i < jids_count; i++) {
+		jint id = ids[i];
+
+		if ((id < 0) || (id >= all_eventset_count) || !all_eventsets[id].valid) {
+			do_throw(env, "Invalid event set id.");
+			return;
+		}
+
+		if (all_eventsets[ id ].config.data_size == 0) {
+			continue;
+		}
+
+		if (all_eventsets[ id ].config.data_index >= all_eventsets[ id ].config.data_size) {
+			all_eventsets[ id ].config.data_index -= 2;
+		}
+
+		ubench_events_snapshot_t *snapshot = &all_eventsets[ id ].config.data[ all_eventsets[ id ].config.data_index ];
+
+		ubench_measure_sample(&all_eventsets[ id ].config, snapshot, (int)juser_id);
+		all_eventsets[ id ].config.data_index++;
+	}
+
+	(*env)->ReleaseIntArrayElements(env, jids, ids, JNI_ABORT);
+}
+
 DLL_EXPORT void JNICALL Java_cz_cuni_mff_d3s_perf_Measurement_reset(
 		JNIEnv *UNUSED_PARAMETER(env), jclass UNUSED_PARAMETER(klass), jintArray jids) {
 	size_t jids_count = (*env)->GetArrayLength(env, jids);
@@ -575,6 +608,76 @@ DLL_EXPORT jobject JNICALL Java_cz_cuni_mff_d3s_perf_Measurement_getResults(JNIE
 
 	return jresults;
 }
+
+
+DLL_EXPORT jobject JNICALL Java_cz_cuni_mff_d3s_perf_Measurement_getRawResults(JNIEnv *env,
+		jclass UNUSED_PARAMETER(klass), jint jid) {
+	if ((jid < 0) || (jid >= all_eventset_count) || !all_eventsets[jid].valid) {
+		do_throw(env, "Invalid event set id.");
+		return NULL;
+	}
+
+	jmethodID constructor;
+	jclass results_class = (*env)->FindClass(env, "cz/cuni/mff/d3s/perf/BenchmarkResultsImpl");
+	if (results_class == NULL) {
+		return NULL;
+	}
+	jclass string_class = (*env)->FindClass(env, "java/lang/String");
+	if (string_class == NULL) {
+		return NULL;
+	}
+
+	jobjectArray jevent_names = (jobjectArray) (*env)->NewObjectArray(env,
+		(jsize) all_eventsets[ jid ].config.used_events_count + 1,
+		string_class, NULL);
+	size_t i;
+	for (i = 0; i < all_eventsets[ jid ].config.used_events_count; i++) {
+		(*env)->SetObjectArrayElement(env, jevent_names, (jsize) i, (*env)->NewStringUTF(env, all_eventsets[ jid ].config.used_events[i].name));
+	}
+	(*env)->SetObjectArrayElement(env, jevent_names, (jsize) all_eventsets[ jid ].config.used_events_count, (*env)->NewStringUTF(env, "TYPE"));
+
+
+	constructor = (*env)->GetMethodID(env, results_class, "<init>", "([Ljava/lang/String;)V");
+	if (constructor == NULL) {
+		return NULL;
+	}
+
+	jobject jresults = (*env)->NewObject(env, results_class, constructor, jevent_names);
+	if (jresults == NULL) {
+		return NULL;
+	}
+
+	jlongArray event_values = (*env)->NewLongArray(env, (jsize) all_eventsets[ jid ].config.used_events_count + 1);
+	if (event_values == NULL) {
+		return NULL;
+	}
+	jmethodID add_data_method = (*env)->GetMethodID(env, results_class, "addDataRow", "([J)V");
+	if (add_data_method == NULL) {
+		return NULL;
+	}
+
+	i = 0;
+	size_t i_max = all_eventsets[ jid ].config.data_index;
+	while (i < i_max) {
+		size_t ei;
+		for (ei = 0; ei < all_eventsets[ jid ].config.used_events_count; ei++) {
+			ubench_event_info_t *event = &all_eventsets[ jid ].config.used_events[ei];
+			long long value = event->op_get_raw(&all_eventsets[jid].config.data[i], event);
+			jlong jvalue = (jlong) value;
+			// FIXME: report PAPI errors etc.
+			(*env)->SetLongArrayRegion(env, event_values, (jsize) ei, 1, &jvalue);
+		}
+		jlong type = (long) all_eventsets[jid].config.data[i].type;
+		(*env)->SetLongArrayRegion(env, event_values, (jsize) all_eventsets[ jid ].config.used_events_count, 1, &type);
+
+		(*env)->CallVoidMethod(env, jresults, add_data_method, event_values);
+
+		i++;
+	}
+
+	return jresults;
+}
+
 
 DLL_EXPORT jboolean JNICALL Java_cz_cuni_mff_d3s_perf_Measurement_isEventSupported(JNIEnv *env,
 		jclass UNUSED_PARAMETER(klass), jstring jevent) {

@@ -651,6 +651,9 @@
 		<self-test
 			classname="cz.cuni.mff.d3s.perf.BenchmarkTest"
 			/>
+		<self-test
+			classname="cz.cuni.mff.d3s.perf.MeasurementSamplingTest"
+			/>
 				
 		<echo level="info" message="All tests passed." />
 	</target>
