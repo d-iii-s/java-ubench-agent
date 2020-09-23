@@ -132,7 +132,7 @@ static long long getter_raw_thread_time(const ubench_events_snapshot_t *value, c
 #ifdef HAS_TIMESPEC
 	return value->threadtime.tv_sec * 1000 * 1000 * 1000 + value->threadtime.tv_nsec;
 #elif defined(HAS_GET_THREAD_TIMES)
-	return (get_filetime_in_us(value->threadtime.kernel) + get_filetime_in_us(value->threadtime.user)) * 1000;
+	return (get_filetime_in_us(&value->threadtime.kernel) + get_filetime_in_us(&value->threadtime.user)) * 1000;
 #else
 	return 0;
 #endif
