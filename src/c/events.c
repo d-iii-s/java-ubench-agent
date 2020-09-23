@@ -108,6 +108,10 @@ static long long get_filetime_diff_in_us(const FILETIME *a, const FILETIME *b) {
   long long result = ((LARGE_INTEGER*)b)->QuadPart - ((LARGE_INTEGER*)a)->QuadPart;
   return result / 10;
 }
+
+static long long get_filetime_in_us(const FILETIME *val) {
+	return (((LARGE_INTEGER*)val)->QuadPart) / 10;
+}
 #endif
 
 static long long getter_thread_time(const ubench_events_snapshot_t *start, const ubench_events_snapshot_t *end, const ubench_event_info_t *UNUSED_PARAMETER(info)) {
@@ -128,7 +132,7 @@ static long long getter_raw_thread_time(const ubench_events_snapshot_t *value, c
 #ifdef HAS_TIMESPEC
 	return value->threadtime.tv_sec * 1000 * 1000 * 1000 + value->threadtime.tv_nsec;
 #elif defined(HAS_GET_THREAD_TIMES)
-  return (((LARGE_INTEGER*)value->threadtime.kernel)->QuadPart + ((LARGE_INTEGER*)value->threadtime.user)->QuadPart) * 1000;
+	return (get_filetime_in_us(value->threadtime.kernel) + get_filetime_in_us(value->threadtime.user)) * 1000;
 #else
 	return 0;
 #endif
