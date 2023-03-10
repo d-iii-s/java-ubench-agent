@@ -38,8 +38,8 @@ public final class Measurement {
 
     /** Create new event set.
      *
-     * @param measurementCount How many measurements should remember the C agent.
-     * @param events List of events.
+     * @param measurementCount How many measurements should the C agent remember.
+     * @param events An array of event names (use {@link #getSupportedEvents()} to get supported event names).
      * @param options Extra options (flags).
      * @return Event set number (opaque identifier).
      * @throws cz.cuni.mff.d3s.perf.MeasurementException On any failure when setting-up
@@ -49,8 +49,8 @@ public final class Measurement {
 
     /** Create new event set attached to a Java thread.
      *
-     * @param threadId Jave thread id.
-     * @param measurementCount How many measurements should remember the C agent.
+     * @param threadId Java thread id.
+     * @param measurementCount How many measurements should the C agent remember.
      * @param events List of events.
      * @param options Extra options (flags).
      * @return Event set number (opaque identifier).
@@ -75,8 +75,8 @@ public final class Measurement {
 
     /** Create new event set attached to a Java thread.
      *
-     * @param thread Jave thread
-     * @param measurementCount How many measurements should remember the C agent.
+     * @param thread Java thread
+     * @param measurementCount How many measurements should the C agent remember.
      * @param events List of events.
      * @param options Extra options (flags).
      * @return Event set number (opaque identifier).
