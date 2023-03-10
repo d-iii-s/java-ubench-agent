@@ -18,7 +18,11 @@
 package cz.cuni.mff.d3s.perf;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
+import java.util.stream.Collectors;
+
+import static java.util.stream.Collectors.toList;
 
 /** Java class interfacing with native calls to the actual implementation. */
 public final class Measurement {
@@ -175,13 +179,9 @@ public final class Measurement {
      * @return List of events supported on current platform.
      */
     public static String[] filterSupportedEvents(final String[] events) {
-        List<String> result = new ArrayList<>(events.length);
-        for (String ev : events) {
-            if (Measurement.isEventSupported(ev)) {
-                result.add(ev);
-            }
-        }
-        return result.toArray(STRING_ARRAY_TYPE);
+        return Arrays.stream(events)
+            .filter(Measurement::isEventSupported)
+            .collect(toList()).toArray(STRING_ARRAY_TYPE);
     }
 
     /** Get list of events supported on current platform.
