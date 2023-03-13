@@ -17,12 +17,10 @@
 
 package cz.cuni.mff.d3s.perf;
 
-import java.util.ArrayList;
+import static java.util.stream.Collectors.toList;
+
 import java.util.Arrays;
 import java.util.List;
-import java.util.stream.Collectors;
-
-import static java.util.stream.Collectors.toList;
 
 /** Java class interfacing with native calls to the actual implementation. */
 public final class Measurement {
