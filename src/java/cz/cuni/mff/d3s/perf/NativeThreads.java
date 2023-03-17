@@ -23,7 +23,11 @@ import java.util.NoSuchElementException;
 public final class NativeThreads {
     /** Invalid thread ID marker. */
     private static final long INVALID_THREAD_ID = -1;
-    
+
+    static {
+        UbenchAgent.load();
+    }
+
     /** Prevent instantiation. */
     private NativeThreads() {}
 

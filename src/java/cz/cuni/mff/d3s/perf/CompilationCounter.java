@@ -19,6 +19,11 @@ package cz.cuni.mff.d3s.perf;
 
 /** Provides access to number of JIT compilations. */
 public final class CompilationCounter {
+
+    static {
+        UbenchAgent.load();
+    }
+
     /** Prevent instantiation. */
     private CompilationCounter() {}
 

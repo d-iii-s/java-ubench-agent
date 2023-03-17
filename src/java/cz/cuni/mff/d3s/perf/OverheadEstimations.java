@@ -19,6 +19,11 @@ package cz.cuni.mff.d3s.perf;
 
 /** Helper class for estimating overhead of native calls. */
 public final class OverheadEstimations {
+
+    static {
+        UbenchAgent.load();
+    }
+
     /** Prevent instantiation. */
     private OverheadEstimations() {}
 

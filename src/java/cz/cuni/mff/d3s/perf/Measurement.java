@@ -34,7 +34,11 @@ public final class Measurement {
 
     /** Generics' helper. */
     private static final String[] STRING_ARRAY_TYPE = new String[0];
-    
+
+    static {
+        UbenchAgent.load();
+    }
+
     /** Prevent instantiation. */
     private Measurement() {}
 
