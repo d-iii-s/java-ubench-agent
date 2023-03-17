@@ -89,7 +89,7 @@ ensure_java_lang_Thread_resolved(JNIEnv* jni_env) {
 	ubench_spinlock_unlock(&java_lang_Thread_guard);
 }
 
-void JNICALL
+INTERNAL void JNICALL
 ubench_jvm_callback_on_thread_start(
 	jvmtiEnv* UNUSED_PARAMETER(jvmti_env), JNIEnv* jni_env, jthread thread
 ) {
@@ -103,7 +103,7 @@ ubench_jvm_callback_on_thread_start(
 	ubench_register_thread_id_mapping(java_id, native_id);
 }
 
-void JNICALL
+INTERNAL void JNICALL
 ubench_jvm_callback_on_thread_end(
 	jvmtiEnv* UNUSED_PARAMETER(jvmti_env), JNIEnv* UNUSED_PARAMETER(jni_env),
 	jthread UNUSED_PARAMETER(thread)
@@ -115,7 +115,7 @@ ubench_jvm_callback_on_thread_end(
 	ubench_unregister_thread_id_mapping_by_native_id(native_id);
 }
 
-int
+INTERNAL int
 ubench_register_thread_id_mapping(jlong java_thread_id, long long native_thread_id) {
 	int res = 0;
 
@@ -151,7 +151,7 @@ leave:
 	return res;
 }
 
-int
+INTERNAL int
 ubench_unregister_thread_id_mapping_by_native_id(long long native_thread_id) {
 	int res = 1;
 
@@ -170,7 +170,7 @@ ubench_unregister_thread_id_mapping_by_native_id(long long native_thread_id) {
 	return res;
 }
 
-long long
+INTERNAL long long
 ubench_get_native_thread_id(jlong java_thread_id) {
 	ubench_spinlock_lock(&thread_mapping_guard);
 
@@ -189,7 +189,7 @@ ubench_get_native_thread_id(jlong java_thread_id) {
 	return UBENCH_THREAD_ID_INVALID;
 }
 
-long long
+INTERNAL long long
 ubench_get_current_thread_native_id(void) {
 #if defined(_MSC_VER)
 	return (long long) GetCurrentThreadId();

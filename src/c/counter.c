@@ -124,7 +124,7 @@ register_and_enable_callback(void) {
 	return JNI_OK;
 }
 
-jint
+INTERNAL jint
 ubench_counters_init(jvmtiEnv* jvmti) {
 	DEBUG_PRINTF("initializing counters");
 

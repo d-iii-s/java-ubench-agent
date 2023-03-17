@@ -109,7 +109,7 @@ do_snapshot(
 	}
 }
 
-void
+INTERNAL void
 ubench_measure_start(
 	const benchmark_configuration_t* config, ubench_events_snapshot_t* snapshot
 ) {
@@ -125,7 +125,7 @@ ubench_measure_start(
 	do_snapshot(config, snapshot);
 }
 
-void
+INTERNAL void
 ubench_measure_sample(
 	const benchmark_configuration_t* config, ubench_events_snapshot_t* snapshot, int user_id
 ) {
@@ -133,7 +133,7 @@ ubench_measure_sample(
 	do_snapshot(config, snapshot);
 }
 
-void
+INTERNAL void
 ubench_measure_stop(
 	const benchmark_configuration_t* config, ubench_events_snapshot_t* snapshot
 ) {

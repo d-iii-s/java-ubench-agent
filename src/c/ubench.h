@@ -39,8 +39,10 @@
 
 #ifdef __GNUC__
 #define UNUSED_PARAMETER(name) name __attribute__((unused))
+#define INTERNAL __attribute__((visibility("hidden")))
 #else
 #define UNUSED_PARAMETER(name) name
+#define INTERNAL
 #endif
 
 #define UNUSED_VARIABLE(name) (void) name

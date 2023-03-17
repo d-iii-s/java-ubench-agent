@@ -57,7 +57,7 @@ typedef struct {
 #define TIMESPEC_TO_NANOS(val) ((val).tv_sec * 1000 * 1000 * 1000 + (val).tv_nsec)
 #define TIMEVAL_TO_MICROS(val) ((val).tv_sec * 1000 * 1000 + (val).tv_usec)
 
-int
+INTERNAL int
 ubench_event_init(void) {
 #ifdef HAS_QUERY_PERFORMANCE_COUNTER
 	QueryPerformanceFrequency(&windows_timer_frequency);
@@ -467,7 +467,7 @@ static known_event_t known_events[] = {
 };
 
 
-int
+INTERNAL int
 ubench_event_resolve(const char* event, ubench_event_info_t* info) {
 	if (event == NULL) {
 		return 0;
@@ -496,7 +496,7 @@ ubench_event_resolve(const char* event, ubench_event_info_t* info) {
 	return 0;
 }
 
-void
+INTERNAL void
 ubench_event_iterate(event_info_iterator_callback_t iterator_callback, void* arg) {
 	if (iterator_callback == NULL) {
 		return;

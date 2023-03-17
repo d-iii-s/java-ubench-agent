@@ -88,7 +88,7 @@ get_thread_id(void) {
 }
 #endif
 
-jint
+INTERNAL jint
 ubench_benchmark_init(void) {
 #ifdef HAS_PAPI
 	// TODO: check for errors
