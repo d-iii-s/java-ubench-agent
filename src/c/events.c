@@ -456,6 +456,8 @@ static known_event_t known_events[] = {
 	},
 #endif
 
+	/* Terminating entry. */
+
 	{
 		.name = NULL,
 		.resolver = NULL,
