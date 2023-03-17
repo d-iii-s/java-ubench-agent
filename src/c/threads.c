@@ -91,11 +91,11 @@ ensure_java_lang_Thread_resolved(JNIEnv* jni_env) {
 
 INTERNAL void JNICALL
 ubench_jvm_callback_on_thread_start(
-	jvmtiEnv* UNUSED_PARAMETER(jvmti_env), JNIEnv* jni_env, jthread thread
+	jvmtiEnv* UNUSED_PARAMETER(jvmti), JNIEnv* jni, jthread thread
 ) {
-	ensure_java_lang_Thread_resolved(jni_env);
+	ensure_java_lang_Thread_resolved(jni);
 
-	jlong java_id = (*jni_env)->CallLongMethod(jni_env, thread, method_java_lang_Thread_getId);
+	jlong java_id = (*jni)->CallLongMethod(jni, thread, method_java_lang_Thread_getId);
 	long long native_id = ubench_get_current_thread_native_id();
 
 	DEBUG_PRINTF("JVM callback: thread %lld [%lld] started.", (long long) java_id, native_id);
@@ -105,7 +105,7 @@ ubench_jvm_callback_on_thread_start(
 
 INTERNAL void JNICALL
 ubench_jvm_callback_on_thread_end(
-	jvmtiEnv* UNUSED_PARAMETER(jvmti_env), JNIEnv* UNUSED_PARAMETER(jni_env),
+	jvmtiEnv* UNUSED_PARAMETER(jvmti), JNIEnv* UNUSED_PARAMETER(jni),
 	jthread UNUSED_PARAMETER(thread)
 ) {
 	long long native_id = ubench_get_current_thread_native_id();

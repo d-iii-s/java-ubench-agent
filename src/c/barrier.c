@@ -35,12 +35,12 @@ static pthread_barrier_t* shared_mem_barrier = NULL;
 
 JNIEXPORT void JNICALL
 Java_cz_cuni_mff_d3s_perf_Barrier_initNative(
-	JNIEnv* env, jclass UNUSED_PARAMETER(klass), jstring jname
+	JNIEnv* jni, jclass UNUSED_PARAMETER(barrier_class), jstring jname
 ) {
 #ifdef __unix__
-	const char* name = (*env)->GetStringUTFChars(env, jname, 0);
+	const char* name = (*jni)->GetStringUTFChars(jni, jname, 0);
 	shared_mem_id = shm_open(name, O_RDWR, 0600);
-	(*env)->ReleaseStringUTFChars(env, jname, name);
+	(*jni)->ReleaseStringUTFChars(jni, jname, name);
 	if (shared_mem_id == -1) {
 		// TODO: throw Java exception
 		fprintf(stderr, "Failed to create shared memory segment!\n");
@@ -55,7 +55,7 @@ Java_cz_cuni_mff_d3s_perf_Barrier_initNative(
 	}
 #else
 	// Silence the compiler (unused variables).
-	(void) env;
+	(void) jni;
 	(void) jname;
 
 	fprintf(stderr, "Platform not yet supported.\n");
@@ -66,7 +66,7 @@ Java_cz_cuni_mff_d3s_perf_Barrier_initNative(
 
 JNIEXPORT void JNICALL
 Java_cz_cuni_mff_d3s_perf_Barrier_barrier(
-	JNIEnv* UNUSED_PARAMETER(env), jclass UNUSED_PARAMETER(klass)
+	JNIEnv* UNUSED_PARAMETER(jni), jclass UNUSED_PARAMETER(barrier_class)
 ) {
 #ifdef __unix__
 	pthread_barrier_wait(shared_mem_barrier);

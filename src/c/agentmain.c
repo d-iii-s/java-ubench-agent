@@ -24,18 +24,18 @@
 
 JNIEXPORT jint JNICALL
 Agent_OnLoad(
-	JavaVM* vm, char* UNUSED_PARAMETER(options), void* UNUSED_PARAMETER(reserved)
+	JavaVM* jvm, char* UNUSED_PARAMETER(options), void* UNUSED_PARAMETER(reserved)
 ) {
 	jint rc;
-	jvmtiEnv* env;
+	jvmtiEnv* jvmti;
 
-	rc = (*vm)->GetEnv(vm, (void**) &env, JVMTI_VERSION);
+	rc = (*jvm)->GetEnv(jvm, (void**) &jvmti, JVMTI_VERSION);
 	if (rc != JNI_OK) {
 		fprintf(stderr, "Unable to create JVMTI environment, JavaVM->GetEnv failed, error %ld.\n", (long) rc);
 		return JNI_ERR;
 	}
 
-	rc = ubench_counters_init(env);
+	rc = ubench_counters_init(jvmti);
 
 	if (rc != JNI_OK) {
 		return JNI_ERR;
@@ -51,6 +51,6 @@ Agent_OnLoad(
 }
 
 JNIEXPORT void JNICALL
-Agent_OnUnload(JavaVM* UNUSED_PARAMETER(vm)) {
+Agent_OnUnload(JavaVM* UNUSED_PARAMETER(jvm)) {
 	DEBUG_PRINTF("agent unloaded.");
 }

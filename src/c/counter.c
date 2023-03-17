@@ -78,7 +78,7 @@ on_compiled_method_load(
 // }
 
 static void JNICALL
-on_gc_finish(jvmtiEnv* UNUSED_PARAMETER(jvmti_env)) {
+on_gc_finish(jvmtiEnv* UNUSED_PARAMETER(jvmti)) {
 	ubench_atomic_int_inc(&counter_gc_total);
 }
 

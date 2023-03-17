@@ -112,21 +112,21 @@ ubench_benchmark_init(void) {
 }
 
 static void
-do_throw(JNIEnv* env, const char* message) {
-	jclass exClass = (*env)->FindClass(env, "cz/cuni/mff/d3s/perf/MeasurementException");
+do_throw(JNIEnv* jni, const char* message) {
+	jclass exClass = (*jni)->FindClass(jni, "cz/cuni/mff/d3s/perf/MeasurementException");
 	if (exClass == NULL) {
 		fprintf(stderr, "Unable to find MeasurementException class, aborting!\n");
 		exit(1);
 	}
-	(*env)->ThrowNew(env, exClass, message);
+	(*jni)->ThrowNew(jni, exClass, message);
 }
 
 #ifdef HAS_PAPI
 static void
-do_papi_error_throw(JNIEnv* env, int rc, const char* function_that_failed) {
+do_papi_error_throw(JNIEnv* jni, int rc, const char* function_that_failed) {
 	char message[512];
 	sprintf(message, "%s failed: %s.", function_that_failed, PAPI_strerror(rc));
-	do_throw(env, message);
+	do_throw(jni, message);
 }
 #endif
 
@@ -135,7 +135,7 @@ do_papi_error_throw(JNIEnv* env, int rc, const char* function_that_failed) {
 
 JNIEXPORT jint JNICALL
 Java_cz_cuni_mff_d3s_perf_Measurement_createEventSet(
-	JNIEnv* env, jclass UNUSED_PARAMETER(klass),
+	JNIEnv* jni, jclass UNUSED_PARAMETER(measurement_class),
 	jint jmeasurements, jobjectArray jeventNames, jintArray joptions
 ) {
 #ifndef HAS_PAPI
@@ -146,13 +146,13 @@ Java_cz_cuni_mff_d3s_perf_Measurement_createEventSet(
 	jmeasurements *= 2;
 
 	if (jmeasurements <= 0) {
-		do_throw(env, "Number of measurements has to be positive.");
+		do_throw(jni, "Number of measurements has to be positive.");
 		return -1;
 	}
 
-	size_t event_count = (*env)->GetArrayLength(env, jeventNames);
+	size_t event_count = (*jni)->GetArrayLength(jni, jeventNames);
 	if (event_count == 0) {
-		do_throw(env, "List of events cannot be empty.");
+		do_throw(jni, "List of events cannot be empty.");
 		return -1;
 	}
 
@@ -174,7 +174,7 @@ Java_cz_cuni_mff_d3s_perf_Measurement_createEventSet(
 	if (eventset == NULL) {
 		eventset_t* new_eventset = realloc(all_eventsets, sizeof(eventset_t) * (all_eventset_count + 1));
 		if (new_eventset == NULL) {
-			THROW_OOM(env, "allocating an event set");
+			THROW_OOM(jni, "allocating an event set");
 			return -1;
 		}
 		all_eventsets = new_eventset;
@@ -190,7 +190,7 @@ Java_cz_cuni_mff_d3s_perf_Measurement_createEventSet(
 
 	eventset->config.data = calloc(jmeasurements, sizeof(ubench_events_snapshot_t));
 	if (eventset->config.data == NULL) {
-		THROW_OOM(env, "allocating place for measurements");
+		THROW_OOM(jni, "allocating place for measurements");
 		return -1;
 	}
 	eventset->config.data_index = 0;
@@ -199,7 +199,7 @@ Java_cz_cuni_mff_d3s_perf_Measurement_createEventSet(
 	eventset->config.used_events = calloc(event_count, sizeof(ubench_event_info_t));
 	if (eventset->config.used_events == NULL) {
 		free(eventset->config.data);
-		THROW_OOM(env, "allocating place for event metadata");
+		THROW_OOM(jni, "allocating place for event metadata");
 		return -1;
 	}
 	eventset->config.used_events_count = 0;
@@ -211,8 +211,8 @@ Java_cz_cuni_mff_d3s_perf_Measurement_createEventSet(
 #endif
 
 	for (size_t i = 0; i < event_count; i++) {
-		jstring jevent_name = (jstring) (*env)->GetObjectArrayElement(env, jeventNames, (jsize) i);
-		const char* event_name = (*env)->GetStringUTFChars(env, jevent_name, 0);
+		jstring jevent_name = (jstring) (*jni)->GetObjectArrayElement(jni, jeventNames, (jsize) i);
+		const char* event_name = (*jni)->GetStringUTFChars(jni, jevent_name, 0);
 
 		ubench_event_info_t* event_info = &eventset->config.used_events[eventset->config.used_events_count];
 
@@ -225,10 +225,10 @@ Java_cz_cuni_mff_d3s_perf_Measurement_createEventSet(
 			snprintf(buf, 510, "Unrecognized event %s.", event_name);
 #endif
 			buf[511] = 0;
-			(*env)->ReleaseStringUTFChars(env, jevent_name, event_name);
+			(*jni)->ReleaseStringUTFChars(jni, jevent_name, event_name);
 			free(eventset->config.used_events);
 			free(eventset->config.data);
-			do_throw(env, buf);
+			do_throw(jni, buf);
 			return -1;
 		}
 
@@ -262,7 +262,7 @@ Java_cz_cuni_mff_d3s_perf_Measurement_createEventSet(
 				if (eventset->config.papi_component != event_info->papi_component) {
 					// fprintf(stderr, "so far %d,  new one %d (events %d)\n", eventset->config.papi_component, event_info->papi_component, eventset->config.used_papi_events_count);
 					//  FIXME: release memory
-					do_throw(env, "PAPI components are not the same in the event set.");
+					do_throw(jni, "PAPI components are not the same in the event set.");
 					return -1;
 				}
 			}
@@ -271,21 +271,21 @@ Java_cz_cuni_mff_d3s_perf_Measurement_createEventSet(
 		}
 #endif
 
-		(*env)->ReleaseStringUTFChars(env, jevent_name, event_name);
+		(*jni)->ReleaseStringUTFChars(jni, jevent_name, event_name);
 	}
 
 #ifdef HAS_PAPI
-	size_t option_count = (*env)->GetArrayLength(env, joptions);
-	jint* options = (*env)->GetIntArrayElements(env, joptions, NULL);
+	size_t option_count = (*jni)->GetArrayLength(jni, joptions);
+	jint* options = (*jni)->GetIntArrayElements(jni, joptions, NULL);
 
 
 	if ((eventset->config.used_backends & UBENCH_EVENT_BACKEND_PAPI) > 0) {
 		int rc = PAPI_create_eventset(&eventset->config.papi_eventset);
 		if (rc != PAPI_OK) {
-			(*env)->ReleaseIntArrayElements(env, joptions, options, JNI_ABORT);
+			(*jni)->ReleaseIntArrayElements(jni, joptions, options, JNI_ABORT);
 			free(eventset->config.used_events);
 			free(eventset->config.data);
-			do_papi_error_throw(env, rc, "PAPI_create_eventset");
+			do_papi_error_throw(jni, rc, "PAPI_create_eventset");
 			return -1;
 		}
 
@@ -295,10 +295,10 @@ Java_cz_cuni_mff_d3s_perf_Measurement_createEventSet(
 		// *before* adding the individual events work
 		rc = PAPI_assign_eventset_component(eventset->config.papi_eventset, eventset->config.papi_component);
 		if (rc != PAPI_OK) {
-			(*env)->ReleaseIntArrayElements(env, joptions, options, JNI_ABORT);
+			(*jni)->ReleaseIntArrayElements(jni, joptions, options, JNI_ABORT);
 			free(eventset->config.used_events);
 			free(eventset->config.data);
-			do_papi_error_throw(env, rc, "PAPI_assign_eventset_component");
+			do_papi_error_throw(jni, rc, "PAPI_assign_eventset_component");
 			return -1;
 		}
 
@@ -310,10 +310,10 @@ Java_cz_cuni_mff_d3s_perf_Measurement_createEventSet(
 				opt.inherit.eventset = eventset->config.papi_eventset;
 				rc = PAPI_set_opt(PAPI_INHERIT, &opt);
 				if (rc != PAPI_OK) {
-					(*env)->ReleaseIntArrayElements(env, joptions, options, JNI_ABORT);
+					(*jni)->ReleaseIntArrayElements(jni, joptions, options, JNI_ABORT);
 					free(eventset->config.used_events);
 					free(eventset->config.data);
-					do_papi_error_throw(env, rc, "PAPI_set_opt(PAPI_INHERIT)");
+					do_papi_error_throw(jni, rc, "PAPI_set_opt(PAPI_INHERIT)");
 					return -1;
 				}
 			}
@@ -322,16 +322,16 @@ Java_cz_cuni_mff_d3s_perf_Measurement_createEventSet(
 		for (size_t i = 0; i < eventset->config.used_papi_events_count; i++) {
 			rc = PAPI_add_event(eventset->config.papi_eventset, eventset->config.used_papi_events[i]);
 			if (rc != PAPI_OK) {
-				(*env)->ReleaseIntArrayElements(env, joptions, options, JNI_ABORT);
+				(*jni)->ReleaseIntArrayElements(jni, joptions, options, JNI_ABORT);
 				free(eventset->config.used_events);
 				free(eventset->config.data);
-				do_papi_error_throw(env, rc, "PAPI_add_event");
+				do_papi_error_throw(jni, rc, "PAPI_add_event");
 				return -1;
 			}
 		}
 	}
 
-	(*env)->ReleaseIntArrayElements(env, joptions, options, JNI_ABORT);
+	(*jni)->ReleaseIntArrayElements(jni, joptions, options, JNI_ABORT);
 
 #endif
 	eventset->valid = 1;
@@ -341,34 +341,34 @@ Java_cz_cuni_mff_d3s_perf_Measurement_createEventSet(
 
 JNIEXPORT jint JNICALL
 Java_cz_cuni_mff_d3s_perf_Measurement_createAttachedEventSetWithJavaThread(
-	JNIEnv* env, jclass klass,
-	jlong jthread_id, jint jmeasurements, jobjectArray jeventNames, jintArray joptions
+	JNIEnv* jni, jclass measurement_class,
+	jlong java_thread_id, jint jmeasurements, jobjectArray jeventNames, jintArray joptions
 ) {
-	jint eventset_index = Java_cz_cuni_mff_d3s_perf_Measurement_createEventSet(env, klass, jmeasurements, jeventNames, joptions);
+	jint eventset_index = Java_cz_cuni_mff_d3s_perf_Measurement_createEventSet(jni, measurement_class, jmeasurements, jeventNames, joptions);
 
 #ifdef HAS_PAPI
 	if ((all_eventsets[eventset_index].config.used_backends & UBENCH_EVENT_BACKEND_PAPI) > 0) {
-		long long native_id = ubench_get_native_thread_id(jthread_id);
+		long long native_id = ubench_get_native_thread_id(java_thread_id);
 
 		if (native_id == UBENCH_THREAD_ID_INVALID) {
-			Java_cz_cuni_mff_d3s_perf_Measurement_destroyEventSet(env, klass, eventset_index);
-			do_throw(env, "Unknown thread (not registered with PAPI).");
+			Java_cz_cuni_mff_d3s_perf_Measurement_destroyEventSet(jni, measurement_class, eventset_index);
+			do_throw(jni, "Unknown thread (not registered with PAPI).");
 			return -1;
 		}
 
-		DEBUG_PRINTF("Trying to attach %d to %llu (%ld).", eventset_index, native_id, jthread_id);
+		DEBUG_PRINTF("Trying to attach %d to %llu (%ld).", eventset_index, native_id, java_thread_id);
 
 		int rc = PAPI_attach(all_eventsets[eventset_index].config.papi_eventset, (unsigned long) native_id);
 		if (rc != PAPI_OK) {
-			Java_cz_cuni_mff_d3s_perf_Measurement_destroyEventSet(env, klass, eventset_index);
-			do_papi_error_throw(env, rc, "PAPI_attach");
+			Java_cz_cuni_mff_d3s_perf_Measurement_destroyEventSet(jni, measurement_class, eventset_index);
+			do_papi_error_throw(jni, rc, "PAPI_attach");
 			return -1;
 		}
-		DEBUG_PRINTF("Attached %d to %llu (%ld).", all_eventsets[eventset_index].config.papi_eventset, native_id, jthread_id);
+		DEBUG_PRINTF("Attached %d to %llu (%ld).", all_eventsets[eventset_index].config.papi_eventset, native_id, java_thread_id);
 	}
 #else
 	UNUSED_VARIABLE(joptions);
-	UNUSED_VARIABLE(jthread_id);
+	UNUSED_VARIABLE(java_thread_id);
 #endif
 
 	return eventset_index;
@@ -376,26 +376,26 @@ Java_cz_cuni_mff_d3s_perf_Measurement_createAttachedEventSetWithJavaThread(
 
 JNIEXPORT jint JNICALL
 Java_cz_cuni_mff_d3s_perf_Measurement_createAttachedEventSetWithNativeThread(
-	JNIEnv* env, jclass klass,
-	jlong thread_id, jint jmeasurements, jobjectArray jeventNames, jintArray joptions
+	JNIEnv* jni, jclass measurement_class,
+	jlong jnative_thread_id, jint jmeasurements, jobjectArray jeventNames, jintArray joptions
 ) {
-	jint eventset_index = Java_cz_cuni_mff_d3s_perf_Measurement_createEventSet(env, klass, jmeasurements, jeventNames, joptions);
+	jint eventset_index = Java_cz_cuni_mff_d3s_perf_Measurement_createEventSet(jni, measurement_class, jmeasurements, jeventNames, joptions);
 
 #ifdef HAS_PAPI
 	if ((all_eventsets[eventset_index].config.used_backends & UBENCH_EVENT_BACKEND_PAPI) > 0) {
-		DEBUG_PRINTF("Trying to attach %d to %lld.", eventset_index, (long long) thread_id);
+		DEBUG_PRINTF("Trying to attach %d to %lld.", eventset_index, (long long) jnative_thread_id);
 
-		int rc = PAPI_attach(all_eventsets[eventset_index].config.papi_eventset, (unsigned long) thread_id);
+		int rc = PAPI_attach(all_eventsets[eventset_index].config.papi_eventset, (unsigned long) jnative_thread_id);
 		if (rc != PAPI_OK) {
-			Java_cz_cuni_mff_d3s_perf_Measurement_destroyEventSet(env, klass, eventset_index);
-			do_papi_error_throw(env, rc, "PAPI_attach");
+			Java_cz_cuni_mff_d3s_perf_Measurement_destroyEventSet(jni, measurement_class, eventset_index);
+			do_papi_error_throw(jni, rc, "PAPI_attach");
 			return -1;
 		}
-		DEBUG_PRINTF("Attached %d to %lld.", all_eventsets[eventset_index].config.papi_eventset, (long long) thread_id);
+		DEBUG_PRINTF("Attached %d to %lld.", all_eventsets[eventset_index].config.papi_eventset, (long long) jnative_thread_id);
 	}
 #else
 	UNUSED_VARIABLE(joptions);
-	UNUSED_VARIABLE(thread_id);
+	UNUSED_VARIABLE(jnative_thread_id);
 #endif
 
 	return eventset_index;
@@ -403,10 +403,10 @@ Java_cz_cuni_mff_d3s_perf_Measurement_createAttachedEventSetWithNativeThread(
 
 JNIEXPORT void JNICALL
 Java_cz_cuni_mff_d3s_perf_Measurement_destroyEventSet(
-	JNIEnv* env, jclass UNUSED_PARAMETER(klass), jint jid
+	JNIEnv* jni, jclass UNUSED_PARAMETER(measurement_class), jint jid
 ) {
 	if ((jid < 0) || (jid >= all_eventset_count) || !all_eventsets[jid].valid) {
-		do_throw(env, "Invalid event set id.");
+		do_throw(jni, "Invalid event set id.");
 		return;
 	}
 
@@ -417,19 +417,19 @@ Java_cz_cuni_mff_d3s_perf_Measurement_destroyEventSet(
 
 JNIEXPORT void JNICALL
 Java_cz_cuni_mff_d3s_perf_Measurement_start(
-	JNIEnv* env, jclass UNUSED_PARAMETER(klass), jintArray jids
+	JNIEnv* jni, jclass UNUSED_PARAMETER(measurement_class), jintArray jids
 ) {
-	size_t jids_count = (*env)->GetArrayLength(env, jids);
+	size_t jids_count = (*jni)->GetArrayLength(jni, jids);
 	if (jids_count == 0) {
 		return;
 	}
 
-	jint* ids = (*env)->GetIntArrayElements(env, jids, NULL);
+	jint* ids = (*jni)->GetIntArrayElements(jni, jids, NULL);
 	for (size_t i = 0; i < jids_count; i++) {
 		jint id = ids[i];
 
 		if ((id < 0) || (id >= all_eventset_count) || !all_eventsets[id].valid) {
-			do_throw(env, "Invalid event set id.");
+			do_throw(jni, "Invalid event set id.");
 			return;
 		}
 
@@ -447,24 +447,24 @@ Java_cz_cuni_mff_d3s_perf_Measurement_start(
 		all_eventsets[id].config.data_index++;
 	}
 
-	(*env)->ReleaseIntArrayElements(env, jids, ids, JNI_ABORT);
+	(*jni)->ReleaseIntArrayElements(jni, jids, ids, JNI_ABORT);
 }
 
 JNIEXPORT void JNICALL
 Java_cz_cuni_mff_d3s_perf_Measurement_stop(
-	JNIEnv* env, jclass UNUSED_PARAMETER(klass), jintArray jids
+	JNIEnv* jni, jclass UNUSED_PARAMETER(measurement_class), jintArray jids
 ) {
-	size_t jids_count = (*env)->GetArrayLength(env, jids);
+	size_t jids_count = (*jni)->GetArrayLength(jni, jids);
 	if (jids_count == 0) {
 		return;
 	}
 
-	jint* ids = (*env)->GetIntArrayElements(env, jids, NULL);
+	jint* ids = (*jni)->GetIntArrayElements(jni, jids, NULL);
 	for (size_t i = 0; i < jids_count; i++) {
 		jint id = ids[i];
 
 		if ((id < 0) || (id >= all_eventset_count) || !all_eventsets[id].valid) {
-			do_throw(env, "Invalid event set id.");
+			do_throw(jni, "Invalid event set id.");
 			return;
 		}
 
@@ -475,24 +475,24 @@ Java_cz_cuni_mff_d3s_perf_Measurement_stop(
 		all_eventsets[id].config.data_index++;
 	}
 
-	(*env)->ReleaseIntArrayElements(env, jids, ids, JNI_ABORT);
+	(*jni)->ReleaseIntArrayElements(jni, jids, ids, JNI_ABORT);
 }
 
 JNIEXPORT void JNICALL
 Java_cz_cuni_mff_d3s_perf_Measurement_sample(
-	JNIEnv* env, jclass UNUSED_PARAMETER(klass), jint juser_id, jintArray jids
+	JNIEnv* jni, jclass UNUSED_PARAMETER(measurement_class), jint juser_id, jintArray jids
 ) {
-	size_t jids_count = (*env)->GetArrayLength(env, jids);
+	size_t jids_count = (*jni)->GetArrayLength(jni, jids);
 	if (jids_count == 0) {
 		return;
 	}
 
-	jint* ids = (*env)->GetIntArrayElements(env, jids, NULL);
+	jint* ids = (*jni)->GetIntArrayElements(jni, jids, NULL);
 	for (size_t i = 0; i < jids_count; i++) {
 		jint id = ids[i];
 
 		if ((id < 0) || (id >= all_eventset_count) || !all_eventsets[id].valid) {
-			do_throw(env, "Invalid event set id.");
+			do_throw(jni, "Invalid event set id.");
 			return;
 		}
 
@@ -510,31 +510,31 @@ Java_cz_cuni_mff_d3s_perf_Measurement_sample(
 		all_eventsets[id].config.data_index++;
 	}
 
-	(*env)->ReleaseIntArrayElements(env, jids, ids, JNI_ABORT);
+	(*jni)->ReleaseIntArrayElements(jni, jids, ids, JNI_ABORT);
 }
 
 JNIEXPORT void JNICALL
 Java_cz_cuni_mff_d3s_perf_Measurement_reset(
-	JNIEnv* env, jclass UNUSED_PARAMETER(klass), jintArray jids
+	JNIEnv* jni, jclass UNUSED_PARAMETER(measurement_class), jintArray jids
 ) {
-	size_t jids_count = (*env)->GetArrayLength(env, jids);
+	size_t jids_count = (*jni)->GetArrayLength(jni, jids);
 	if (jids_count == 0) {
 		return;
 	}
 
-	jint* ids = (*env)->GetIntArrayElements(env, jids, NULL);
+	jint* ids = (*jni)->GetIntArrayElements(jni, jids, NULL);
 	for (size_t i = 0; i < jids_count; i++) {
 		jint id = ids[i];
 
 		if ((id < 0) || (id >= all_eventset_count) || !all_eventsets[id].valid) {
-			do_throw(env, "Invalid event set id.");
+			do_throw(jni, "Invalid event set id.");
 			return;
 		}
 
 		all_eventsets[id].config.data_index = 0;
 	}
 
-	(*env)->ReleaseIntArrayElements(env, jids, ids, JNI_ABORT);
+	(*jni)->ReleaseIntArrayElements(jni, jids, ids, JNI_ABORT);
 }
 
 static size_t
@@ -554,45 +554,45 @@ find_first_matching_snapshot_type(ubench_events_snapshot_t* snapshots, size_t st
 
 JNIEXPORT jobject JNICALL
 Java_cz_cuni_mff_d3s_perf_Measurement_getResults(
-	JNIEnv* env, jclass UNUSED_PARAMETER(klass), jint jid
+	JNIEnv* jni, jclass UNUSED_PARAMETER(measurement_class), jint jid
 ) {
 	if ((jid < 0) || (jid >= all_eventset_count) || !all_eventsets[jid].valid) {
-		do_throw(env, "Invalid event set id.");
+		do_throw(jni, "Invalid event set id.");
 		return NULL;
 	}
 
 	jmethodID constructor;
-	jclass results_class = (*env)->FindClass(env, "cz/cuni/mff/d3s/perf/BenchmarkResultsImpl");
+	jclass results_class = (*jni)->FindClass(jni, "cz/cuni/mff/d3s/perf/BenchmarkResultsImpl");
 	if (results_class == NULL) {
 		return NULL;
 	}
-	jclass string_class = (*env)->FindClass(env, "java/lang/String");
+	jclass string_class = (*jni)->FindClass(jni, "java/lang/String");
 	if (string_class == NULL) {
 		return NULL;
 	}
 
-	jobjectArray jevent_names = (jobjectArray) (*env)->NewObjectArray(env, (jsize) all_eventsets[jid].config.used_events_count, string_class, NULL);
+	jobjectArray jevent_names = (jobjectArray) (*jni)->NewObjectArray(jni, (jsize) all_eventsets[jid].config.used_events_count, string_class, NULL);
 	size_t i;
 	for (i = 0; i < all_eventsets[jid].config.used_events_count; i++) {
-		(*env)->SetObjectArrayElement(env, jevent_names, (jsize) i, (*env)->NewStringUTF(env, all_eventsets[jid].config.used_events[i].name));
+		(*jni)->SetObjectArrayElement(jni, jevent_names, (jsize) i, (*jni)->NewStringUTF(jni, all_eventsets[jid].config.used_events[i].name));
 	}
 
 
-	constructor = (*env)->GetMethodID(env, results_class, "<init>", "([Ljava/lang/String;)V");
+	constructor = (*jni)->GetMethodID(jni, results_class, "<init>", "([Ljava/lang/String;)V");
 	if (constructor == NULL) {
 		return NULL;
 	}
 
-	jobject jresults = (*env)->NewObject(env, results_class, constructor, jevent_names);
+	jobject jresults = (*jni)->NewObject(jni, results_class, constructor, jevent_names);
 	if (jresults == NULL) {
 		return NULL;
 	}
 
-	jlongArray event_values = (*env)->NewLongArray(env, (jsize) all_eventsets[jid].config.used_events_count);
+	jlongArray event_values = (*jni)->NewLongArray(jni, (jsize) all_eventsets[jid].config.used_events_count);
 	if (event_values == NULL) {
 		return NULL;
 	}
-	jmethodID add_data_method = (*env)->GetMethodID(env, results_class, "addDataRow", "([J)V");
+	jmethodID add_data_method = (*jni)->GetMethodID(jni, results_class, "addDataRow", "([J)V");
 	if (add_data_method == NULL) {
 		return NULL;
 	}
@@ -616,10 +616,10 @@ Java_cz_cuni_mff_d3s_perf_Measurement_getResults(
 			long long value = event->op_get(&snapshots[start_index], &snapshots[end_index], event);
 			jlong jvalue = (jlong) value;
 			// FIXME: report PAPI errors etc.
-			(*env)->SetLongArrayRegion(env, event_values, (jsize) ei, 1, &jvalue);
+			(*jni)->SetLongArrayRegion(jni, event_values, (jsize) ei, 1, &jvalue);
 		}
 
-		(*env)->CallVoidMethod(env, jresults, add_data_method, event_values);
+		(*jni)->CallVoidMethod(jni, jresults, add_data_method, event_values);
 	}
 
 	return jresults;
@@ -627,46 +627,46 @@ Java_cz_cuni_mff_d3s_perf_Measurement_getResults(
 
 JNIEXPORT jobject JNICALL
 Java_cz_cuni_mff_d3s_perf_Measurement_getRawResults(
-	JNIEnv* env, jclass UNUSED_PARAMETER(klass), jint jid
+	JNIEnv* jni, jclass UNUSED_PARAMETER(measurement_class), jint jid
 ) {
 	if ((jid < 0) || (jid >= all_eventset_count) || !all_eventsets[jid].valid) {
-		do_throw(env, "Invalid event set id.");
+		do_throw(jni, "Invalid event set id.");
 		return NULL;
 	}
 
 	jmethodID constructor;
-	jclass results_class = (*env)->FindClass(env, "cz/cuni/mff/d3s/perf/BenchmarkResultsImpl");
+	jclass results_class = (*jni)->FindClass(jni, "cz/cuni/mff/d3s/perf/BenchmarkResultsImpl");
 	if (results_class == NULL) {
 		return NULL;
 	}
-	jclass string_class = (*env)->FindClass(env, "java/lang/String");
+	jclass string_class = (*jni)->FindClass(jni, "java/lang/String");
 	if (string_class == NULL) {
 		return NULL;
 	}
 
-	jobjectArray jevent_names = (jobjectArray) (*env)->NewObjectArray(env, (jsize) all_eventsets[jid].config.used_events_count + 1, string_class, NULL);
+	jobjectArray jevent_names = (jobjectArray) (*jni)->NewObjectArray(jni, (jsize) all_eventsets[jid].config.used_events_count + 1, string_class, NULL);
 	size_t i;
 	for (i = 0; i < all_eventsets[jid].config.used_events_count; i++) {
-		(*env)->SetObjectArrayElement(env, jevent_names, (jsize) i, (*env)->NewStringUTF(env, all_eventsets[jid].config.used_events[i].name));
+		(*jni)->SetObjectArrayElement(jni, jevent_names, (jsize) i, (*jni)->NewStringUTF(jni, all_eventsets[jid].config.used_events[i].name));
 	}
-	(*env)->SetObjectArrayElement(env, jevent_names, (jsize) all_eventsets[jid].config.used_events_count, (*env)->NewStringUTF(env, "TYPE"));
+	(*jni)->SetObjectArrayElement(jni, jevent_names, (jsize) all_eventsets[jid].config.used_events_count, (*jni)->NewStringUTF(jni, "TYPE"));
 
 
-	constructor = (*env)->GetMethodID(env, results_class, "<init>", "([Ljava/lang/String;)V");
+	constructor = (*jni)->GetMethodID(jni, results_class, "<init>", "([Ljava/lang/String;)V");
 	if (constructor == NULL) {
 		return NULL;
 	}
 
-	jobject jresults = (*env)->NewObject(env, results_class, constructor, jevent_names);
+	jobject jresults = (*jni)->NewObject(jni, results_class, constructor, jevent_names);
 	if (jresults == NULL) {
 		return NULL;
 	}
 
-	jlongArray event_values = (*env)->NewLongArray(env, (jsize) all_eventsets[jid].config.used_events_count + 1);
+	jlongArray event_values = (*jni)->NewLongArray(jni, (jsize) all_eventsets[jid].config.used_events_count + 1);
 	if (event_values == NULL) {
 		return NULL;
 	}
-	jmethodID add_data_method = (*env)->GetMethodID(env, results_class, "addDataRow", "([J)V");
+	jmethodID add_data_method = (*jni)->GetMethodID(jni, results_class, "addDataRow", "([J)V");
 	if (add_data_method == NULL) {
 		return NULL;
 	}
@@ -680,12 +680,12 @@ Java_cz_cuni_mff_d3s_perf_Measurement_getRawResults(
 			long long value = event->op_get_raw(&all_eventsets[jid].config.data[i], event);
 			jlong jvalue = (jlong) value;
 			// FIXME: report PAPI errors etc.
-			(*env)->SetLongArrayRegion(env, event_values, (jsize) ei, 1, &jvalue);
+			(*jni)->SetLongArrayRegion(jni, event_values, (jsize) ei, 1, &jvalue);
 		}
 		jlong type = (long) all_eventsets[jid].config.data[i].type;
-		(*env)->SetLongArrayRegion(env, event_values, (jsize) all_eventsets[jid].config.used_events_count, 1, &type);
+		(*jni)->SetLongArrayRegion(jni, event_values, (jsize) all_eventsets[jid].config.used_events_count, 1, &type);
 
-		(*env)->CallVoidMethod(env, jresults, add_data_method, event_values);
+		(*jni)->CallVoidMethod(jni, jresults, add_data_method, event_values);
 
 		i++;
 	}
@@ -695,9 +695,9 @@ Java_cz_cuni_mff_d3s_perf_Measurement_getRawResults(
 
 JNIEXPORT jboolean JNICALL
 Java_cz_cuni_mff_d3s_perf_Measurement_isEventSupported(
-	JNIEnv* env, jclass UNUSED_PARAMETER(klass), jstring jevent
+	JNIEnv* jni, jclass UNUSED_PARAMETER(measurement_class), jstring jevent
 ) {
-	const char* event = (*env)->GetStringUTFChars(env, jevent, 0);
+	const char* event = (*jni)->GetStringUTFChars(jni, jevent, 0);
 
 	ubench_event_info_t info;
 	info.name = NULL;
@@ -707,13 +707,13 @@ Java_cz_cuni_mff_d3s_perf_Measurement_isEventSupported(
 	if (info.name != NULL) {
 		free(info.name);
 	}
-	(*env)->ReleaseStringUTFChars(env, jevent, event);
+	(*jni)->ReleaseStringUTFChars(jni, jevent, event);
 
 	return result ? JNI_TRUE : JNI_FALSE;
 }
 
 struct adding_supported_events_data {
-	JNIEnv* env;
+	JNIEnv* jni;
 	jobject event_list;
 	jmethodID add_method;
 };
@@ -722,41 +722,41 @@ static int
 adding_supported_events_callback(const char* name, void* arg) {
 	struct adding_supported_events_data* j = arg;
 
-	jstring jname = (*j->env)->NewStringUTF(j->env, name);
+	jstring jname = (*j->jni)->NewStringUTF(j->jni, name);
 
-	(*j->env)->CallBooleanMethod(j->env, j->event_list, j->add_method, jname);
+	(*j->jni)->CallBooleanMethod(j->jni, j->event_list, j->add_method, jname);
 
 	return 0;
 }
 
 JNIEXPORT jobject JNICALL
 Java_cz_cuni_mff_d3s_perf_Measurement_getSupportedEvents(
-	JNIEnv* env, jclass UNUSED_PARAMETER(klass)
+	JNIEnv* jni, jclass UNUSED_PARAMETER(measurement_class)
 ) {
-	jclass array_list_class = (*env)->FindClass(env, "java/util/ArrayList");
+	jclass array_list_class = (*jni)->FindClass(jni, "java/util/ArrayList");
 	if (array_list_class == NULL) {
 		return NULL;
 	}
-	jclass string_class = (*env)->FindClass(env, "java/lang/String");
+	jclass string_class = (*jni)->FindClass(jni, "java/lang/String");
 	if (string_class == NULL) {
 		return NULL;
 	}
-	jmethodID constructor = (*env)->GetMethodID(env, array_list_class, "<init>", "()V");
+	jmethodID constructor = (*jni)->GetMethodID(jni, array_list_class, "<init>", "()V");
 	if (constructor == NULL) {
 		return NULL;
 	}
-	jmethodID add_method = (*env)->GetMethodID(env, array_list_class, "add", "(Ljava/lang/Object;)Z");
+	jmethodID add_method = (*jni)->GetMethodID(jni, array_list_class, "add", "(Ljava/lang/Object;)Z");
 	if (add_method == NULL) {
 		return NULL;
 	}
 
-	jobject jresults = (*env)->NewObject(env, array_list_class, constructor);
+	jobject jresults = (*jni)->NewObject(jni, array_list_class, constructor);
 	if (jresults == NULL) {
 		return NULL;
 	}
 
 	struct adding_supported_events_data callback_data;
-	callback_data.env = env;
+	callback_data.jni = jni;
 	callback_data.event_list = jresults;
 	callback_data.add_method = add_method;
 
