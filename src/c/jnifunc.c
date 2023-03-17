@@ -22,7 +22,7 @@
 #include "cz_cuni_mff_d3s_perf_NativeThreads.h"
 #pragma warning(pop)
 
-DLL_EXPORT jint JNICALL
+JNIEXPORT jint JNICALL
 Java_cz_cuni_mff_d3s_perf_CompilationCounter_getCompilationCountAndReset(
 	JNIEnv* UNUSED_PARAMETER(env), jclass UNUSED_PARAMETER(unused)
 ) {

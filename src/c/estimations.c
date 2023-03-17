@@ -28,14 +28,14 @@
 #endif
 #pragma warning(pop)
 
-DLL_EXPORT void JNICALL
+JNIEXPORT void JNICALL
 Java_cz_cuni_mff_d3s_perf_OverheadEstimations_emptyNativeCall(
 	JNIEnv* UNUSED_PARAMETER(env), jclass UNUSED_PARAMETER(klass)
 ) {
 	return;
 }
 
-DLL_EXPORT void JNICALL
+JNIEXPORT void JNICALL
 Java_cz_cuni_mff_d3s_perf_OverheadEstimations_resourceUsageCall(
 	JNIEnv* UNUSED_PARAMETER(env), jclass UNUSED_PARAMETER(klass)
 ) {

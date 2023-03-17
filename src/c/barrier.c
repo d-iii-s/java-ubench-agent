@@ -33,7 +33,7 @@ static int shared_mem_id = -1;
 static pthread_barrier_t* shared_mem_barrier = NULL;
 #endif
 
-DLL_EXPORT void JNICALL
+JNIEXPORT void JNICALL
 Java_cz_cuni_mff_d3s_perf_Barrier_initNative(
 	JNIEnv* env, jclass UNUSED_PARAMETER(klass), jstring jname
 ) {
@@ -64,7 +64,7 @@ Java_cz_cuni_mff_d3s_perf_Barrier_initNative(
 #endif
 }
 
-DLL_EXPORT void JNICALL
+JNIEXPORT void JNICALL
 Java_cz_cuni_mff_d3s_perf_Barrier_barrier(
 	JNIEnv* UNUSED_PARAMETER(env), jclass UNUSED_PARAMETER(klass)
 ) {

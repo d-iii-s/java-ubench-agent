@@ -45,12 +45,6 @@
 
 #define UNUSED_VARIABLE(name) (void) name
 
-#ifdef _MSC_VER
-#define DLL_EXPORT __declspec(dllexport)
-#else
-#define DLL_EXPORT
-#endif
-
 /*
  * Prevent condition expression is constant warning in wrappers around
  * multi-statement macros (the do { ... } while (0) construct).
