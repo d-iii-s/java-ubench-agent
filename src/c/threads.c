@@ -24,18 +24,19 @@
 #pragma warning(push, 0)
 #include "cz_cuni_mff_d3s_perf_CompilationCounter.h"
 #include "cz_cuni_mff_d3s_perf_Measurement.h"
-#include <stdlib.h>
-#include <stddef.h>
-#include <time.h>
-#include <string.h>
+
 #include <assert.h>
+#include <stddef.h>
+#include <stdlib.h>
+#include <string.h>
+#include <time.h>
 #pragma warning(pop)
 
 #ifdef __GNUC__
 #pragma warning(push, 0)
 #define _GNU_SOURCE
-#include <unistd.h>
 #include <sys/syscall.h>
+#include <unistd.h>
 #pragma warning(pop)
 #endif
 
@@ -58,14 +59,15 @@ typedef struct {
 } thread_mapping_t;
 
 static ubench_spinlock_t thread_mapping_guard = UBENCH_SPINLOCK_INITIALIZER;
-static thread_mapping_t *thread_mappings = NULL;
+static thread_mapping_t* thread_mappings = NULL;
 static int thread_mapping_count = 0;
 
 static ubench_spinlock_t java_lang_Thread_guard = UBENCH_SPINLOCK_INITIALIZER;
 static jclass class_java_lang_Thread = NULL;
 static jmethodID method_java_lang_Thread_getId = NULL;
 
-static void ensure_java_lang_Thread_resolved(JNIEnv* jni_env) {
+static void
+ensure_java_lang_Thread_resolved(JNIEnv* jni_env) {
 	ubench_spinlock_lock(&java_lang_Thread_guard);
 
 	if (class_java_lang_Thread != NULL) {
@@ -87,8 +89,10 @@ static void ensure_java_lang_Thread_resolved(JNIEnv* jni_env) {
 	ubench_spinlock_unlock(&java_lang_Thread_guard);
 }
 
-void JNICALL ubench_jvm_callback_on_thread_start(jvmtiEnv *UNUSED_PARAMETER(jvmti_env),
-		JNIEnv* jni_env, jthread thread) {
+void JNICALL
+ubench_jvm_callback_on_thread_start(
+	jvmtiEnv* UNUSED_PARAMETER(jvmti_env), JNIEnv* jni_env, jthread thread
+) {
 	ensure_java_lang_Thread_resolved(jni_env);
 
 	jlong java_id = (*jni_env)->CallLongMethod(jni_env, thread, method_java_lang_Thread_getId);
@@ -99,8 +103,11 @@ void JNICALL ubench_jvm_callback_on_thread_start(jvmtiEnv *UNUSED_PARAMETER(jvmt
 	ubench_register_thread_id_mapping(java_id, native_id);
 }
 
-void JNICALL ubench_jvm_callback_on_thread_end(jvmtiEnv *UNUSED_PARAMETER(jvmti_env),
-		JNIEnv* UNUSED_PARAMETER(jni_env), jthread UNUSED_PARAMETER(thread)) {
+void JNICALL
+ubench_jvm_callback_on_thread_end(
+	jvmtiEnv* UNUSED_PARAMETER(jvmti_env), JNIEnv* UNUSED_PARAMETER(jni_env),
+	jthread UNUSED_PARAMETER(thread)
+) {
 	long long native_id = ubench_get_current_thread_native_id();
 
 	DEBUG_PRINTF("JVM callback: thread [%lld] ended.", native_id);
@@ -108,8 +115,8 @@ void JNICALL ubench_jvm_callback_on_thread_end(jvmtiEnv *UNUSED_PARAMETER(jvmti_
 	ubench_unregister_thread_id_mapping_by_native_id(native_id);
 }
 
-
-int ubench_register_thread_id_mapping(jlong java_thread_id, long long native_thread_id) {
+int
+ubench_register_thread_id_mapping(jlong java_thread_id, long long native_thread_id) {
 	int res = 0;
 
 	ubench_spinlock_lock(&thread_mapping_guard);
@@ -126,7 +133,7 @@ int ubench_register_thread_id_mapping(jlong java_thread_id, long long native_thr
 			goto leave;
 		}
 	}
-	thread_mapping_t *new_mapping = realloc(thread_mappings, sizeof(thread_mapping_t) * (thread_mapping_count + 1));
+	thread_mapping_t* new_mapping = realloc(thread_mappings, sizeof(thread_mapping_t) * (thread_mapping_count + 1));
 	if (new_mapping == NULL) {
 		res = 2;
 		goto leave;
@@ -144,7 +151,8 @@ leave:
 	return res;
 }
 
-int ubench_unregister_thread_id_mapping_by_native_id(long long native_thread_id) {
+int
+ubench_unregister_thread_id_mapping_by_native_id(long long native_thread_id) {
 	int res = 1;
 
 	ubench_spinlock_lock(&thread_mapping_guard);
@@ -162,7 +170,8 @@ int ubench_unregister_thread_id_mapping_by_native_id(long long native_thread_id)
 	return res;
 }
 
-long long ubench_get_native_thread_id(jlong java_thread_id) {
+long long
+ubench_get_native_thread_id(jlong java_thread_id) {
 	ubench_spinlock_lock(&thread_mapping_guard);
 
 	for (int i = 0; i < thread_mapping_count; i++) {
@@ -180,14 +189,15 @@ long long ubench_get_native_thread_id(jlong java_thread_id) {
 	return UBENCH_THREAD_ID_INVALID;
 }
 
-long long ubench_get_current_thread_native_id(void) {
+long long
+ubench_get_current_thread_native_id(void) {
 #if defined(_MSC_VER)
 	return (long long) GetCurrentThreadId();
 #elif defined(__APPLE__)
 	pthread_t tid = pthread_self();
 	return (long long) tid;
 #elif defined(__GNUC__)
-	pid_t answer = syscall (__NR_gettid);
+	pid_t answer = syscall(__NR_gettid);
 	return (long long) answer;
 #else
 #error "Threading not supported on this platform."

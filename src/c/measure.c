@@ -23,10 +23,10 @@
 #include "ubench.h"
 
 #pragma warning(push, 0)
-#include <stdlib.h>
 #include <stddef.h>
-#include <time.h>
+#include <stdlib.h>
 #include <string.h>
+#include <time.h>
 #pragma warning(pop)
 
 #ifdef HAS_PAPI
@@ -34,13 +34,13 @@
  * Include <sys/types.h> to have caddr_t.
  * Not needed with GCC and -std=c99.
  */
-#include <sys/types.h>
 #include <papi.h>
+#include <sys/types.h>
 #endif
 
 #ifdef HAS_GETRUSAGE
-#include <sys/time.h>
 #include <sys/resource.h>
+#include <sys/time.h>
 #endif
 
 #ifdef HAS_QUERY_PERFORMANCE_COUNTER
@@ -49,7 +49,8 @@
 #pragma warning(pop)
 #endif
 
-static void store_wallclock(timestamp_t *ts) {
+static void
+store_wallclock(timestamp_t* ts) {
 #ifdef HAS_TIMESPEC
 	clock_gettime(CLOCK_MONOTONIC, ts);
 #elif defined(HAS_QUERY_PERFORMANCE_COUNTER)
@@ -59,24 +60,27 @@ static void store_wallclock(timestamp_t *ts) {
 #endif
 }
 
-static void store_threadtime(threadtime_t *ts) {
+static void
+store_threadtime(threadtime_t* ts) {
 #ifdef HAS_TIMESPEC
 	clock_gettime(CLOCK_THREAD_CPUTIME_ID, ts);
 #elif defined(HAS_GET_THREAD_TIMES)
-  FILETIME t_creation, t_exit, t_kernel, t_user;
-  HANDLE thr = GetCurrentThread();
-  // For reasons yet unknown, directly passing &(ts->kernel), &(ts->user))
-  // causes segfault. Thus, we use a temporary variable.
-  GetThreadTimes(thr, &t_creation, &t_exit, &t_kernel, &t_user);
-  ts->kernel = t_kernel;
-  ts->user = t_user;
+	FILETIME t_creation, t_exit, t_kernel, t_user;
+	HANDLE thr = GetCurrentThread();
+	// For reasons yet unknown, directly passing &(ts->kernel), &(ts->user))
+	// causes segfault. Thus, we use a temporary variable.
+	GetThreadTimes(thr, &t_creation, &t_exit, &t_kernel, &t_user);
+	ts->kernel = t_kernel;
+	ts->user = t_user;
 #else
 	*ts = -1;
 #endif
 }
 
-static inline void do_snapshot(const benchmark_configuration_t *config,
-		ubench_events_snapshot_t *snapshot) {
+static inline void
+do_snapshot(
+	const benchmark_configuration_t* config, ubench_events_snapshot_t* snapshot
+) {
 #ifdef HAS_GETRUSAGE
 	if ((config->used_backends & UBENCH_EVENT_BACKEND_RESOURCE_USAGE) > 0) {
 		getrusage(RUSAGE_THREAD, &(snapshot->resource_usage));
@@ -105,8 +109,10 @@ static inline void do_snapshot(const benchmark_configuration_t *config,
 	}
 }
 
-void ubench_measure_start(const benchmark_configuration_t *config,
-		ubench_events_snapshot_t *snapshot) {
+void
+ubench_measure_start(
+	const benchmark_configuration_t* config, ubench_events_snapshot_t* snapshot
+) {
 #ifdef HAS_PAPI
 	if ((config->used_backends & UBENCH_EVENT_BACKEND_PAPI) > 0) {
 		// TODO: check for errors
@@ -119,14 +125,18 @@ void ubench_measure_start(const benchmark_configuration_t *config,
 	do_snapshot(config, snapshot);
 }
 
-void ubench_measure_sample(const benchmark_configuration_t *config,
-		ubench_events_snapshot_t *snapshot, int user_id) {
+void
+ubench_measure_sample(
+	const benchmark_configuration_t* config, ubench_events_snapshot_t* snapshot, int user_id
+) {
 	snapshot->type = user_id;
 	do_snapshot(config, snapshot);
 }
 
-void ubench_measure_stop(const benchmark_configuration_t *config,
-		ubench_events_snapshot_t *snapshot) {
+void
+ubench_measure_stop(
+	const benchmark_configuration_t* config, ubench_events_snapshot_t* snapshot
+) {
 	if ((config->used_backends & UBENCH_EVENT_BACKEND_SYS_WALLCLOCK) > 0) {
 		store_wallclock(&(snapshot->timestamp));
 	}

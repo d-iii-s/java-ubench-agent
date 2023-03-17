@@ -23,23 +23,22 @@
 
 #define FILL_WITH_ZEROS(variable) memset(&variable, 0, sizeof(variable))
 
-static jvmtiEnv *agent_env;
+static jvmtiEnv* agent_env;
 
 
 ubench_atomic_int_t counter_compilation = { 0 };
 ubench_atomic_int_t counter_compilation_total = { 0 };
 ubench_atomic_int_t counter_gc_total = { 0 };
 
-static void report_error(const char *line_prefix,
-		jvmtiError error, const char *operation_description) {
-	char *error_description = NULL;
+static void
+report_error(const char* line_prefix, jvmtiError error, const char* operation_description) {
+	char* error_description = NULL;
 	(void) (*agent_env)->GetErrorName(agent_env, error, &error_description);
 	if (error_description == NULL) {
 		error_description = "uknown error";
 	}
 
-	fprintf(stderr, "%sJVMTI agent error #%d: %s (%s).\n",
-			line_prefix, (int) error, error_description, operation_description);
+	fprintf(stderr, "%sJVMTI agent error #%d: %s (%s).\n", line_prefix, (int) error, error_description, operation_description);
 }
 
 #define QUOTE2(x) #x
@@ -50,23 +49,21 @@ static void report_error(const char *line_prefix,
 
 #define REGISTER_EVENT_OR_RETURN(agent_env_var, event) \
 	do { \
-		jvmtiError event_err = (*agent_env_var)->SetEventNotificationMode( \
-			agent_env_var, JVMTI_ENABLE, event, NULL); \
+		jvmtiError event_err = (*agent_env_var)->SetEventNotificationMode(agent_env_var, JVMTI_ENABLE, event, NULL); \
 		if (event_err != JVMTI_ERROR_NONE) { \
 			REPORT_ERROR(err, "enabling notification for " #event); \
 			return JNI_ERR; \
 		} \
-	} ONCE
+	} \
+	ONCE
 
-
-static void JNICALL on_compiled_method_load(jvmtiEnv* UNUSED_PARAMETER(jvmti),
-		jmethodID UNUSED_PARAMETER(method),
-		jint UNUSED_PARAMETER(code_size),
-		const void* UNUSED_PARAMETER(code_addr),
-		jint UNUSED_PARAMETER(map_length),
-		const jvmtiAddrLocationMap* UNUSED_PARAMETER(map),
-		const void* UNUSED_PARAMETER(compile_info)) {
-
+static void JNICALL
+on_compiled_method_load(
+	jvmtiEnv* UNUSED_PARAMETER(jvmti), jmethodID UNUSED_PARAMETER(method),
+	jint UNUSED_PARAMETER(code_size), const void* UNUSED_PARAMETER(code_addr),
+	jint UNUSED_PARAMETER(map_length), const jvmtiAddrLocationMap* UNUSED_PARAMETER(map),
+	const void* UNUSED_PARAMETER(compile_info)
+) {
 	/*
 	 * Currently, we do not record any information about the
 	 * method that was just compiled.
@@ -80,7 +77,8 @@ static void JNICALL on_compiled_method_load(jvmtiEnv* UNUSED_PARAMETER(jvmti),
 // static void JNICALL on_gc_start(jvmtiEnv *UNUSED_PARAMETER(jvmti_env)) {
 // }
 
-static void JNICALL on_gc_finish(jvmtiEnv *UNUSED_PARAMETER(jvmti_env)) {
+static void JNICALL
+on_gc_finish(jvmtiEnv* UNUSED_PARAMETER(jvmti_env)) {
 	ubench_atomic_int_inc(&counter_gc_total);
 }
 
@@ -89,7 +87,8 @@ static void JNICALL on_gc_finish(jvmtiEnv *UNUSED_PARAMETER(jvmti_env)) {
  * We need to enable the capability, set the callback and enable the
  * actual notification.
  */
-static jint register_and_enable_callback(void) {
+static jint
+register_and_enable_callback(void) {
 	jvmtiError err;
 
 	jvmtiCapabilities capabilities;
@@ -125,8 +124,8 @@ static jint register_and_enable_callback(void) {
 	return JNI_OK;
 }
 
-
-jint ubench_counters_init(jvmtiEnv *jvmti) {
+jint
+ubench_counters_init(jvmtiEnv* jvmti) {
 	DEBUG_PRINTF("initializing counters");
 
 	agent_env = jvmti;
@@ -139,4 +138,3 @@ jint ubench_counters_init(jvmtiEnv *jvmti) {
 
 	return JNI_OK;
 }
-

@@ -19,8 +19,8 @@
 #define UBENCH_H_GUARD
 
 #pragma warning(push, 0)
-#include <jvmti.h>
 #include <jni.h>
+#include <jvmti.h>
 #include <jvmticmlr.h>
 #include <stdlib.h>
 #include <string.h>
@@ -42,6 +42,7 @@
 #else
 #define UNUSED_PARAMETER(name) name
 #endif
+
 #define UNUSED_VARIABLE(name) (void) name
 
 #ifdef _MSC_VER
@@ -57,9 +58,9 @@
 #ifdef _MSC_VER
 #define ONCE \
 	__pragma(warning(push)) \
-	__pragma(warning(disable:4127)) \
-    while (0) \
-    __pragma(warning(pop))
+	__pragma(warning(disable : 4127)) \
+	while (0) \
+	__pragma(warning(pop))
 #else
 #define ONCE while (0)
 #endif
@@ -67,7 +68,7 @@
 #ifdef UBENCH_DEBUG
 #define DEBUG_PRINTF(fmt, ...) printf("[ubench-agent]: " fmt "\n", ##__VA_ARGS__)
 #else
-#define DEBUG_PRINTF(fmt, ...) (void)0
+#define DEBUG_PRINTF(fmt, ...) (void) 0
 #endif
 
 #ifdef HAS_GETRUSAGE
@@ -91,7 +92,11 @@ typedef struct timespec threadtime_t;
 #pragma warning(push, 0)
 #include <windows.h>
 #pragma warning(pop)
-typedef struct { FILETIME kernel; FILETIME user; } threadtime_t;
+
+typedef struct {
+	FILETIME kernel;
+	FILETIME user;
+} threadtime_t;
 #else
 typedef int threadtime_t;
 #endif
@@ -133,9 +138,9 @@ typedef struct {
 } ubench_events_snapshot_t;
 
 typedef struct ubench_event_info ubench_event_info_t;
-typedef long long (*event_getter_raw_func_t)(const ubench_events_snapshot_t *, const ubench_event_info_t *);
-typedef long long (*event_getter_func_t)(const ubench_events_snapshot_t *, const ubench_events_snapshot_t *, const ubench_event_info_t *);
-typedef int (*event_info_iterator_callback_t)(const char *, void *);
+typedef long long (*event_getter_raw_func_t)(const ubench_events_snapshot_t*, const ubench_event_info_t*);
+typedef long long (*event_getter_func_t)(const ubench_events_snapshot_t*, const ubench_events_snapshot_t*, const ubench_event_info_t*);
+typedef int (*event_info_iterator_callback_t)(const char*, void*);
 
 struct ubench_event_info {
 	unsigned int backend;
@@ -144,13 +149,13 @@ struct ubench_event_info {
 	size_t papi_index;
 	event_getter_raw_func_t op_get_raw;
 	event_getter_func_t op_get;
-	char *name;
+	char* name;
 };
 
 typedef struct {
 	unsigned int used_backends;
 
-	ubench_event_info_t *used_events;
+	ubench_event_info_t* used_events;
 	size_t used_events_count;
 
 #ifdef HAS_PAPI
@@ -160,17 +165,15 @@ typedef struct {
 	int papi_component;
 #endif
 
-	ubench_events_snapshot_t *data;
+	ubench_events_snapshot_t* data;
 	size_t data_size;
 	size_t data_index;
 } benchmark_configuration_t;
 
+extern void ubench_jvm_callback_on_thread_start(jvmtiEnv*, JNIEnv*, jthread);
+extern void ubench_jvm_callback_on_thread_end(jvmtiEnv*, JNIEnv*, jthread);
 
-
-extern void ubench_jvm_callback_on_thread_start(jvmtiEnv *, JNIEnv*, jthread);
-extern void ubench_jvm_callback_on_thread_end(jvmtiEnv *, JNIEnv*, jthread);
-
-extern jint ubench_counters_init(jvmtiEnv *);
+extern jint ubench_counters_init(jvmtiEnv*);
 extern void ubench_register_this_thread(jthread, JNIEnv*);
 extern void ubench_unregister_this_thread(jthread, JNIEnv*);
 extern int ubench_register_thread_id_mapping(jlong, long long);
@@ -179,19 +182,20 @@ extern long long ubench_get_native_thread_id(jlong);
 extern long long ubench_get_current_thread_native_id(void);
 extern jint ubench_benchmark_init(void);
 extern int ubench_event_init(void);
-extern int ubench_event_resolve(const char *, ubench_event_info_t *);
-extern void ubench_event_iterate(event_info_iterator_callback_t, void *);
+extern int ubench_event_resolve(const char*, ubench_event_info_t*);
+extern void ubench_event_iterate(event_info_iterator_callback_t, void*);
 
-extern void ubench_measure_start(const benchmark_configuration_t *, ubench_events_snapshot_t *);
-extern void ubench_measure_sample(const benchmark_configuration_t *, ubench_events_snapshot_t *, int user_id);
-extern void ubench_measure_stop(const benchmark_configuration_t *, ubench_events_snapshot_t *);
+extern void ubench_measure_start(const benchmark_configuration_t*, ubench_events_snapshot_t*);
+extern void ubench_measure_sample(const benchmark_configuration_t*, ubench_events_snapshot_t*, int user_id);
+extern void ubench_measure_stop(const benchmark_configuration_t*, ubench_events_snapshot_t*);
 
 extern ubench_atomic_int_t counter_compilation;
 extern ubench_atomic_int_t counter_compilation_total;
 extern ubench_atomic_int_t counter_gc_total;
 
-static inline char *ubench_str_dup(const char *str) {
-	char *result = malloc(sizeof(char) * strlen(str) + 1);
+static inline char*
+ubench_str_dup(const char* str) {
+	char* result = malloc(sizeof(char) * strlen(str) + 1);
 	if (result == NULL) {
 		return NULL;
 	}
@@ -200,21 +204,23 @@ static inline char *ubench_str_dup(const char *str) {
 	 * We know that the buffer is big enough and thus we can use strcpy()
 	 * without worrying that we would run past the buffer.
 	 */
-#pragma warning(suppress:4996)
+#pragma warning(suppress : 4996)
 	strcpy(result, str);
 
 	return result;
 }
 
-static inline int ubench_str_is_icase_equal(const char *a, const char *b) {
+static inline int
+ubench_str_is_icase_equal(const char* a, const char* b) {
 #ifdef _MSC_VER
-  return _stricmp(a, b) == 0;
+	return _stricmp(a, b) == 0;
 #else
-  return strcasecmp(a, b) == 0;
+	return strcasecmp(a, b) == 0;
 #endif
 }
 
-static inline int ubench_str_starts_with_icase(const char *str, const char *prefix) {
+static inline int
+ubench_str_starts_with_icase(const char* str, const char* prefix) {
 #ifdef _MSC_VER
 	return _strnicmp(str, prefix, strlen(prefix)) == 0;
 #else

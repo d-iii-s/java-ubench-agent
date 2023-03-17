@@ -20,25 +20,25 @@
 #pragma warning(push, 0)
 #include "cz_cuni_mff_d3s_perf_Barrier.h"
 #ifdef __unix__
-#include <sys/mman.h>
-#include <sys/stat.h>
+#include <errno.h>
 #include <fcntl.h>
 #include <pthread.h>
-#include <errno.h>
+#include <sys/mman.h>
+#include <sys/stat.h>
 #endif
 #pragma warning(pop)
 
 #ifdef __unix__
 static int shared_mem_id = -1;
-static pthread_barrier_t *shared_mem_barrier = NULL;
+static pthread_barrier_t* shared_mem_barrier = NULL;
 #endif
 
 DLL_EXPORT void JNICALL
 Java_cz_cuni_mff_d3s_perf_Barrier_initNative(
-		JNIEnv *env, jclass UNUSED_PARAMETER(klass),
-		jstring jname) {
+	JNIEnv* env, jclass UNUSED_PARAMETER(klass), jstring jname
+) {
 #ifdef __unix__
-	const char *name = (*env)->GetStringUTFChars(env, jname, 0);
+	const char* name = (*env)->GetStringUTFChars(env, jname, 0);
 	shared_mem_id = shm_open(name, O_RDWR, 0600);
 	(*env)->ReleaseStringUTFChars(env, jname, name);
 	if (shared_mem_id == -1) {
@@ -66,7 +66,8 @@ Java_cz_cuni_mff_d3s_perf_Barrier_initNative(
 
 DLL_EXPORT void JNICALL
 Java_cz_cuni_mff_d3s_perf_Barrier_barrier(
-		JNIEnv *UNUSED_PARAMETER(env), jclass UNUSED_PARAMETER(klass)) {
+	JNIEnv* UNUSED_PARAMETER(env), jclass UNUSED_PARAMETER(klass)
+) {
 #ifdef __unix__
 	pthread_barrier_wait(shared_mem_barrier);
 #endif

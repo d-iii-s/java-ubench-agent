@@ -19,25 +19,28 @@
 
 #pragma warning(push, 0)
 #include "cz_cuni_mff_d3s_perf_OverheadEstimations.h"
+
 #include <stdlib.h>
-#include <time.h>
 #include <string.h>
+#include <time.h>
 #ifdef HAS_GETRUSAGE
 #include <sys/resource.h>
 #endif
 #pragma warning(pop)
 
-DLL_EXPORT void JNICALL Java_cz_cuni_mff_d3s_perf_OverheadEstimations_emptyNativeCall(
-		JNIEnv *UNUSED_PARAMETER(env), jclass UNUSED_PARAMETER(klass)) {
+DLL_EXPORT void JNICALL
+Java_cz_cuni_mff_d3s_perf_OverheadEstimations_emptyNativeCall(
+	JNIEnv* UNUSED_PARAMETER(env), jclass UNUSED_PARAMETER(klass)
+) {
 	return;
 }
 
-
-DLL_EXPORT void JNICALL Java_cz_cuni_mff_d3s_perf_OverheadEstimations_resourceUsageCall(
-		JNIEnv *UNUSED_PARAMETER(env), jclass UNUSED_PARAMETER(klass)) {
+DLL_EXPORT void JNICALL
+Java_cz_cuni_mff_d3s_perf_OverheadEstimations_resourceUsageCall(
+	JNIEnv* UNUSED_PARAMETER(env), jclass UNUSED_PARAMETER(klass)
+) {
 #ifdef HAS_GETRUSAGE
 	struct rusage resource_usage;
 	getrusage(RUSAGE_SELF, &resource_usage);
 #endif
 }
-

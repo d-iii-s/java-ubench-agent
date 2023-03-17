@@ -16,8 +16,8 @@
  */
 
 #pragma warning(push, 0)
-#include <jvmti.h>
 #include <jni.h>
+#include <jvmti.h>
 #include <jvmticmlr.h>
 #pragma warning(pop)
 
@@ -37,12 +37,14 @@ typedef struct {
 #endif
 } ubench_atomic_int_t;
 
-static inline int ubench_atomic_int_get(ubench_atomic_int_t *atomic) {
+static inline int
+ubench_atomic_int_get(ubench_atomic_int_t* atomic) {
 	return atomic->atomic_value;
 }
 
 // return old value
-static inline int ubench_atomic_int_inc(ubench_atomic_int_t *atomic) {
+static inline int
+ubench_atomic_int_inc(ubench_atomic_int_t* atomic) {
 #if defined(_MSC_VER)
 	return InterlockedIncrement(&atomic->atomic_value) - 1;
 #elif defined(__GNUC__)
@@ -53,7 +55,8 @@ static inline int ubench_atomic_int_inc(ubench_atomic_int_t *atomic) {
 #endif
 }
 
-static inline int ubench_atomic_int_reset(ubench_atomic_int_t *atomic) {
+static inline int
+ubench_atomic_int_reset(ubench_atomic_int_t* atomic) {
 #if defined(_MSC_VER)
 	return InterlockedAnd(&atomic->atomic_value, 0);
 #elif defined(__GNUC__)

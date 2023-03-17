@@ -32,20 +32,20 @@
  * Include <sys/types.h> to have caddr_t.
  * Not needed with GCC and -std=c99.
  */
-#include <sys/types.h>
-#include <papi.h>
 #include <errno.h>
+#include <papi.h>
+#include <sys/types.h>
 #endif
 
 #ifdef HAS_QUERY_PERFORMANCE_COUNTER
 static LARGE_INTEGER windows_timer_frequency;
 #endif
 
-typedef int (*resolve_event_func_t)(const char *, ubench_event_info_t *);
-typedef int (*event_lister_func_t)(event_info_iterator_callback_t, void *);
+typedef int (*resolve_event_func_t)(const char*, ubench_event_info_t*);
+typedef int (*event_lister_func_t)(event_info_iterator_callback_t, void*);
 
 typedef struct {
-	const char *name;
+	const char* name;
 	int obsolete;
 	resolve_event_func_t resolver;
 	event_lister_func_t lister;
@@ -54,26 +54,28 @@ typedef struct {
 	event_getter_func_t getter;
 } known_event_t;
 
-
 #define TIMESPEC_TO_NANOS(val) ((val).tv_sec * 1000 * 1000 * 1000 + (val).tv_nsec)
 #define TIMEVAL_TO_MICROS(val) ((val).tv_sec * 1000 * 1000 + (val).tv_usec)
 
-int ubench_event_init(void) {
+int
+ubench_event_init(void) {
 #ifdef HAS_QUERY_PERFORMANCE_COUNTER
-	 QueryPerformanceFrequency(&windows_timer_frequency);
+	QueryPerformanceFrequency(&windows_timer_frequency);
 #endif
-	 return JNI_OK;
+	return JNI_OK;
 }
 
 #ifdef HAS_TIMESPEC
-static inline long long timespec_diff_as_ns(const struct timespec *a, const struct timespec *b) {
+static inline long long
+timespec_diff_as_ns(const struct timespec* a, const struct timespec* b) {
 	long long sec_diff = b->tv_sec - a->tv_sec;
 	long long nanosec_diff = b->tv_nsec - a->tv_nsec;
 	return sec_diff * 1000 * 1000 * 1000 + nanosec_diff;
 }
 #endif
 
-static long long timestamp_diff_ns(const timestamp_t *a, const timestamp_t *b) {
+static long long
+timestamp_diff_ns(const timestamp_t* a, const timestamp_t* b) {
 #ifdef HAS_TIMESPEC
 	return timespec_diff_as_ns(a, b);
 #elif defined(HAS_QUERY_PERFORMANCE_COUNTER)
@@ -86,11 +88,18 @@ static long long timestamp_diff_ns(const timestamp_t *a, const timestamp_t *b) {
 #endif
 }
 
-static long long getter_wall_clock_time(const ubench_events_snapshot_t *start, const ubench_events_snapshot_t *end, const ubench_event_info_t *UNUSED_PARAMETER(info)) {
+static long long
+getter_wall_clock_time(
+	const ubench_events_snapshot_t* start, const ubench_events_snapshot_t* end,
+	const ubench_event_info_t* UNUSED_PARAMETER(info)
+) {
 	return timestamp_diff_ns(&start->timestamp, &end->timestamp);
 }
 
-static long long getter_raw_wall_clock_time(const ubench_events_snapshot_t *value, const ubench_event_info_t *UNUSED_PARAMETER(info)) {
+static long long
+getter_raw_wall_clock_time(
+	const ubench_events_snapshot_t* value, const ubench_event_info_t* UNUSED_PARAMETER(info)
+) {
 #ifdef HAS_TIMESPEC
 	return TIMESPEC_TO_NANOS(value->timestamp);
 #elif defined(HAS_QUERY_PERFORMANCE_COUNTER)
@@ -104,31 +113,40 @@ static long long getter_raw_wall_clock_time(const ubench_events_snapshot_t *valu
 }
 
 #ifdef HAS_GET_THREAD_TIMES
-static long long get_filetime_diff_in_us(const FILETIME *a, const FILETIME *b) {
-  long long result = ((LARGE_INTEGER*)b)->QuadPart - ((LARGE_INTEGER*)a)->QuadPart;
-  return result / 10;
+static long long
+get_filetime_diff_in_us(const FILETIME* a, const FILETIME* b) {
+	long long result = ((LARGE_INTEGER*) b)->QuadPart - ((LARGE_INTEGER*) a)->QuadPart;
+	return result / 10;
 }
 
-static long long get_filetime_in_us(const FILETIME *val) {
-	return (((LARGE_INTEGER*)val)->QuadPart) / 10;
+static long long
+get_filetime_in_us(const FILETIME* val) {
+	return (((LARGE_INTEGER*) val)->QuadPart) / 10;
 }
 #endif
 
-static long long getter_thread_time(const ubench_events_snapshot_t *start, const ubench_events_snapshot_t *end, const ubench_event_info_t *UNUSED_PARAMETER(info)) {
+static long long
+getter_thread_time(
+	const ubench_events_snapshot_t* start, const ubench_events_snapshot_t* end,
+	const ubench_event_info_t* UNUSED_PARAMETER(info)
+) {
 #ifdef HAS_TIMESPEC
 	long long result = timespec_diff_as_ns(&start->threadtime, &end->threadtime);
 	// fprintf(stderr, "getter_thread_time(%lld:%lld, %lld:%lld) = %lld\n", (long long) bench->start.threadtime.tv_sec, (long long) bench->start.threadtime.tv_nsec, (long long) bench->end.threadtime.tv_sec, (long long) bench->end.threadtime.tv_nsec, result);
 	return result;
 #elif defined(HAS_GET_THREAD_TIMES)
-  long long kernel_us = get_filetime_diff_in_us(&start->threadtime.kernel, &end->threadtime.kernel);
-  long long user_us = get_filetime_diff_in_us(&start->threadtime.user, &end->threadtime.user);
-  return (user_us + kernel_us) * 1000;
+	long long kernel_us = get_filetime_diff_in_us(&start->threadtime.kernel, &end->threadtime.kernel);
+	long long user_us = get_filetime_diff_in_us(&start->threadtime.user, &end->threadtime.user);
+	return (user_us + kernel_us) * 1000;
 #else
 	return 0;
 #endif
 }
 
-static long long getter_raw_thread_time(const ubench_events_snapshot_t *value, const ubench_event_info_t *UNUSED_PARAMETER(info)) {
+static long long
+getter_raw_thread_time(
+	const ubench_events_snapshot_t* value, const ubench_event_info_t* UNUSED_PARAMETER(info)
+) {
 #ifdef HAS_TIMESPEC
 	return value->threadtime.tv_sec * 1000 * 1000 * 1000 + value->threadtime.tv_nsec;
 #elif defined(HAS_GET_THREAD_TIMES)
@@ -138,25 +156,40 @@ static long long getter_raw_thread_time(const ubench_events_snapshot_t *value, c
 #endif
 }
 
-static long long getter_jvm_compilations(const ubench_events_snapshot_t *start, const ubench_events_snapshot_t *end, const ubench_event_info_t *UNUSED_PARAMETER(info)) {
+static long long
+getter_jvm_compilations(
+	const ubench_events_snapshot_t* start, const ubench_events_snapshot_t* end,
+	const ubench_event_info_t* UNUSED_PARAMETER(info)
+) {
 	return end->compilations - start->compilations;
 }
 
-static long long getter_raw_jvm_compilations(const ubench_events_snapshot_t *value, const ubench_event_info_t *UNUSED_PARAMETER(info)) {
+static long long
+getter_raw_jvm_compilations(
+	const ubench_events_snapshot_t* value, const ubench_event_info_t* UNUSED_PARAMETER(info)
+) {
 	return value->compilations;
 }
 
 
 #ifdef HAS_GETRUSAGE
-static long long getter_context_switch_forced(const ubench_events_snapshot_t *start, const ubench_events_snapshot_t *end, const ubench_event_info_t *UNUSED_PARAMETER(info)) {
+static long long
+getter_context_switch_forced(
+	const ubench_events_snapshot_t* start, const ubench_events_snapshot_t* end,
+	const ubench_event_info_t* UNUSED_PARAMETER(info)
+) {
 	return end->resource_usage.ru_nivcsw - start->resource_usage.ru_nivcsw;
 }
 
-static long long getter_raw_context_switch_forced(const ubench_events_snapshot_t *value, const ubench_event_info_t *UNUSED_PARAMETER(info)) {
+static long long
+getter_raw_context_switch_forced(
+	const ubench_events_snapshot_t* value, const ubench_event_info_t* UNUSED_PARAMETER(info)
+) {
 	return value->resource_usage.ru_nivcsw;
 }
 
-static inline long long timeval_diff_as_us(const struct timeval *a, const struct timeval *b) {
+static inline long long
+timeval_diff_as_us(const struct timeval* a, const struct timeval* b) {
 	// fprintf(stderr, "timeval_diff_as_us(%lld:%lld, %lld:%lld)\n", (long long) a->tv_sec, (long long) a->tv_usec, (long long) b->tv_sec, (long long) b->tv_usec);
 	long long sec_diff = b->tv_sec - a->tv_sec;
 	long long usec_diff = b->tv_usec - a->tv_usec;
@@ -164,13 +197,20 @@ static inline long long timeval_diff_as_us(const struct timeval *a, const struct
 	return sec_diff * 1000 * 1000 + usec_diff;
 }
 
-static long long getter_thread_time_rusage(const ubench_events_snapshot_t *start, const ubench_events_snapshot_t *end, const ubench_event_info_t *UNUSED_PARAMETER(info)) {
+static long long
+getter_thread_time_rusage(
+	const ubench_events_snapshot_t* start, const ubench_events_snapshot_t* end,
+	const ubench_event_info_t* UNUSED_PARAMETER(info)
+) {
 	long long user_us = timeval_diff_as_us(&start->resource_usage.ru_utime, &end->resource_usage.ru_utime);
 	long long system_us = timeval_diff_as_us(&start->resource_usage.ru_stime, &end->resource_usage.ru_stime);
 	return (user_us + system_us) * (long long) 1000;
 }
 
-static long long getter_raw_thread_time_rusage(const ubench_events_snapshot_t *value, const ubench_event_info_t *UNUSED_PARAMETER(info)) {
+static long long
+getter_raw_thread_time_rusage(
+	const ubench_events_snapshot_t* value, const ubench_event_info_t* UNUSED_PARAMETER(info)
+) {
 	long long user_us = TIMEVAL_TO_MICROS(value->resource_usage.ru_utime);
 	long long system_us = TIMEVAL_TO_MICROS(value->resource_usage.ru_stime);
 	return (user_us + system_us) * (long long) 1000;
@@ -179,7 +219,11 @@ static long long getter_raw_thread_time_rusage(const ubench_events_snapshot_t *v
 #endif
 
 #ifdef HAS_PAPI
-static long long getter_papi(const ubench_events_snapshot_t *start, const ubench_events_snapshot_t *end, const ubench_event_info_t *info) {
+static long long
+getter_papi(
+	const ubench_events_snapshot_t* start, const ubench_events_snapshot_t* end,
+	const ubench_event_info_t* info
+) {
 	if (start->papi_rc1 != PAPI_OK) {
 		return start->papi_rc1;
 	} else if (start->papi_rc2 != PAPI_OK) {
@@ -197,7 +241,10 @@ static long long getter_papi(const ubench_events_snapshot_t *start, const ubench
 	}
 }
 
-static long long getter_raw_papi(const ubench_events_snapshot_t *value, const ubench_event_info_t *info) {
+static long long
+getter_raw_papi(
+	const ubench_events_snapshot_t* value, const ubench_event_info_t* info
+) {
 	if (value->papi_rc1 != PAPI_OK) {
 		return value->papi_rc1;
 	} else if (value->papi_rc2 != PAPI_OK) {
@@ -207,9 +254,10 @@ static long long getter_raw_papi(const ubench_events_snapshot_t *value, const ub
 	return value->papi_events[info->papi_index];
 }
 
-static int resolve_papi_event(const char *name, ubench_event_info_t *info) {
+static int
+resolve_papi_event(const char* name, ubench_event_info_t* info) {
 	int papi_event_id = 0;
-	int ok = PAPI_event_name_to_code((char *) name, &papi_event_id);
+	int ok = PAPI_event_name_to_code((char*) name, &papi_event_id);
 	if (ok != PAPI_OK) {
 		return 0;
 	}
@@ -228,14 +276,16 @@ static int resolve_papi_event(const char *name, ubench_event_info_t *info) {
 	return 1;
 }
 
-static int resolve_papi_event_with_prefix(const char *name, ubench_event_info_t *info) {
+static int
+resolve_papi_event_with_prefix(const char* name, ubench_event_info_t* info) {
 	return resolve_papi_event(name + 5, info);
 }
 
-static int list_papi_events(event_info_iterator_callback_t callback, void *arg) {
-	char event_name_full[PAPI_MAX_STR_LEN + 7 ];
+static int
+list_papi_events(event_info_iterator_callback_t callback, void* arg) {
+	char event_name_full[PAPI_MAX_STR_LEN + 7];
 	strcpy(event_name_full, "PAPI:");
-	char *event_name = event_name_full + strlen(event_name_full);
+	char* event_name = event_name_full + strlen(event_name_full);
 
 	int rc;
 	int event_code;
@@ -243,9 +293,11 @@ static int list_papi_events(event_info_iterator_callback_t callback, void *arg) 
 	// First, retrieve available preset events
 	event_code = 0 | PAPI_PRESET_MASK;
 
-	for (rc = PAPI_enum_event(&event_code, PAPI_ENUM_FIRST);
-			rc == PAPI_OK;
-			rc = PAPI_enum_event(&event_code, PAPI_PRESET_ENUM_AVAIL)) {
+	for (
+		rc = PAPI_enum_event(&event_code, PAPI_ENUM_FIRST);
+		rc == PAPI_OK;
+		rc = PAPI_enum_event(&event_code, PAPI_PRESET_ENUM_AVAIL)
+	) {
 		rc = PAPI_event_code_to_name(event_code, event_name);
 		if (rc != PAPI_OK) {
 			continue;
@@ -269,9 +321,11 @@ static int list_papi_events(event_info_iterator_callback_t callback, void *arg) 
 	int component_count = PAPI_num_components();
 	for (int component = 0; component < component_count; component++) {
 		event_code = 0 | PAPI_NATIVE_MASK;
-		for (rc = PAPI_enum_cmp_event(&event_code, PAPI_ENUM_FIRST, component);
-				rc == PAPI_OK;
-				rc = PAPI_enum_cmp_event(&event_code, PAPI_ENUM_EVENTS, component)) {
+		for (
+			rc = PAPI_enum_cmp_event(&event_code, PAPI_ENUM_FIRST, component);
+			rc == PAPI_OK;
+			rc = PAPI_enum_cmp_event(&event_code, PAPI_ENUM_EVENTS, component)
+		) {
 			rc = PAPI_event_code_to_name(event_code, event_name);
 			if (rc != PAPI_OK) {
 				continue;
@@ -290,6 +344,7 @@ static int list_papi_events(event_info_iterator_callback_t callback, void *arg) 
 
 static known_event_t known_events[] = {
 	/* Legacy names first. */
+
 	{
 		.name = "JVM_COMPILATIONS",
 		.obsolete = 1,
@@ -308,6 +363,7 @@ static known_event_t known_events[] = {
 		.getter_raw = getter_raw_wall_clock_time,
 		.getter = getter_wall_clock_time
 	},
+
 #ifdef HAS_GETRUSAGE
 	{
 		.name = "forced-context-switch",
@@ -320,8 +376,8 @@ static known_event_t known_events[] = {
 	},
 #endif
 
-
 	/* New naming. */
+
 	{
 		.name = "JVM:compilations",
 		.obsolete = 0,
@@ -331,6 +387,7 @@ static known_event_t known_events[] = {
 		.getter_raw = getter_raw_jvm_compilations,
 		.getter = getter_jvm_compilations
 	},
+
 #ifdef HAS_PAPI
 	{
 		.name = "PAPI:",
@@ -342,6 +399,7 @@ static known_event_t known_events[] = {
 		.getter = getter_papi
 	},
 #endif
+
 #ifdef HAS_GETRUSAGE
 	{
 		.name = "SYS:forced-context-switches",
@@ -353,6 +411,7 @@ static known_event_t known_events[] = {
 		.getter = getter_context_switch_forced
 	},
 #endif
+
 	{
 		.name = "SYS:thread-time",
 		.obsolete = 0,
@@ -362,6 +421,7 @@ static known_event_t known_events[] = {
 		.getter_raw = getter_raw_thread_time,
 		.getter = getter_thread_time
 	},
+
 #ifdef HAS_GETRUSAGE
 	{
 		.name = "SYS:thread-time-rusage",
@@ -373,6 +433,7 @@ static known_event_t known_events[] = {
 		.getter = getter_thread_time_rusage
 	},
 #endif
+
 	{
 		.name = "SYS:wallclock-time",
 		.obsolete = 0,
@@ -382,6 +443,7 @@ static known_event_t known_events[] = {
 		.getter_raw = getter_raw_wall_clock_time,
 		.getter = getter_wall_clock_time
 	},
+
 #ifdef HAS_PAPI
 	{
 		.name = "",
@@ -393,6 +455,7 @@ static known_event_t known_events[] = {
 		.getter = getter_papi
 	},
 #endif
+
 	{
 		.name = NULL,
 		.resolver = NULL,
@@ -404,12 +467,13 @@ static known_event_t known_events[] = {
 };
 
 
-int ubench_event_resolve(const char *event, ubench_event_info_t *info) {
+int
+ubench_event_resolve(const char* event, ubench_event_info_t* info) {
 	if (event == NULL) {
 		return 0;
 	}
 
-	for (known_event_t *it = known_events; it->name != NULL; it++) {
+	for (known_event_t* it = known_events; it->name != NULL; it++) {
 		if (it->resolver == NULL) {
 			if (!ubench_str_is_icase_equal(event, it->name)) {
 				continue;
@@ -432,12 +496,13 @@ int ubench_event_resolve(const char *event, ubench_event_info_t *info) {
 	return 0;
 }
 
-void ubench_event_iterate(event_info_iterator_callback_t iterator_callback, void *arg) {
+void
+ubench_event_iterate(event_info_iterator_callback_t iterator_callback, void* arg) {
 	if (iterator_callback == NULL) {
 		return;
 	}
 
-	for (known_event_t *it = known_events; it->name != NULL; it++) {
+	for (known_event_t* it = known_events; it->name != NULL; it++) {
 		if (it->obsolete) {
 			continue;
 		}

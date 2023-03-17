@@ -24,15 +24,16 @@
 
 DLL_EXPORT jint JNICALL
 Java_cz_cuni_mff_d3s_perf_CompilationCounter_getCompilationCountAndReset(
-		JNIEnv *UNUSED_PARAMETER(env),
-		jclass UNUSED_PARAMETER(unused)) {
+	JNIEnv* UNUSED_PARAMETER(env), jclass UNUSED_PARAMETER(unused)
+) {
 	return ubench_atomic_int_reset(&counter_compilation);
 }
 
-JNIEXPORT jlong JNICALL Java_cz_cuni_mff_d3s_perf_NativeThreads_getNativeId(
-		JNIEnv *UNUSED_PARAMETER(env),
-		jclass UNUSED_PARAMETER(unused),
-		jlong java_thread_id) {
+JNIEXPORT jlong JNICALL
+Java_cz_cuni_mff_d3s_perf_NativeThreads_getNativeId(
+	JNIEnv* UNUSED_PARAMETER(env), jclass UNUSED_PARAMETER(unused),
+	jlong java_thread_id
+) {
 	long long answer = ubench_get_native_thread_id((long) java_thread_id);
 	if (answer == UBENCH_THREAD_ID_INVALID) {
 		// TODO: throw an error
@@ -42,11 +43,11 @@ JNIEXPORT jlong JNICALL Java_cz_cuni_mff_d3s_perf_NativeThreads_getNativeId(
 	return (jlong) answer;
 }
 
-JNIEXPORT jboolean JNICALL Java_cz_cuni_mff_d3s_perf_NativeThreads_registerJavaThread(
-		JNIEnv *UNUSED_PARAMETER(env),
-		jclass UNUSED_PARAMETER(unused),
-		jlong java_thread_id,
-		jlong native_thread_id) {
+JNIEXPORT jboolean JNICALL
+Java_cz_cuni_mff_d3s_perf_NativeThreads_registerJavaThread(
+	JNIEnv* UNUSED_PARAMETER(env), jclass UNUSED_PARAMETER(unused),
+	jlong java_thread_id, jlong native_thread_id
+) {
 	int res = ubench_register_thread_id_mapping((long) java_thread_id, (long long) native_thread_id);
 	return res == 0;
 }

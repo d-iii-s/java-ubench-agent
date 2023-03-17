@@ -16,8 +16,8 @@
  */
 
 #pragma warning(push, 0)
-#include <jvmti.h>
 #include <jni.h>
+#include <jvmti.h>
 #include <jvmticmlr.h>
 #pragma warning(pop)
 
@@ -39,7 +39,8 @@ typedef struct {
 #endif
 } ubench_spinlock_t;
 
-static inline void ubench_spinlock_lock(ubench_spinlock_t *spinlock) {
+static inline void
+ubench_spinlock_lock(ubench_spinlock_t* spinlock) {
 #if defined(_MSC_VER)
 	while (InterlockedCompareExchange(&spinlock->value, 1, 0) == 1) {}
 #elif defined(__GNUC__)
@@ -51,7 +52,8 @@ static inline void ubench_spinlock_lock(ubench_spinlock_t *spinlock) {
 #endif
 }
 
-static inline void ubench_spinlock_unlock(ubench_spinlock_t *spinlock) {
+static inline void
+ubench_spinlock_unlock(ubench_spinlock_t* spinlock) {
 #if defined(_MSC_VER)
 	InterlockedAnd(&spinlock->value, 0);
 #elif defined(__GNUC__)
