@@ -403,7 +403,7 @@ Java_cz_cuni_mff_d3s_perf_Measurement_createAttachedEventSetWithNativeThread(
 
 JNIEXPORT void JNICALL
 Java_cz_cuni_mff_d3s_perf_Measurement_destroyEventSet(
-	JNIEnv* UNUSED_PARAMETER(env), jclass UNUSED_PARAMETER(klass), jint jid
+	JNIEnv* env, jclass UNUSED_PARAMETER(klass), jint jid
 ) {
 	if ((jid < 0) || (jid >= all_eventset_count) || !all_eventsets[jid].valid) {
 		do_throw(env, "Invalid event set id.");
@@ -452,7 +452,7 @@ Java_cz_cuni_mff_d3s_perf_Measurement_start(
 
 JNIEXPORT void JNICALL
 Java_cz_cuni_mff_d3s_perf_Measurement_stop(
-	JNIEnv* UNUSED_PARAMETER(env), jclass UNUSED_PARAMETER(klass), jintArray jids
+	JNIEnv* env, jclass UNUSED_PARAMETER(klass), jintArray jids
 ) {
 	size_t jids_count = (*env)->GetArrayLength(env, jids);
 	if (jids_count == 0) {
@@ -515,7 +515,7 @@ Java_cz_cuni_mff_d3s_perf_Measurement_sample(
 
 JNIEXPORT void JNICALL
 Java_cz_cuni_mff_d3s_perf_Measurement_reset(
-	JNIEnv* UNUSED_PARAMETER(env), jclass UNUSED_PARAMETER(klass), jintArray jids
+	JNIEnv* env, jclass UNUSED_PARAMETER(klass), jintArray jids
 ) {
 	size_t jids_count = (*env)->GetArrayLength(env, jids);
 	if (jids_count == 0) {
