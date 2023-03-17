@@ -162,7 +162,7 @@
 		  Try to find jni.h in known locations.
 
 		  We first try $JAVA_HOME (%JAVA_HOME%) if set (that
-		  shall take care of custom locations or when the
+		  should take care of custom locations or when the
 		  user wants to compile with a specific version of JDK).
 		  Then we try ${java.home} that usually points to JRE
 		  that could be inside JDK. After that, we go through
