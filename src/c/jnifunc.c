@@ -29,25 +29,25 @@ Java_cz_cuni_mff_d3s_perf_CompilationCounter_getCompilationCountAndReset(
 	return ubench_atomic_int_reset(&counter_compilation);
 }
 
-JNIEXPORT jlong JNICALL
+JNIEXPORT java_tid_t JNICALL
 Java_cz_cuni_mff_d3s_perf_NativeThreads_getNativeId(
 	JNIEnv* UNUSED_PARAMETER(jni), jclass UNUSED_PARAMETER(threads_class),
-	jlong java_thread_id
+	java_tid_t java_thread_id
 ) {
-	long long answer = ubench_get_native_thread_id((long) java_thread_id);
+	native_tid_t answer = ubench_get_native_thread_id(java_thread_id);
 	if (answer == UBENCH_THREAD_ID_INVALID) {
 		// TODO: throw an error
-		return (jlong) cz_cuni_mff_d3s_perf_NativeThreads_INVALID_THREAD_ID;
+		return (java_tid_t) cz_cuni_mff_d3s_perf_NativeThreads_INVALID_THREAD_ID;
 	}
 
-	return (jlong) answer;
+	return (java_tid_t) answer;
 }
 
 JNIEXPORT jboolean JNICALL
 Java_cz_cuni_mff_d3s_perf_NativeThreads_registerJavaThread(
 	JNIEnv* UNUSED_PARAMETER(jni), jclass UNUSED_PARAMETER(threads_class),
-	jlong java_thread_id, jlong jnative_thread_id
+	java_tid_t java_thread_id, java_tid_t jnative_thread_id
 ) {
-	int res = ubench_register_thread_id_mapping((long) java_thread_id, (long long) jnative_thread_id);
+	int res = ubench_register_thread_id_mapping(java_thread_id, (native_tid_t) jnative_thread_id);
 	return res == 0;
 }

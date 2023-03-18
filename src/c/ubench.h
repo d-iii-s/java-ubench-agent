@@ -19,6 +19,7 @@
 #define UBENCH_H_GUARD
 
 #pragma warning(push, 0)
+#include <inttypes.h>
 #include <jni.h>
 #include <jvmti.h>
 #include <jvmticmlr.h>
@@ -99,7 +100,26 @@ typedef int threadtime_t;
 
 #define UBENCH_MAX_PAPI_EVENTS 20
 
-#define UBENCH_THREAD_ID_INVALID ((long long) -1)
+
+/*
+ * A number type that represents a Java thread identifier. This is just an
+ * alias to the JNI 'jlong' type, which always represents a 64-bit integer.
+ */
+typedef jlong java_tid_t;
+
+#define PRId_JAVA_TID PRId64
+
+/*
+ * A number type that represents a native thread identifier. The type must
+ * be wide enough to contain various indentifier types, such as 'pid_t'
+ * (32-bit signed), 'pthread_t' (unsigned long) or 'DWORD' (32-bit unsigned).
+ */
+typedef int_fast64_t native_tid_t;
+
+#define PRId_NATIVE_TID PRIdFAST64
+
+#define UBENCH_THREAD_ID_INVALID ((native_tid_t) -1)
+
 
 /*
  * Backend bit masks.
@@ -172,10 +192,10 @@ extern void ubench_jvm_callback_on_thread_end(jvmtiEnv*, JNIEnv*, jthread);
 extern jint ubench_counters_init(jvmtiEnv*);
 extern void ubench_register_this_thread(jthread, JNIEnv*);
 extern void ubench_unregister_this_thread(jthread, JNIEnv*);
-extern int ubench_register_thread_id_mapping(jlong, long long);
-extern int ubench_unregister_thread_id_mapping_by_native_id(long long);
-extern long long ubench_get_native_thread_id(jlong);
-extern long long ubench_get_current_thread_native_id(void);
+extern int ubench_register_thread_id_mapping(java_tid_t, native_tid_t);
+extern int ubench_unregister_thread_id_mapping_by_native_id(native_tid_t);
+extern native_tid_t ubench_get_native_thread_id(java_tid_t);
+extern native_tid_t ubench_get_current_thread_native_id(void);
 extern jint ubench_benchmark_init(void);
 extern int ubench_event_init(void);
 extern int ubench_event_resolve(const char*, ubench_event_info_t*);

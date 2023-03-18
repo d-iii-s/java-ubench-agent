@@ -342,13 +342,13 @@ Java_cz_cuni_mff_d3s_perf_Measurement_createEventSet(
 JNIEXPORT jint JNICALL
 Java_cz_cuni_mff_d3s_perf_Measurement_createAttachedEventSetWithJavaThread(
 	JNIEnv* jni, jclass measurement_class,
-	jlong java_thread_id, jint jmeasurements, jobjectArray jeventNames, jintArray joptions
+	java_tid_t java_thread_id, jint jmeasurements, jobjectArray jeventNames, jintArray joptions
 ) {
 	jint eventset_index = Java_cz_cuni_mff_d3s_perf_Measurement_createEventSet(jni, measurement_class, jmeasurements, jeventNames, joptions);
 
 #ifdef HAS_PAPI
 	if ((all_eventsets[eventset_index].config.used_backends & UBENCH_EVENT_BACKEND_PAPI) > 0) {
-		long long native_id = ubench_get_native_thread_id(java_thread_id);
+		native_tid_t native_id = ubench_get_native_thread_id(java_thread_id);
 
 		if (native_id == UBENCH_THREAD_ID_INVALID) {
 			Java_cz_cuni_mff_d3s_perf_Measurement_destroyEventSet(jni, measurement_class, eventset_index);
@@ -356,7 +356,7 @@ Java_cz_cuni_mff_d3s_perf_Measurement_createAttachedEventSetWithJavaThread(
 			return -1;
 		}
 
-		DEBUG_PRINTF("Trying to attach %d to %llu (%ld).", eventset_index, native_id, java_thread_id);
+		DEBUG_PRINTF("Trying to attach %d to %" PRId_NATIVE_TID " (%" PRId_JAVA_TID ").", eventset_index, native_id, java_thread_id);
 
 		int rc = PAPI_attach(all_eventsets[eventset_index].config.papi_eventset, (unsigned long) native_id);
 		if (rc != PAPI_OK) {
@@ -364,7 +364,7 @@ Java_cz_cuni_mff_d3s_perf_Measurement_createAttachedEventSetWithJavaThread(
 			do_papi_error_throw(jni, rc, "PAPI_attach");
 			return -1;
 		}
-		DEBUG_PRINTF("Attached %d to %llu (%ld).", all_eventsets[eventset_index].config.papi_eventset, native_id, java_thread_id);
+		DEBUG_PRINTF("Attached %d to %" PRId_NATIVE_TID " (%" PRId_JAVA_TID").", all_eventsets[eventset_index].config.papi_eventset, native_id, java_thread_id);
 	}
 #else
 	UNUSED_VARIABLE(joptions);
@@ -377,21 +377,22 @@ Java_cz_cuni_mff_d3s_perf_Measurement_createAttachedEventSetWithJavaThread(
 JNIEXPORT jint JNICALL
 Java_cz_cuni_mff_d3s_perf_Measurement_createAttachedEventSetWithNativeThread(
 	JNIEnv* jni, jclass measurement_class,
-	jlong jnative_thread_id, jint jmeasurements, jobjectArray jeventNames, jintArray joptions
+	java_tid_t jnative_thread_id, jint jmeasurements, jobjectArray jeventNames, jintArray joptions
 ) {
 	jint eventset_index = Java_cz_cuni_mff_d3s_perf_Measurement_createEventSet(jni, measurement_class, jmeasurements, jeventNames, joptions);
 
 #ifdef HAS_PAPI
 	if ((all_eventsets[eventset_index].config.used_backends & UBENCH_EVENT_BACKEND_PAPI) > 0) {
-		DEBUG_PRINTF("Trying to attach %d to %lld.", eventset_index, (long long) jnative_thread_id);
+		native_tid_t native_thread_id = (native_tid_t) jnative_thread_id;
+		DEBUG_PRINTF("Trying to attach %d to %" PRId_NATIVE_TID ".", eventset_index, native_thread_id);
 
-		int rc = PAPI_attach(all_eventsets[eventset_index].config.papi_eventset, (unsigned long) jnative_thread_id);
+		int rc = PAPI_attach(all_eventsets[eventset_index].config.papi_eventset, native_thread_id);
 		if (rc != PAPI_OK) {
 			Java_cz_cuni_mff_d3s_perf_Measurement_destroyEventSet(jni, measurement_class, eventset_index);
 			do_papi_error_throw(jni, rc, "PAPI_attach");
 			return -1;
 		}
-		DEBUG_PRINTF("Attached %d to %lld.", all_eventsets[eventset_index].config.papi_eventset, (long long) jnative_thread_id);
+		DEBUG_PRINTF("Attached %d to %" PRId_NATIVE_TID ".", all_eventsets[eventset_index].config.papi_eventset, native_thread_id);
 	}
 #else
 	UNUSED_VARIABLE(joptions);
