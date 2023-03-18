@@ -38,12 +38,20 @@
 #define snprintf _snprintf
 #endif
 
-#ifdef __GNUC__
-#define UNUSED_PARAMETER(name) name __attribute__((unused))
+#ifndef __has_attribute
+#define __has_attribute(x) 0
+#endif
+
+#if __has_attribute(visibility)
 #define INTERNAL __attribute__((visibility("hidden")))
 #else
-#define UNUSED_PARAMETER(name) name
 #define INTERNAL
+#endif
+
+#if __has_attribute(unused)
+#define UNUSED_PARAMETER(name) name __attribute__((unused))
+#else
+#define UNUSED_PARAMETER(name) name
 #endif
 
 #define UNUSED_VARIABLE(name) (void) name
