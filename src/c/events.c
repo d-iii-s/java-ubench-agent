@@ -67,7 +67,7 @@ ubench_event_init(void) {
 
 #ifdef HAS_TIMESPEC
 static inline long long
-timespec_diff_as_ns(const struct timespec* a, const struct timespec* b) {
+timespec_diff_ns(const struct timespec* a, const struct timespec* b) {
 	long long sec_diff = b->tv_sec - a->tv_sec;
 	long long nanosec_diff = b->tv_nsec - a->tv_nsec;
 	return sec_diff * 1000 * 1000 * 1000 + nanosec_diff;
@@ -77,7 +77,7 @@ timespec_diff_as_ns(const struct timespec* a, const struct timespec* b) {
 static long long
 timestamp_diff_ns(const timestamp_t* a, const timestamp_t* b) {
 #ifdef HAS_TIMESPEC
-	return timespec_diff_as_ns(a, b);
+	return timespec_diff_ns(a, b);
 #elif defined(HAS_QUERY_PERFORMANCE_COUNTER)
 	if (windows_timer_frequency.QuadPart == 0) {
 		return -1;
@@ -114,13 +114,13 @@ getter_raw_wall_clock_time(
 
 #ifdef HAS_GET_THREAD_TIMES
 static long long
-get_filetime_diff_in_us(const FILETIME* a, const FILETIME* b) {
+filetime_diff_us(const FILETIME* a, const FILETIME* b) {
 	long long result = ((LARGE_INTEGER*) b)->QuadPart - ((LARGE_INTEGER*) a)->QuadPart;
 	return result / 10;
 }
 
 static long long
-get_filetime_in_us(const FILETIME* val) {
+filetime_us(const FILETIME* val) {
 	return (((LARGE_INTEGER*) val)->QuadPart) / 10;
 }
 #endif
@@ -131,12 +131,12 @@ getter_thread_time(
 	const ubench_event_info_t* UNUSED_PARAMETER(info)
 ) {
 #ifdef HAS_TIMESPEC
-	long long result = timespec_diff_as_ns(&start->threadtime, &end->threadtime);
+	long long result = timespec_diff_ns(&start->threadtime, &end->threadtime);
 	// fprintf(stderr, "getter_thread_time(%lld:%lld, %lld:%lld) = %lld\n", (long long) bench->start.threadtime.tv_sec, (long long) bench->start.threadtime.tv_nsec, (long long) bench->end.threadtime.tv_sec, (long long) bench->end.threadtime.tv_nsec, result);
 	return result;
 #elif defined(HAS_GET_THREAD_TIMES)
-	long long kernel_us = get_filetime_diff_in_us(&start->threadtime.kernel, &end->threadtime.kernel);
-	long long user_us = get_filetime_diff_in_us(&start->threadtime.user, &end->threadtime.user);
+	long long kernel_us = filetime_diff_us(&start->threadtime.kernel, &end->threadtime.kernel);
+	long long user_us = filetime_diff_us(&start->threadtime.user, &end->threadtime.user);
 	return (user_us + kernel_us) * 1000;
 #else
 	return 0;
@@ -150,7 +150,7 @@ getter_raw_thread_time(
 #ifdef HAS_TIMESPEC
 	return value->threadtime.tv_sec * 1000 * 1000 * 1000 + value->threadtime.tv_nsec;
 #elif defined(HAS_GET_THREAD_TIMES)
-	return (get_filetime_in_us(&value->threadtime.kernel) + get_filetime_in_us(&value->threadtime.user)) * 1000;
+	return (filetime_us(&value->threadtime.kernel) + filetime_us(&value->threadtime.user)) * 1000;
 #else
 	return 0;
 #endif
@@ -189,8 +189,8 @@ getter_raw_context_switch_forced(
 }
 
 static inline long long
-timeval_diff_as_us(const struct timeval* a, const struct timeval* b) {
-	// fprintf(stderr, "timeval_diff_as_us(%lld:%lld, %lld:%lld)\n", (long long) a->tv_sec, (long long) a->tv_usec, (long long) b->tv_sec, (long long) b->tv_usec);
+timeval_diff_us(const struct timeval* a, const struct timeval* b) {
+	// fprintf(stderr, "timeval_diff_us(%lld:%lld, %lld:%lld)\n", (long long) a->tv_sec, (long long) a->tv_usec, (long long) b->tv_sec, (long long) b->tv_usec);
 	long long sec_diff = b->tv_sec - a->tv_sec;
 	long long usec_diff = b->tv_usec - a->tv_usec;
 
@@ -202,8 +202,8 @@ getter_thread_time_rusage(
 	const ubench_events_snapshot_t* start, const ubench_events_snapshot_t* end,
 	const ubench_event_info_t* UNUSED_PARAMETER(info)
 ) {
-	long long user_us = timeval_diff_as_us(&start->resource_usage.ru_utime, &end->resource_usage.ru_utime);
-	long long system_us = timeval_diff_as_us(&start->resource_usage.ru_stime, &end->resource_usage.ru_stime);
+	long long user_us = timeval_diff_us(&start->resource_usage.ru_utime, &end->resource_usage.ru_utime);
+	long long system_us = timeval_diff_us(&start->resource_usage.ru_stime, &end->resource_usage.ru_stime);
 	return (user_us + system_us) * (long long) 1000;
 }
 
