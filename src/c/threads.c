@@ -249,6 +249,24 @@ ubench_unregister_native_thread(native_tid_t native_thread_id) {
 
 //
 
+static inline native_tid_t
+ubench_get_current_thread_native_id(void) {
+#if defined(_MSC_VER)
+	return (native_tid_t) GetCurrentThreadId();
+#elif defined(__APPLE__)
+	pthread_t tid = pthread_self();
+	return (native_tid_t) tid;
+#elif defined(__GNUC__)
+	pid_t answer = syscall(__NR_gettid);
+	return (native_tid_t) answer;
+#else
+#error "Threading not supported on this platform."
+	return UBENCH_THREAD_ID_INVALID;
+#endif
+}
+
+//
+
 /*
  * Cached identifier of 'java.lang.Thread.getId()' method.
  * Initialized from the 'VM Init' callback, which is called before the
@@ -330,24 +348,6 @@ static jvmti_context_t threads_context = {
 	},
 	.events = { JVMTI_EVENT_THREAD_START, JVMTI_EVENT_THREAD_END, 0 }
 };
-
-//
-
-INTERNAL native_tid_t
-ubench_get_current_thread_native_id(void) {
-#if defined(_MSC_VER)
-	return (native_tid_t) GetCurrentThreadId();
-#elif defined(__APPLE__)
-	pthread_t tid = pthread_self();
-	return (native_tid_t) tid;
-#elif defined(__GNUC__)
-	pid_t answer = syscall(__NR_gettid);
-	return (native_tid_t) answer;
-#else
-#error "Threading not supported on this platform."
-	return UBENCH_THREAD_ID_INVALID;
-#endif
-}
 
 //
 
