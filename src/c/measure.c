@@ -20,6 +20,7 @@
 #define _GNU_SOURCE
 #define _POSIX_C_SOURCE 200809L
 
+#include "compiler.h"
 #include "ubench.h"
 
 #pragma warning(push, 0)
@@ -49,7 +50,7 @@
 #pragma warning(pop)
 #endif
 
-static void
+static inline void
 store_wallclock(timestamp_t* ts) {
 #ifdef HAS_TIMESPEC
 	clock_gettime(CLOCK_MONOTONIC, ts);
@@ -60,7 +61,7 @@ store_wallclock(timestamp_t* ts) {
 #endif
 }
 
-static void
+static inline void
 store_threadtime(threadtime_t* ts) {
 #ifdef HAS_TIMESPEC
 	clock_gettime(CLOCK_THREAD_CPUTIME_ID, ts);
