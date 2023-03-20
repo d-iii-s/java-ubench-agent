@@ -81,9 +81,6 @@ on_compiled_method_load(
 	ubench_atomic_int_inc(&counter_compilation_total);
 }
 
-// static void JNICALL on_gc_start(jvmtiEnv *UNUSED_PARAMETER(jvmti_env)) {
-// }
-
 static void JNICALL
 on_gc_finish(jvmtiEnv* UNUSED_PARAMETER(jvmti)) {
 	ubench_atomic_int_inc(&counter_gc_total);
@@ -111,7 +108,6 @@ register_and_enable_callback(void) {
 	jvmtiEventCallbacks callbacks;
 	FILL_WITH_ZEROS(callbacks);
 	callbacks.CompiledMethodLoad = &on_compiled_method_load;
-	// callbacks.GarbageCollectionStart = &on_gc_start;
 	callbacks.GarbageCollectionFinish = &on_gc_finish;
 	callbacks.ThreadStart = &ubench_jvm_callback_on_thread_start;
 	callbacks.ThreadEnd = &ubench_jvm_callback_on_thread_end;
@@ -123,7 +119,6 @@ register_and_enable_callback(void) {
 
 
 	REGISTER_EVENT_OR_RETURN(agent_env, JVMTI_EVENT_COMPILED_METHOD_LOAD);
-	// REGISTER_EVENT_OR_RETURN(agent_env, JVMTI_EVENT_GARBAGE_COLLECTION_START);
 	REGISTER_EVENT_OR_RETURN(agent_env, JVMTI_EVENT_GARBAGE_COLLECTION_FINISH);
 	REGISTER_EVENT_OR_RETURN(agent_env, JVMTI_EVENT_THREAD_START);
 	REGISTER_EVENT_OR_RETURN(agent_env, JVMTI_EVENT_THREAD_END);
