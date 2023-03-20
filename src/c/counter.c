@@ -138,3 +138,12 @@ ubench_counters_init(jvmtiEnv* jvmti) {
 
 	return JNI_OK;
 }
+
+//
+
+JNIEXPORT jint JNICALL
+Java_cz_cuni_mff_d3s_perf_CompilationCounter_getCompilationCountAndReset(
+	JNIEnv* UNUSED_PARAMETER(jni), jclass UNUSED_PARAMETER(counter_class)
+) {
+	return ubench_atomic_int_reset(&counter_compilation);
+}

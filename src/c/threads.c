@@ -24,6 +24,7 @@
 #pragma warning(push, 0)
 #include "cz_cuni_mff_d3s_perf_CompilationCounter.h"
 #include "cz_cuni_mff_d3s_perf_Measurement.h"
+#include "cz_cuni_mff_d3s_perf_NativeThreads.h"
 
 #include <assert.h>
 #include <stddef.h>
@@ -203,4 +204,29 @@ ubench_get_current_thread_native_id(void) {
 #error "Threading not supported on this platform."
 	return UBENCH_THREAD_ID_INVALID;
 #endif
+}
+
+//
+
+JNIEXPORT java_tid_t JNICALL
+Java_cz_cuni_mff_d3s_perf_NativeThreads_getNativeId(
+	JNIEnv* UNUSED_PARAMETER(jni), jclass UNUSED_PARAMETER(threads_class),
+	java_tid_t java_thread_id
+) {
+	native_tid_t answer = ubench_get_native_thread_id(java_thread_id);
+	if (answer == UBENCH_THREAD_ID_INVALID) {
+		// TODO: throw an error
+		return (java_tid_t) cz_cuni_mff_d3s_perf_NativeThreads_INVALID_THREAD_ID;
+	}
+
+	return (java_tid_t) answer;
+}
+
+JNIEXPORT jboolean JNICALL
+Java_cz_cuni_mff_d3s_perf_NativeThreads_registerJavaThread(
+	JNIEnv* UNUSED_PARAMETER(jni), jclass UNUSED_PARAMETER(threads_class),
+	java_tid_t java_thread_id, java_tid_t jnative_thread_id
+) {
+	int res = ubench_register_thread_id_mapping(java_thread_id, (native_tid_t) jnative_thread_id);
+	return res == 0;
 }
