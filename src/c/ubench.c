@@ -30,17 +30,8 @@ Agent_OnLoad(
 	JavaVM* jvm, char* UNUSED_PARAMETER(options), void* UNUSED_PARAMETER(reserved)
 ) {
 	jint rc;
-	jvmtiEnv* jvmti;
 
-	rc = (*jvm)->GetEnv(jvm, (void**) &jvmti, JVMTI_VERSION);
-	if (rc != JNI_OK) {
-		fprintf(stderr, "Unable to create JVMTI environment, JavaVM->GetEnv failed, error %ld.\n", (long) rc);
-		return JNI_ERR;
-	}
-
-	rc = ubench_counters_init(jvmti);
-
-	if (rc != JNI_OK) {
+	if (!ubench_counters_init(jvm)) {
 		return JNI_ERR;
 	}
 

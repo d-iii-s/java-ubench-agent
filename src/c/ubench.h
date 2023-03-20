@@ -175,10 +175,8 @@ extern bool ubench_jvmti_context_enable(jvmti_context_t*);
 extern bool ubench_jvmti_context_destroy(jvmti_context_t*);
 extern bool ubench_jvmti_context_init_and_enable(jvmti_context_t*, JavaVM*);
 
-extern void ubench_jvm_callback_on_thread_start(jvmtiEnv*, JNIEnv*, jthread);
-extern void ubench_jvm_callback_on_thread_end(jvmtiEnv*, JNIEnv*, jthread);
+extern bool ubench_counters_init(JavaVM*);
 
-extern jint ubench_counters_init(jvmtiEnv*);
 extern void ubench_register_this_thread(jthread, JNIEnv*);
 extern void ubench_unregister_this_thread(jthread, JNIEnv*);
 extern int ubench_register_thread_id_mapping(java_tid_t, native_tid_t);
