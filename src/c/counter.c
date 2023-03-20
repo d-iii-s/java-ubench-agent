@@ -15,10 +15,17 @@
  * limitations under the License.
  */
 
+#include "compiler.h"
+#include "myatomic.h"
 #include "ubench.h"
 
 #pragma warning(push, 0)
-#include <string.h>
+/* Ensure compatibility of JNI function types. */
+#include "cz_cuni_mff_d3s_perf_CompilationCounter.h"
+
+#include <jni.h>
+#include <jvmti.h>
+#include <jvmticmlr.h>
 #pragma warning(pop)
 
 #define FILL_WITH_ZEROS(variable) memset(&variable, 0, sizeof(variable))

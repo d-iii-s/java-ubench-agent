@@ -15,10 +15,12 @@
  * limitations under the License.
  */
 
-#include "ubench.h"
+#include "compiler.h"
 
 #pragma warning(push, 0)
+/* Ensure compatibility of JNI function types. */
 #include "cz_cuni_mff_d3s_perf_Barrier.h"
+
 #ifdef __unix__
 #include <errno.h>
 #include <fcntl.h>
@@ -26,6 +28,9 @@
 #include <sys/mman.h>
 #include <sys/stat.h>
 #endif
+
+#include <jni.h>
+#include <jvmti.h>
 #pragma warning(pop)
 
 #ifdef __unix__

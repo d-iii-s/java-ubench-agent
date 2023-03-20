@@ -15,17 +15,17 @@
  * limitations under the License.
  */
 
-#include "ubench.h"
+#include "compiler.h"
 
 #pragma warning(push, 0)
+/* Ensure compatibility of JNI function types. */
 #include "cz_cuni_mff_d3s_perf_OverheadEstimations.h"
 
-#include <stdlib.h>
-#include <string.h>
-#include <time.h>
 #ifdef HAS_GETRUSAGE
 #include <sys/resource.h>
 #endif
+
+#include <jni.h>
 #pragma warning(pop)
 
 JNIEXPORT void JNICALL

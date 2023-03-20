@@ -22,7 +22,7 @@
 #include "ubench.h"
 
 #pragma warning(push, 0)
-#include "cz_cuni_mff_d3s_perf_CompilationCounter.h"
+/* Ensure compatibility of JNI function types. */
 #include "cz_cuni_mff_d3s_perf_Measurement.h"
 
 #include <assert.h>

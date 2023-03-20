@@ -15,11 +15,14 @@
  * limitations under the License.
  */
 
+#include "compiler.h"
 #include "ubench.h"
 
 #pragma warning(push, 0)
 #include <stdio.h>
-#include <string.h>
+
+#include <jni.h>
+#include <jvmti.h>
 #pragma warning(pop)
 
 JNIEXPORT jint JNICALL

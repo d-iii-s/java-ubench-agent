@@ -20,12 +20,6 @@
 
 #include "compiler.h"
 
-#pragma warning(push, 0)
-#include <jni.h>
-#include <jvmti.h>
-#include <jvmticmlr.h>
-#pragma warning(pop)
-
 #ifdef _MSC_VER
 #pragma warning(push, 0)
 #include <Windows.h>

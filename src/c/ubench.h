@@ -19,22 +19,22 @@
 #define UBENCH_H_GUARD
 
 #include "compiler.h"
+#include "myatomic.h"
+#include "mylock.h"
 
 #pragma warning(push, 0)
 #include <inttypes.h>
-#include <jni.h>
-#include <jvmti.h>
-#include <jvmticmlr.h>
 #include <stdlib.h>
 #include <string.h>
 #include <time.h>
+
 #ifndef _MSC_VER
 #include <strings.h>
 #endif
-#pragma warning(pop)
 
-#include "myatomic.h"
-#include "mylock.h"
+#include <jni.h>
+#include <jvmti.h>
+#pragma warning(pop)
 
 #ifdef UBENCH_DEBUG
 #define DEBUG_PRINTF(fmt, ...) printf("[ubench-agent]: " fmt "\n", ##__VA_ARGS__)
