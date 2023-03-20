@@ -61,7 +61,7 @@ public final class Benchmark {
     public static void stop() {
         Measurement.stop(defaultEventSet);
     }
-    
+
     /** Reset the counters. */
     public static void reset() {
         Measurement.reset(defaultEventSet);

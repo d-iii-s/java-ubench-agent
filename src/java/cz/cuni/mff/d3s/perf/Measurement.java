@@ -35,7 +35,7 @@ public final class Measurement {
     
     /** Prevent instantiation. */
     private Measurement() {}
-    
+
     /** Create new event set.
      *
      * @param measurementCount How many measurements should remember the C agent.
@@ -59,7 +59,7 @@ public final class Measurement {
      */
     private static native int createAttachedEventSetWithJavaThread(long threadId,
             int measurementCount, String[] events, int... options);
-    
+
     /** Create new event set attached to a native thread.
      *
      * @param threadId Native thread id (OS-dependent).
@@ -116,13 +116,13 @@ public final class Measurement {
      * @param eventSet Array of event sets where the measurements are started.
      */
     public static native void start(int... eventSet);
-    
+
     /** Stop actual measurement.
      *
      * @param eventSet Array of event sets where the measurements are stopped.
      */
     public static native void stop(int... eventSet);
-    
+
     /** Sample the event counters.
      *
      * <p>

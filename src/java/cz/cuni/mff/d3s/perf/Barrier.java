@@ -21,7 +21,7 @@ package cz.cuni.mff.d3s.perf;
 public final class Barrier {
     /** Prevent instantiation. */
     private Barrier() {}
-    
+
     /** Create a new barrier.
      *
      * @param name Barrier name.
@@ -35,7 +35,7 @@ public final class Barrier {
      * @param name Barrier name.
      */
     private static native void initNative(String name);
-    
+
     /** Waits on the barrier. */
     public static native void barrier();
 }
