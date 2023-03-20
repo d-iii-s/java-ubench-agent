@@ -29,8 +29,9 @@
 #include <errno.h>
 #include <stdbool.h>
 #include <stdlib.h>
-#include <string.h>
-#include <time.h>
+
+#include <jni.h>
+#include <jvmti.h>
 #pragma warning(pop)
 
 #ifdef __GNUC__
@@ -248,59 +249,89 @@ ubench_unregister_native_thread(native_tid_t native_thread_id) {
 
 //
 
-static ubench_spinlock_t java_lang_Thread_guard = UBENCH_SPINLOCK_INITIALIZER;
-static jclass class_java_lang_Thread = NULL;
-static jmethodID method_java_lang_Thread_getId = NULL;
+/*
+ * Cached identifier of 'java.lang.Thread.getId()' method.
+ * Initialized from the 'VM Init' callback, which is called before the
+ * main thread is started. Allows the 'Thread Start' and 'Thread End'
+ * callbacks get the Java thread identifier.
+ */
+static jmethodID thread_get_id_method;
 
-static void
-ensure_java_lang_Thread_resolved(JNIEnv* jni_env) {
-	ubench_spinlock_lock(&java_lang_Thread_guard);
-
-	if (class_java_lang_Thread != NULL) {
-		ubench_spinlock_unlock(&java_lang_Thread_guard);
-		return;
-	}
-
-	class_java_lang_Thread = (*jni_env)->FindClass(jni_env, "java/lang/Thread");
-	if (class_java_lang_Thread == NULL) {
-		fprintf(stderr, "Failed to find java.lang.Thread, aborting!\n");
-		exit(1);
-	}
-	method_java_lang_Thread_getId = (*jni_env)->GetMethodID(jni_env, class_java_lang_Thread, "getId", "()J");
-	if (method_java_lang_Thread_getId == NULL) {
-		fprintf(stderr, "Failed to find java.lang.Thread.getId(), aborting!\n");
-		exit(1);
-	}
-
-	ubench_spinlock_unlock(&java_lang_Thread_guard);
-}
-
-INTERNAL void JNICALL
-ubench_jvm_callback_on_thread_start(
+static void JNICALL
+jvmti_callback_on_thread_start(
 	jvmtiEnv* UNUSED_PARAMETER(jvmti), JNIEnv* jni, jthread thread
 ) {
-	ensure_java_lang_Thread_resolved(jni);
+#ifdef UBENCH_DEBUG
+	jvmtiThreadInfo thread_info = (jvmtiThreadInfo) { .name = NULL, /* clear the structure */ };
 
-	java_tid_t java_id = (*jni)->CallLongMethod(jni, thread, method_java_lang_Thread_getId);
+	jvmtiError ti_error = (*jvmti)->GetThreadInfo(jvmti, thread, &thread_info);
+	assert(ti_error == JVMTI_ERROR_NONE);
+#endif
+
+	DEBUG_PRINTF("thread %p [%s] started.", thread, thread_info.name);
+
+	java_tid_t java_id = (*jni)->CallLongMethod(jni, thread, thread_get_id_method);
 	native_tid_t native_id = ubench_get_current_thread_native_id();
+	bool registered = ubench_register_java_thread(java_id, native_id);
 
-	DEBUG_PRINTF("JVM callback: thread %" PRId_JAVA_TID " [%" PRId_NATIVE_TID "] started.", java_id, native_id);
+	DEBUG_PRINTF(
+		"%s thread %p [%s, %" PRId_JAVA_TID "] with native id [%" PRId_NATIVE_TID "].",
+		registered ? "registered" : "failed to register",
+		thread, thread_info.name, java_id, native_id
+	);
 
-	ubench_register_java_thread(java_id, native_id);
+	UNUSED_VARIABLE(registered);
+
+#ifdef UBENCH_DEBUG
+	if (thread_info.name != NULL) {
+		ti_error = (*jvmti)->Deallocate(jvmti, (unsigned char*) thread_info.name);
+		assert(ti_error == JVMTI_ERROR_NONE);
+	}
+#endif
 }
 
-INTERNAL void JNICALL
-ubench_jvm_callback_on_thread_end(
+static void JNICALL
+jvmti_callback_on_thread_end(
 	jvmtiEnv* UNUSED_PARAMETER(jvmti), JNIEnv* UNUSED_PARAMETER(jni),
 	jthread UNUSED_PARAMETER(thread)
 ) {
+#ifdef UBENCH_DEBUG
+	jvmtiThreadInfo thread_info = (jvmtiThreadInfo) { .name = NULL, /* clear the structure */ };
+
+	jvmtiError ti_error = (*jvmti)->GetThreadInfo(jvmti, thread, &thread_info);
+	assert(ti_error == JVMTI_ERROR_NONE);
+#endif
+
+	DEBUG_PRINTF("thread %p [%s] finished.", thread, thread_info.name);
+
 	native_tid_t native_id = ubench_get_current_thread_native_id();
+	bool unregistered = ubench_unregister_native_thread(native_id);
 
-	DEBUG_PRINTF("JVM callback: thread [%" PRId_NATIVE_TID "] ended.", native_id);
+	DEBUG_PRINTF(
+		"%s thread %p [%s] with native id [%" PRId_NATIVE_TID "].",
+		unregistered ? "unregistered" : "failed to unregister",
+		thread, thread_info.name, native_id
+	);
 
-	ubench_unregister_native_thread(native_id);
+	UNUSED_VARIABLE(unregistered);
+
+#ifdef UBENCH_DEBUG
+	if (thread_info.name != NULL) {
+		ti_error = (*jvmti)->Deallocate(jvmti, (unsigned char*) thread_info.name);
+		assert(ti_error == JVMTI_ERROR_NONE);
+	}
+#endif
 }
 
+static jvmti_context_t threads_context = {
+	.callbacks = {
+		.ThreadStart = &jvmti_callback_on_thread_start,
+		.ThreadEnd = &jvmti_callback_on_thread_end,
+	},
+	.events = { JVMTI_EVENT_THREAD_START, JVMTI_EVENT_THREAD_END, 0 }
+};
+
+//
 
 INTERNAL native_tid_t
 ubench_get_current_thread_native_id(void) {
@@ -316,6 +347,63 @@ ubench_get_current_thread_native_id(void) {
 #error "Threading not supported on this platform."
 	return UBENCH_THREAD_ID_INVALID;
 #endif
+}
+
+//
+
+static void JNICALL
+jvmti_callback_on_vm_init(
+	jvmtiEnv* UNUSED_PARAMETER(jvmti), JNIEnv* jni, jthread UNUSED_PARAMETER(thread)
+) {
+	//
+	// Initialize the 'thread_class' and 'thread_get_id_method' variables for
+	// the thread registration callbacks.
+	//
+	jclass thread_class = (*jni)->FindClass(jni, "java/lang/Thread");
+	if (thread_class == NULL) {
+		fprintf(stderr, "fatal: failed to find 'java.lang.Thread' class, aborting!\n");
+		exit(1);
+	}
+
+	thread_get_id_method = (*jni)->GetMethodID(jni, thread_class, "getId", "()J");
+	if (thread_get_id_method == NULL) {
+		fprintf(stderr, "fatal: failed to find 'java.lang.Thread.getId()' method, aborting!\n");
+		exit(1);
+	}
+
+	//
+	// Enable the thread registration JVMTI context to automatically register
+	// newly created threads. This ensures that the thread registration methods
+	// will be called only after the variables have been initialized.
+	//
+	if (!ubench_jvmti_context_enable(&threads_context)) {
+		DEBUG_PRINTF("could not enable thread registration JVMTI context");
+	}
+}
+
+INTERNAL bool
+ubench_threads_init(JavaVM* jvm) {
+	assert(jvm != NULL);
+
+	static jvmti_context_t init_context = {
+		.callbacks = { .VMInit = &jvmti_callback_on_vm_init },
+		.events = { JVMTI_EVENT_VM_INIT, 0 }
+	};
+
+	//
+	// Initialize the thread registration context. If it succeeds, initialize
+	// and enable the VM initialization context, which will enable the thread
+	// registration context upon receiving the 'VM Init' event.
+	//
+	if (ubench_jvmti_context_init(&threads_context, jvm)) {
+		if (ubench_jvmti_context_init_and_enable(&init_context, jvm)) {
+			return true;
+		}
+
+		ubench_jvmti_context_destroy(&threads_context);
+	}
+
+	return false;
 }
 
 INTERNAL native_tid_t

@@ -33,6 +33,10 @@ Agent_OnLoad(
 		return JNI_ERR;
 	}
 
+	if (!ubench_threads_init(jvm)) {
+		return JNI_ERR;
+	}
+
 	if (!ubench_benchmark_init()) {
 		return JNI_ERR;
 	}

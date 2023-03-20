@@ -178,6 +178,7 @@ extern bool ubench_jvmti_context_init_and_enable(jvmti_context_t*, JavaVM*);
 extern bool ubench_counters_init(JavaVM*);
 extern bool ubench_benchmark_init(void);
 
+extern bool ubench_threads_init(JavaVM*);
 extern native_tid_t ubench_threads_get_native_id(java_tid_t);
 extern native_tid_t ubench_get_current_thread_native_id(void);
 
