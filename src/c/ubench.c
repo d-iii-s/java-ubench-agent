@@ -29,14 +29,11 @@ JNIEXPORT jint JNICALL
 Agent_OnLoad(
 	JavaVM* jvm, char* UNUSED_PARAMETER(options), void* UNUSED_PARAMETER(reserved)
 ) {
-	jint rc;
-
 	if (!ubench_counters_init(jvm)) {
 		return JNI_ERR;
 	}
 
-	rc = ubench_benchmark_init();
-	if (rc != JNI_OK) {
+	if (!ubench_benchmark_init()) {
 		return JNI_ERR;
 	}
 

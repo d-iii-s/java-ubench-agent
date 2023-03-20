@@ -88,7 +88,7 @@ get_thread_id(void) {
 }
 #endif
 
-INTERNAL jint
+INTERNAL bool
 ubench_benchmark_init(void) {
 #ifdef HAS_PAPI
 	// TODO: check for errors
@@ -108,7 +108,7 @@ ubench_benchmark_init(void) {
 
 	ubench_event_init();
 
-	return JNI_OK;
+	return true;
 }
 
 static void
