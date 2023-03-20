@@ -212,13 +212,13 @@ Java_cz_cuni_mff_d3s_perf_NativeThreads_getNativeId(
 	JNIEnv* UNUSED_PARAMETER(jni), jclass UNUSED_PARAMETER(threads_class),
 	java_tid_t java_thread_id
 ) {
-	native_tid_t answer = ubench_get_native_thread_id(java_thread_id);
-	if (answer == UBENCH_THREAD_ID_INVALID) {
-		// TODO: throw an error
+	native_tid_t native_thread_id = ubench_get_native_thread_id(java_thread_id);
+	if (native_thread_id == UBENCH_THREAD_ID_INVALID) {
+		// TODO Consider throwing an error, because -1 may be a valid id.
 		return (java_tid_t) cz_cuni_mff_d3s_perf_NativeThreads_INVALID_THREAD_ID;
 	}
 
-	return (java_tid_t) answer;
+	return (java_tid_t) native_thread_id;
 }
 
 JNIEXPORT jboolean JNICALL
