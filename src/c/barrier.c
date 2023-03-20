@@ -55,8 +55,8 @@ Java_cz_cuni_mff_d3s_perf_Barrier_initNative(
 	}
 #else
 	// Silence the compiler (unused variables).
-	(void) jni;
-	(void) jname;
+	UNUSED_VARIABLE(jni);
+	UNUSED_VARIABLE(jname);
 
 	fprintf(stderr, "Platform not yet supported.\n");
 	return;
