@@ -445,3 +445,12 @@ Java_cz_cuni_mff_d3s_perf_NativeThreads_registerJavaThread(
 	// TODO Consider throwing an exception ('false' really means "already registered").
 	return ubench_register_java_thread(java_thread_id, (native_tid_t) jnative_thread_id);
 }
+
+JNIEXPORT jboolean JNICALL
+Java_cz_cuni_mff_d3s_perf_NativeThreads_registerCurrentJavaThread(
+	JNIEnv* UNUSED_PARAMETER(jni), jclass UNUSED_PARAMETER(threads_class),
+	java_tid_t java_thread_id
+) {
+	// TODO Consider throwing an exception ('false' really means "already registered").
+	return ubench_register_java_thread(java_thread_id, ubench_get_current_thread_native_id());
+}
