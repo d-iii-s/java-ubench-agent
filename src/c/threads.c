@@ -26,7 +26,8 @@
 #include "cz_cuni_mff_d3s_perf_NativeThreads.h"
 
 #include <assert.h>
-#include <stddef.h>
+#include <errno.h>
+#include <stdbool.h>
 #include <stdlib.h>
 #include <string.h>
 #include <time.h>
@@ -56,11 +57,196 @@
 typedef struct {
 	native_tid_t native_id;
 	java_tid_t java_id;
-} thread_mapping_t;
+} thread_map_entry_t;
 
-static ubench_spinlock_t thread_mapping_guard = UBENCH_SPINLOCK_INITIALIZER;
-static thread_mapping_t* thread_mappings = NULL;
-static int thread_mapping_count = 0;
+typedef struct {
+	int length;
+	int capacity;
+	thread_map_entry_t* entries;
+} thread_map_t;
+
+typedef bool (*predicate_func_t)(const void* arg, const thread_map_entry_t* entry);
+
+#ifdef UBENCH_DEBUG
+static void
+debug_thread_map_print_entries(const thread_map_t* map) {
+	assert(map != NULL);
+
+	DEBUG_PRINTF("thread_map_t(%p) = {", map);
+	DEBUG_PRINTF("    .length = %d", map->length);
+	DEBUG_PRINTF("    .capacity = %d", map->capacity);
+
+	if (map->length > 0) {
+		DEBUG_PRINTF("    .entries = {");
+
+		for (int i = 0; i < map->length; i++) {
+			thread_map_entry_t* entry = &map->entries[i];
+
+			DEBUG_PRINTF(
+				"       .[%d] = { .java_id = %" PRId_JAVA_TID ", .native_id = %" PRId_NATIVE_TID " }",
+				i, entry->java_id, entry->native_id
+			);
+		};
+
+		DEBUG_PRINTF("    }");
+	} else {
+		DEBUG_PRINTF("    .entries = {}");
+	}
+
+	DEBUG_PRINTF("}");
+}
+#else
+#define debug_thread_map_print_entries(map) (void) 0
+#endif
+
+//
+
+static inline int
+thread_map_index_of(const thread_map_t* map, predicate_func_t predicate, void* arg) {
+	//
+	// We assume that the sequence of valid entries is contiguous.
+	// Once we find an invalid entry, it means that the given thread
+	// is is not present.
+	//
+
+	for (int i = 0; i < map->length; i++) {
+		thread_map_entry_t* entry = &map->entries[i];
+		if (predicate(arg, entry)) {
+			return i;
+		}
+	}
+
+	return -1;
+}
+
+//
+
+static bool
+predicate_java_id_match(const java_tid_t* java_id_arg, const thread_map_entry_t* entry) {
+	java_tid_t java_thread_id = *java_id_arg;
+	return entry->java_id == java_thread_id;
+}
+
+static int
+thread_map_index_of_java_thread(const thread_map_t* map, java_tid_t java_thread_id) {
+	return thread_map_index_of(map, (predicate_func_t) predicate_java_id_match, &java_thread_id);
+}
+
+//
+
+static bool
+predicate_native_id_match(const native_tid_t* native_id_arg, const thread_map_entry_t* entry) {
+	native_tid_t native_thread_id = *native_id_arg;
+	return entry->native_id == native_thread_id;
+}
+
+static int
+thread_map_index_of_native_thread(const thread_map_t* map, native_tid_t native_thread_id) {
+	return thread_map_index_of(map, (predicate_func_t) predicate_native_id_match, &native_thread_id);
+}
+
+//
+
+static bool
+thread_map_ensure_capacity(thread_map_t* map, int required_capacity) {
+	assert(map != NULL);
+
+	if (map->capacity < required_capacity) {
+		thread_map_entry_t* new_entries = realloc(map->entries, required_capacity * sizeof(thread_map_entry_t));
+		if (new_entries == NULL) {
+			return false;
+		}
+
+		map->entries = new_entries;
+		map->capacity = required_capacity;
+	}
+
+	return true;
+}
+
+static int
+thread_map_put_java_thread(thread_map_t* map, java_tid_t java_thread_id, native_tid_t native_thread_id) {
+	assert(map != NULL);
+
+	// Lookup the entry and if it exists, indicate that nothing was added.
+	int index = thread_map_index_of_java_thread(map, java_thread_id);
+	if (index >= 0) {
+		return EEXIST;
+	}
+
+	// Ensure there is enough room to add a new entry.
+	if (!thread_map_ensure_capacity(map, map->length + 1)) {
+		return ENOMEM;
+	}
+
+	// Fill the entry and indicate that a new entry was added.
+	map->entries[map->length] = (thread_map_entry_t) {
+		.java_id = java_thread_id,
+		.native_id = native_thread_id,
+	};
+
+	map->length++;
+	return 0;
+}
+
+//
+
+static int
+thread_map_remove_native_thread(thread_map_t* map, native_tid_t native_thread_id) {
+	assert(map != NULL);
+
+	//
+	// If the entry exists, replace it with the last entry and shrink the map by one.
+	//
+	int index = thread_map_index_of_native_thread(map, native_thread_id);
+	if (index < 0) {
+		return ENOENT;
+	}
+
+	// The entry exists, so the map must have a non-zero length.
+	assert(map->length > 0);
+	map->length--;
+
+	// The new length is the index of the last element.
+	map->entries[index] = map->entries[map->length];
+	return 0;
+}
+
+//
+
+static thread_map_t thread_map;
+static ubench_spinlock_t thread_map_lock = UBENCH_SPINLOCK_INITIALIZER;
+
+static bool
+ubench_register_java_thread(java_tid_t java_thread_id, native_tid_t native_thread_id) {
+	ubench_spinlock_lock(&thread_map_lock);
+
+	int result = thread_map_put_java_thread(&thread_map, java_thread_id, native_thread_id);
+	debug_thread_map_print_entries(&thread_map);
+
+	ubench_spinlock_unlock(&thread_map_lock);
+
+	if (result == ENOMEM) {
+		// TODO Consider throwing an exception from the caller.
+		fprintf(stderr, "fatal: failed to register Java thread with native id, aborting!\n");
+		exit(1);
+	}
+
+	return (result == 0);
+}
+
+static bool
+ubench_unregister_native_thread(native_tid_t native_thread_id) {
+	ubench_spinlock_lock(&thread_map_lock);
+
+	int result = thread_map_remove_native_thread(&thread_map, native_thread_id);
+	debug_thread_map_print_entries(&thread_map);
+
+	ubench_spinlock_unlock(&thread_map_lock);
+	return (result == 0);
+}
+
+//
 
 static ubench_spinlock_t java_lang_Thread_guard = UBENCH_SPINLOCK_INITIALIZER;
 static jclass class_java_lang_Thread = NULL;
@@ -100,7 +286,7 @@ ubench_jvm_callback_on_thread_start(
 
 	DEBUG_PRINTF("JVM callback: thread %" PRId_JAVA_TID " [%" PRId_NATIVE_TID "] started.", java_id, native_id);
 
-	ubench_register_thread_id_mapping(java_id, native_id);
+	ubench_register_java_thread(java_id, native_id);
 }
 
 INTERNAL void JNICALL
@@ -112,82 +298,9 @@ ubench_jvm_callback_on_thread_end(
 
 	DEBUG_PRINTF("JVM callback: thread [%" PRId_NATIVE_TID "] ended.", native_id);
 
-	ubench_unregister_thread_id_mapping_by_native_id(native_id);
+	ubench_unregister_native_thread(native_id);
 }
 
-INTERNAL int
-ubench_register_thread_id_mapping(java_tid_t java_thread_id, native_tid_t native_thread_id) {
-	int res = 0;
-
-	ubench_spinlock_lock(&thread_mapping_guard);
-
-	for (int i = 0; i < thread_mapping_count; i++) {
-		if (thread_mappings[i].java_id == java_thread_id) {
-			res = 1;
-			goto leave;
-		}
-		if (thread_mappings[i].native_id == UBENCH_THREAD_ID_INVALID) {
-			thread_mappings[i].java_id = java_thread_id;
-			thread_mappings[i].native_id = native_thread_id;
-			res = 0;
-			goto leave;
-		}
-	}
-	thread_mapping_t* new_mapping = realloc(thread_mappings, sizeof(thread_mapping_t) * (thread_mapping_count + 1));
-	if (new_mapping == NULL) {
-		res = 2;
-		goto leave;
-	}
-
-
-	thread_mappings = new_mapping;
-	thread_mappings[thread_mapping_count].java_id = java_thread_id;
-	thread_mappings[thread_mapping_count].native_id = native_thread_id;
-	thread_mapping_count++;
-
-leave:
-	ubench_spinlock_unlock(&thread_mapping_guard);
-
-	return res;
-}
-
-INTERNAL int
-ubench_unregister_thread_id_mapping_by_native_id(native_tid_t native_thread_id) {
-	int res = 1;
-
-	ubench_spinlock_lock(&thread_mapping_guard);
-
-	for (int i = 0; i < thread_mapping_count; i++) {
-		if (thread_mappings[i].native_id == native_thread_id) {
-			thread_mappings[i].native_id = UBENCH_THREAD_ID_INVALID;
-			res = 0;
-			break;
-		}
-	}
-
-	ubench_spinlock_unlock(&thread_mapping_guard);
-
-	return res;
-}
-
-INTERNAL native_tid_t
-ubench_get_native_thread_id(java_tid_t java_thread_id) {
-	ubench_spinlock_lock(&thread_mapping_guard);
-
-	for (int i = 0; i < thread_mapping_count; i++) {
-		if (thread_mappings[i].java_id == java_thread_id) {
-			native_tid_t res = thread_mappings[i].native_id;
-
-			ubench_spinlock_unlock(&thread_mapping_guard);
-
-			return res;
-		}
-	}
-
-	ubench_spinlock_unlock(&thread_mapping_guard);
-
-	return UBENCH_THREAD_ID_INVALID;
-}
 
 INTERNAL native_tid_t
 ubench_get_current_thread_native_id(void) {
@@ -205,6 +318,17 @@ ubench_get_current_thread_native_id(void) {
 #endif
 }
 
+INTERNAL native_tid_t
+ubench_threads_get_native_id(java_tid_t java_thread_id) {
+	ubench_spinlock_lock(&thread_map_lock);
+
+	int index = thread_map_index_of_java_thread(&thread_map, java_thread_id);
+	native_tid_t result = (index >= 0) ? thread_map.entries[index].native_id : UBENCH_THREAD_ID_INVALID;
+
+	ubench_spinlock_unlock(&thread_map_lock);
+	return result;
+}
+
 //
 
 JNIEXPORT java_tid_t JNICALL
@@ -212,9 +336,9 @@ Java_cz_cuni_mff_d3s_perf_NativeThreads_getNativeId(
 	JNIEnv* UNUSED_PARAMETER(jni), jclass UNUSED_PARAMETER(threads_class),
 	java_tid_t java_thread_id
 ) {
-	native_tid_t native_thread_id = ubench_get_native_thread_id(java_thread_id);
+	native_tid_t native_thread_id = ubench_threads_get_native_id(java_thread_id);
 	if (native_thread_id == UBENCH_THREAD_ID_INVALID) {
-		// TODO Consider throwing an error, because -1 may be a valid id.
+		// TODO Consider throwing an exception (-1 could be a valid id).
 		return (java_tid_t) cz_cuni_mff_d3s_perf_NativeThreads_INVALID_THREAD_ID;
 	}
 
@@ -226,6 +350,6 @@ Java_cz_cuni_mff_d3s_perf_NativeThreads_registerJavaThread(
 	JNIEnv* UNUSED_PARAMETER(jni), jclass UNUSED_PARAMETER(threads_class),
 	java_tid_t java_thread_id, java_tid_t jnative_thread_id
 ) {
-	int res = ubench_register_thread_id_mapping(java_thread_id, (native_tid_t) jnative_thread_id);
-	return res == 0;
+	// TODO Consider throwing an exception ('false' really means "already registered").
+	return ubench_register_java_thread(java_thread_id, (native_tid_t) jnative_thread_id);
 }

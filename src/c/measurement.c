@@ -348,7 +348,7 @@ Java_cz_cuni_mff_d3s_perf_Measurement_createAttachedEventSetWithJavaThread(
 
 #ifdef HAS_PAPI
 	if ((all_eventsets[eventset_index].config.used_backends & UBENCH_EVENT_BACKEND_PAPI) > 0) {
-		native_tid_t native_id = ubench_get_native_thread_id(java_thread_id);
+		native_tid_t native_id = ubench_threads_get_native_id(java_thread_id);
 
 		if (native_id == UBENCH_THREAD_ID_INVALID) {
 			Java_cz_cuni_mff_d3s_perf_Measurement_destroyEventSet(jni, measurement_class, eventset_index);
