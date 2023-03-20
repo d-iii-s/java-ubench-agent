@@ -24,6 +24,7 @@
 
 #pragma warning(push, 0)
 #include <inttypes.h>
+#include <stdbool.h>
 #include <stdlib.h>
 #include <string.h>
 #include <time.h>
@@ -155,6 +156,24 @@ typedef struct {
 	size_t data_size;
 	size_t data_index;
 } benchmark_configuration_t;
+
+typedef struct {
+	jvmtiEnv* jvmti;
+
+	bool has_capabilities;
+	jvmtiCapabilities capabilities;
+
+	jvmtiEventCallbacks callbacks;
+
+	// Zero-terminated array of JVMTI events.
+	// The zero element MUST be always present!
+	jvmtiEvent events[];
+} jvmti_context_t;
+
+extern bool ubench_jvmti_context_init(jvmti_context_t*, JavaVM*);
+extern bool ubench_jvmti_context_enable(jvmti_context_t*);
+extern bool ubench_jvmti_context_destroy(jvmti_context_t*);
+extern bool ubench_jvmti_context_init_and_enable(jvmti_context_t*, JavaVM*);
 
 extern void ubench_jvm_callback_on_thread_start(jvmtiEnv*, JNIEnv*, jthread);
 extern void ubench_jvm_callback_on_thread_end(jvmtiEnv*, JNIEnv*, jthread);
