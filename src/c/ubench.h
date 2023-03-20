@@ -18,6 +18,8 @@
 #ifndef UBENCH_H_GUARD
 #define UBENCH_H_GUARD
 
+#include "compiler.h"
+
 #pragma warning(push, 0)
 #include <inttypes.h>
 #include <jni.h>
@@ -33,42 +35,6 @@
 
 #include "myatomic.h"
 #include "mylock.h"
-
-#ifdef _MSC_VER
-#define snprintf _snprintf
-#endif
-
-#ifndef __has_attribute
-#define __has_attribute(x) 0
-#endif
-
-#if __has_attribute(visibility)
-#define INTERNAL __attribute__((visibility("hidden")))
-#else
-#define INTERNAL
-#endif
-
-#if __has_attribute(unused)
-#define UNUSED_PARAMETER(name) name __attribute__((unused))
-#else
-#define UNUSED_PARAMETER(name) name
-#endif
-
-#define UNUSED_VARIABLE(name) (void) name
-
-/*
- * Prevent condition expression is constant warning in wrappers around
- * multi-statement macros (the do { ... } while (0) construct).
- */
-#ifdef _MSC_VER
-#define ONCE \
-	__pragma(warning(push)) \
-	__pragma(warning(disable : 4127)) \
-	while (0) \
-	__pragma(warning(pop))
-#else
-#define ONCE while (0)
-#endif
 
 #ifdef UBENCH_DEBUG
 #define DEBUG_PRINTF(fmt, ...) printf("[ubench-agent]: " fmt "\n", ##__VA_ARGS__)

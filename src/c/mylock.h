@@ -18,6 +18,8 @@
 #ifndef MYLOCK_H_GUARD
 #define MYLOCK_H_GUARD
 
+#include "compiler.h"
+
 #pragma warning(push, 0)
 #include <jni.h>
 #include <jvmti.h>
@@ -25,8 +27,6 @@
 #pragma warning(pop)
 
 #ifdef _MSC_VER
-/* MSVC offers inline only for C++ code. */
-#define inline __inline
 #pragma warning(push, 0)
 #include <Windows.h>
 #pragma warning(pop)
