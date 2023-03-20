@@ -15,6 +15,9 @@
  * limitations under the License.
  */
 
+#ifndef MYATOMIC_H_GUARD
+#define MYATOMIC_H_GUARD
+
 #pragma warning(push, 0)
 #include <jni.h>
 #include <jvmti.h>
@@ -68,3 +71,5 @@ ubench_atomic_int_reset(ubench_atomic_int_t* atomic) {
 	return result;
 #endif
 }
+
+#endif

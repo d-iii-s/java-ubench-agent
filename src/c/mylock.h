@@ -15,6 +15,9 @@
  * limitations under the License.
  */
 
+#ifndef MYLOCK_H_GUARD
+#define MYLOCK_H_GUARD
+
 #pragma warning(push, 0)
 #include <jni.h>
 #include <jvmti.h>
@@ -63,3 +66,5 @@ ubench_spinlock_unlock(ubench_spinlock_t* spinlock) {
 	spinlock->value = 0;
 #endif
 }
+
+#endif
