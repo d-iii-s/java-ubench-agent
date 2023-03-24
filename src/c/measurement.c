@@ -107,8 +107,6 @@ ubench_benchmark_init(void) {
 	// PAPI_set_debug(PAPI_VERB_ECONT);
 #endif
 
-	ubench_event_init();
-
 	return true;
 }
 

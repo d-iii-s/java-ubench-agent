@@ -104,6 +104,12 @@ ubench_startup(JavaVM* jvm) {
 		return false;
 	}
 
+	DEBUG_PRINTF("initializing event module");
+	if (!ubench_event_init()) {
+		ERROR_PRINTF("failed to initialize event module.");
+		return false;
+	}
+
 	// When the VM is initialized, signal that the agent has been loaded.
 	// This will not work in an environment without JVMTI (e.g., native image),
 	// which means that the library must have been loaded explicitly.
