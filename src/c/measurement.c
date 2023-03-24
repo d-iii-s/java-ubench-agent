@@ -90,7 +90,7 @@ get_thread_id(void) {
 #endif
 
 INTERNAL bool
-ubench_benchmark_init(void) {
+ubench_measurement_init(void) {
 #ifdef HAS_PAPI
 	// TODO: check for errors
 	int lib_init_rc = PAPI_library_init(PAPI_VER_CURRENT);

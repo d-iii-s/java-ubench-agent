@@ -98,9 +98,9 @@ ubench_startup(JavaVM* jvm) {
 		WARN_PRINTF("failed to initialize threads module.");
 	}
 
-	DEBUG_PRINTF("initializing benchmark module");
-	if (!ubench_benchmark_init()) {
-		ERROR_PRINTF("failed to initialize benchmark module.");
+	DEBUG_PRINTF("initializing measurement module");
+	if (!ubench_measurement_init()) {
+		ERROR_PRINTF("failed to initialize measurement module.");
 		return false;
 	}
 
