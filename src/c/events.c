@@ -19,6 +19,7 @@
 #define _DEFAULT_SOURCE // For glibc 2.20 to include caddr_t
 #define _POSIX_C_SOURCE 200809L
 
+#include "strutil.h"
 #include "ubench.h"
 
 #ifdef HAS_QUERY_PERFORMANCE_COUNTER

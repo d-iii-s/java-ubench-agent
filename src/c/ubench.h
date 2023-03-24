@@ -28,10 +28,6 @@
 #include <string.h>
 #include <time.h>
 
-#ifndef _MSC_VER
-#include <strings.h>
-#endif
-
 #include <jni.h>
 #include <jvmti.h>
 #pragma warning(pop)
@@ -182,40 +178,5 @@ extern void ubench_measure_stop(const benchmark_configuration_t*, ubench_events_
 extern ubench_atomic_int_t counter_compilation;
 extern ubench_atomic_int_t counter_compilation_total;
 extern ubench_atomic_int_t counter_gc_total;
-
-static inline char*
-ubench_str_dup(const char* str) {
-	char* result = malloc(sizeof(char) * strlen(str) + 1);
-	if (result == NULL) {
-		return NULL;
-	}
-
-	/*
-	 * We know that the buffer is big enough and thus we can use strcpy()
-	 * without worrying that we would run past the buffer.
-	 */
-#pragma warning(suppress : 4996)
-	strcpy(result, str);
-
-	return result;
-}
-
-static inline int
-ubench_str_is_icase_equal(const char* a, const char* b) {
-#ifdef _MSC_VER
-	return _stricmp(a, b) == 0;
-#else
-	return strcasecmp(a, b) == 0;
-#endif
-}
-
-static inline int
-ubench_str_starts_with_icase(const char* str, const char* prefix) {
-#ifdef _MSC_VER
-	return _strnicmp(str, prefix, strlen(prefix)) == 0;
-#else
-	return strncasecmp(str, prefix, strlen(prefix)) == 0;
-#endif
-}
 
 #endif
