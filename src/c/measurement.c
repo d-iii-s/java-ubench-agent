@@ -19,6 +19,7 @@
 #define _DEFAULT_SOURCE // For glibc 2.20 to include caddr_t
 #define _POSIX_C_SOURCE 200809L
 
+#include "logging.h"
 #include "ubench.h"
 
 #pragma warning(push, 0)
@@ -66,8 +67,8 @@ static jint all_eventset_count = 0;
 #ifdef HAS_PAPI
 static void
 __die_with_papi_error(int papi_error, const char* message) {
-	fprintf(
-		stderr, "error: %s: %s (%d)\n",
+	FATAL_PRINTF(
+		"%s: %s (%d), aborting!",
 		message, PAPI_strerror(papi_error), papi_error
 	);
 
@@ -94,7 +95,7 @@ ubench_benchmark_init(void) {
 	// TODO: check for errors
 	int lib_init_rc = PAPI_library_init(PAPI_VER_CURRENT);
 	if (lib_init_rc != PAPI_VER_CURRENT && lib_init_rc > 0) {
-		fprintf(stderr, "error: PAPI library version mismatch!\n");
+		FATAL_PRINTF("PAPI library version mismatch, aborting!");
 		exit(1);
 	}
 
@@ -115,7 +116,7 @@ static void
 do_throw(JNIEnv* jni, const char* message) {
 	jclass exClass = (*jni)->FindClass(jni, "cz/cuni/mff/d3s/perf/MeasurementException");
 	if (exClass == NULL) {
-		fprintf(stderr, "Unable to find MeasurementException class, aborting!\n");
+		FATAL_PRINTF("unable to find 'MeasurementException' class, aborting!");
 		exit(1);
 	}
 	(*jni)->ThrowNew(jni, exClass, message);

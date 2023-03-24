@@ -19,6 +19,7 @@
 #define _DEFAULT_SOURCE // For glibc 2.20 to include caddr_t
 #define _POSIX_C_SOURCE 200809L
 
+#include "logging.h"
 #include "ubench.h"
 
 #pragma warning(push, 0)
@@ -155,6 +156,7 @@ thread_map_ensure_capacity(thread_map_t* map, int required_capacity) {
 	if (map->capacity < required_capacity) {
 		thread_map_entry_t* new_entries = realloc(map->entries, required_capacity * sizeof(thread_map_entry_t));
 		if (new_entries == NULL) {
+			DEBUG_PRINTF("failed to reallocate memory for thread map entries.");
 			return false;
 		}
 
@@ -177,6 +179,7 @@ thread_map_put_java_thread(thread_map_t* map, java_tid_t java_thread_id, native_
 
 	// Ensure there is enough room to add a new entry.
 	if (!thread_map_ensure_capacity(map, map->length + 1)) {
+		DEBUG_PRINTF("failed to expand thread map capacity.");
 		return ENOMEM;
 	}
 
@@ -201,6 +204,7 @@ thread_map_remove_native_thread(thread_map_t* map, native_tid_t native_thread_id
 	//
 	int index = thread_map_index_of_native_thread(map, native_thread_id);
 	if (index < 0) {
+		DEBUG_PRINTF("native thread with id %" PRId_NATIVE_TID " does not exist.", native_thread_id);
 		return ENOENT;
 	}
 
@@ -229,7 +233,7 @@ ubench_register_java_thread(java_tid_t java_thread_id, native_tid_t native_threa
 
 	if (result == ENOMEM) {
 		// TODO Consider throwing an exception from the caller.
-		fprintf(stderr, "fatal: failed to register Java thread with native id, aborting!\n");
+		FATAL_PRINTF("failed to register Java thread with native id, aborting!");
 		exit(1);
 	}
 
@@ -361,13 +365,13 @@ jvmti_callback_on_vm_init(
 	//
 	jclass thread_class = (*jni)->FindClass(jni, "java/lang/Thread");
 	if (thread_class == NULL) {
-		fprintf(stderr, "fatal: failed to find 'java.lang.Thread' class, aborting!\n");
+		FATAL_PRINTF("failed to find 'java.lang.Thread' class, aborting!");
 		exit(1);
 	}
 
 	thread_get_id_method = (*jni)->GetMethodID(jni, thread_class, "getId", "()J");
 	if (thread_get_id_method == NULL) {
-		fprintf(stderr, "fatal: failed to find 'java.lang.Thread.getId()' method, aborting!\n");
+		FATAL_PRINTF("failed to find 'java.lang.Thread.getId()' method, aborting!\n");
 		exit(1);
 	}
 

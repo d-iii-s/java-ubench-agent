@@ -33,12 +33,6 @@
 #include <jvmti.h>
 #pragma warning(pop)
 
-#ifdef UBENCH_DEBUG
-#define DEBUG_PRINTF(fmt, ...) printf("[ubench-agent]: " fmt "\n", ##__VA_ARGS__)
-#else
-#define DEBUG_PRINTF(fmt, ...) (void) 0
-#endif
-
 #ifdef HAS_GETRUSAGE
 #include <sys/resource.h>
 #endif

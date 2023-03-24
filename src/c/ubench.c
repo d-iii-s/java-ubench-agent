@@ -16,12 +16,12 @@
  */
 
 #include "compiler.h"
+#include "logging.h"
 #include "ubench.h"
 
 #pragma warning(push, 0)
 #include <assert.h>
 #include <stdbool.h>
-#include <stdio.h>
 
 #include <jni.h>
 #include <jvmti.h>
@@ -43,13 +43,13 @@ jvmti_callback_on_vm_init(
 	//
 	jclass loader_class = (*jni)->FindClass(jni, "cz/cuni/mff/d3s/perf/UbenchAgent");
 	if (loader_class == NULL) {
-		fprintf(stderr, "warning: could not find 'UbenchAgent' class\n");
+		WARN_PRINTF("could not find 'UbenchAgent' class.");
 		return;
 	}
 
 	jfieldID field_id = (*jni)->GetStaticFieldID(jni, loader_class, "alreadyLoaded", "Z");
 	if (field_id == NULL) {
-		fprintf(stderr, "warning: could not find 'alreadyLoaded' field in the 'UbenchAgent' class\n");
+		WARN_PRINTF("could not find 'alreadyLoaded' field in the 'UbenchAgent' class.");
 		return;
 	}
 
@@ -90,17 +90,17 @@ ubench_startup(JavaVM* jvm) {
 	//
 	DEBUG_PRINTF("initializing counters module");
 	if (!ubench_counters_init(jvm)) {
-		fprintf(stderr, "warning: failed to initialize event counter module.\n");
+		WARN_PRINTF("failed to initialize event counter module.");
 	}
 
 	DEBUG_PRINTF("initializing threads module");
 	if (!ubench_threads_init(jvm)) {
-		fprintf(stderr, "warning: failed to initialize threads module.\n");
+		WARN_PRINTF("failed to initialize threads module.");
 	}
 
 	DEBUG_PRINTF("initializing benchmark module");
 	if (!ubench_benchmark_init()) {
-		fprintf(stderr, "error: failed to initialize benchmark module.\n");
+		ERROR_PRINTF("failed to initialize benchmark module.");
 		return false;
 	}
 
