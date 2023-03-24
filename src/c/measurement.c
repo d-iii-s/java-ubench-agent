@@ -19,7 +19,9 @@
 #define _DEFAULT_SOURCE // For glibc 2.20 to include caddr_t
 #define _POSIX_C_SOURCE 200809L
 
+#include "compiler.h"
 #include "logging.h"
+#include "myatomic.h"
 #include "ubench.h"
 
 #pragma warning(push, 0)

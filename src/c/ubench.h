@@ -20,7 +20,6 @@
 
 #include "compiler.h"
 #include "myatomic.h"
-#include "mylock.h"
 
 #pragma warning(push, 0)
 #include <inttypes.h>

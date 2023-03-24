@@ -17,6 +17,7 @@
 
 #include "compiler.h"
 #include "logging.h"
+#include "myatomic.h"
 #include "ubench.h"
 
 #pragma warning(push, 0)

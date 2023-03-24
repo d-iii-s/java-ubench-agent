@@ -15,6 +15,7 @@
  * limitations under the License.
  */
 
+#include "compiler.h"
 #include "logging.h"
 #include "ubench.h"
 
