@@ -477,6 +477,7 @@
 		<compile-header classname="OverheadEstimations" />
 		<compile-header classname="Measurement" />
 		<compile-header classname="NativeThreads" />
+		<compile-header classname="UbenchAgent" />
 	</target>
 
 	<target name="compile-agent-maybe-gcc" if="agent.cc.is.gcc">

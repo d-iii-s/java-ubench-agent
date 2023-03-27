@@ -21,6 +21,9 @@
 #include "ubench.h"
 
 #pragma warning(push, 0)
+/* Ensure compatibility of JNI function types. */
+#include "cz_cuni_mff_d3s_perf_UbenchAgent.h"
+
 #include <assert.h>
 #include <stdbool.h>
 
@@ -30,51 +33,18 @@
 
 //
 
-static void JNICALL
-jvmti_callback_on_vm_init(
-	jvmtiEnv* UNUSED_PARAMETER(jvmti), JNIEnv* UNUSED_PARAMETER(jni),
-	jthread UNUSED_PARAMETER(thread)
-) {
-	//
-	// Set the static boolean field 'alreadyLoaded' in the 'UbenchAgent' class to 'true'
-	// to indicate that native methods are already bound, because the library has been
-	// already loaded through the agent mechanism. This will prevent 'UbenchAgent' from
-	// trying to load the library explicitly. Even though the library can handle it, the
-	// 'loadLibrary()' call could fail if the 'java.library.path' is not set correctly.
-	//
-	jclass loader_class = (*jni)->FindClass(jni, "cz/cuni/mff/d3s/perf/UbenchAgent");
-	if (loader_class == NULL) {
-		WARN_PRINTF("could not find 'UbenchAgent' class.");
-		return;
-	}
-
-	jfieldID field_id = (*jni)->GetStaticFieldID(jni, loader_class, "alreadyLoaded", "Z");
-	if (field_id == NULL) {
-		WARN_PRINTF("could not find 'alreadyLoaded' field in the 'UbenchAgent' class.");
-		return;
-	}
-
-	(*jni)->SetStaticBooleanField(jni, loader_class, field_id, JNI_TRUE);
-}
-
-static jvmti_context_t init_context = {
-	.callbacks = { .VMInit = &jvmti_callback_on_vm_init },
-	.events = { JVMTI_EVENT_VM_INIT, 0 }
-};
-
-static bool
-ubench_signal_agent_loaded_on_vm_init(JavaVM* jvm) {
-	assert(jvm != NULL);
-	return ubench_jvmti_context_init_and_enable(&init_context, jvm);
-}
-
-//
-
 static bool
 ubench_startup(JavaVM* jvm) {
 	assert(jvm != NULL);
 
-	// Avoid initializing the library twice on startup.
+	//
+	// Avoid initializing the library twice.
+	//
+	// This could happen if the library is loaded as a JVM agent and also
+	// explicitly loaded using the 'loadLibrary()' call. We rely on the
+	// 'UbenchAgent' class to avoid loading the library if it was already
+	// loaded as an agent, so this is just an extra precaution.
+	//
 	static ubench_atomic_int_t startup_guard = { .atomic_value = 0 };
 
 	bool initialized = ubench_atomic_int_inc(&startup_guard) != 0;
@@ -111,13 +81,6 @@ ubench_startup(JavaVM* jvm) {
 		return false;
 	}
 
-	// When the VM is initialized, signal that the agent has been loaded.
-	// This will not work in an environment without JVMTI (e.g., native image),
-	// which means that the library must have been loaded explicitly.
-	if (!ubench_signal_agent_loaded_on_vm_init(jvm)) {
-		DEBUG_PRINTF("unable to signal that the agent has been loaded.");
-	}
-
 	return true;
 }
 
@@ -136,6 +99,24 @@ ubench_shutdown(JavaVM* UNUSED_PARAMETER(jvm)) {
 
 	// So far, there is nothing to do on shutdown.
 	// We do not dispose the JVMTI environments.
+}
+
+//
+
+/**
+ * Dummy function used by the 'UbenchAgent' class to check if the native
+ * functions are already bound. If the call to this function succeeds, it
+ * means that the agent has been already loaded and there is no need to
+ * try loading it via the 'loadLibrary()' method which could fail if the
+ * agent was loaded using the '-agentlib' JVM option without setting the
+ * value of the 'java.library.path'.
+ */
+JNIEXPORT jboolean JNICALL
+Java_cz_cuni_mff_d3s_perf_UbenchAgent_nativeIsLoaded(
+	JNIEnv* UNUSED_PARAMETER(jni), jclass UNUSED_PARAMETER(ubench_class)
+) {
+	DEBUG_PRINTF("nativeIsLoaded called from Java");
+	return JNI_TRUE;
 }
 
 //
