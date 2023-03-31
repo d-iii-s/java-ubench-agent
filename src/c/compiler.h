@@ -63,4 +63,20 @@
 #define ONCE while (0)
 #endif
 
+/*
+ * Disable selected MSVC warnings.
+ */
+#ifdef _MSC_VER
+// C4100: unreferenced formal parameter.
+#pragma warning(disable : 4100)
+// C4204: nonstandard extension used: non-constant aggregate initializer.
+#pragma warning(disable : 4204)
+// C4710: function not inlined ('inline' present).
+#pragma warning(disable : 4710)
+// C4711: function selected for automatic inline expansion ('inline' missing).
+#pragma warning(disable : 4711)
+// C4820: padding added after data member.
+#pragma warning(disable : 4820)
+#endif
+
 #endif
