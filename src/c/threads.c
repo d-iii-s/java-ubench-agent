@@ -21,6 +21,7 @@
 
 #include "compiler.h"
 #include "logging.h"
+#include "jvmutil.h"
 #include "myatomic.h"
 #include "mylock.h"
 #include "ubench.h"

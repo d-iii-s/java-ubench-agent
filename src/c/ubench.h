@@ -150,24 +150,6 @@ typedef struct benchmark_configuration {
 	size_t data_index;
 } benchmark_configuration_t;
 
-typedef struct jvmti_context {
-	jvmtiEnv* jvmti;
-
-	bool has_capabilities;
-	jvmtiCapabilities capabilities;
-
-	jvmtiEventCallbacks callbacks;
-
-	// Zero-terminated array of JVMTI events.
-	// The zero element MUST be always present!
-	jvmtiEvent events[];
-} jvmti_context_t;
-
-extern bool ubench_jvmti_context_init(jvmti_context_t*, JavaVM*);
-extern bool ubench_jvmti_context_enable(jvmti_context_t*);
-extern bool ubench_jvmti_context_destroy(jvmti_context_t*);
-extern bool ubench_jvmti_context_init_and_enable(jvmti_context_t*, JavaVM*);
-
 extern bool ubench_counters_init(JavaVM*);
 extern bool ubench_measurement_init(void);
 

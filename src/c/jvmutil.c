@@ -16,8 +16,8 @@
  */
 
 #include "compiler.h"
+#include "jvmutil.h"
 #include "logging.h"
-#include "ubench.h"
 
 #pragma warning(push, 0)
 #include <assert.h>

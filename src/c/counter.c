@@ -16,6 +16,7 @@
  */
 
 #include "compiler.h"
+#include "jvmutil.h"
 #include "myatomic.h"
 #include "ubench.h"
 
