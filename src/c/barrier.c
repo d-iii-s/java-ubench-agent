@@ -15,6 +15,8 @@
  * limitations under the License.
  */
 
+#define _POSIX_C_SOURCE 200809L // For pthreads to include pthread_barrier_t
+
 #include "compiler.h"
 
 #pragma warning(push, 0)
