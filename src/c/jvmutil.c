@@ -22,16 +22,52 @@
 #pragma warning(push, 0)
 #include <assert.h>
 #include <stdbool.h>
+#include <stddef.h>
+#include <stdint.h>
 
 #include <jni.h>
 #include <jvmti.h>
 #pragma warning(pop)
+
+#ifdef UBENCH_DEBUG
+static void
+debug_ubench_jvmti_context_print(jvmti_context_t* context, const char* name) {
+	DEBUG_PRINTF("%s(%p) = {", (name != NULL) ? name : "jvmti_context_t", context);
+	DEBUG_PRINTF("    .jvmti = %p", context->jvmti);
+
+	jvmtiEventReserved* callbacks = (jvmtiEventReserved*) &context->callbacks;
+	for (size_t i = 0; i < sizeof(jvmtiEventCallbacks) / sizeof(*callbacks); i++) {
+		if (callbacks[i] != 0) {
+			DEBUG_PRINTF("    .callbacks[%02zu] = %p", i, callbacks[i]);
+		}
+	}
+
+	for (int i = 0; context->events[i] != 0; i++) {
+		DEBUG_PRINTF("    .events[%02d] = %d", i, context->events[i]);
+	}
+
+	DEBUG_PRINTF("    .has_capabilities = %s", context->has_capabilities ? "yes" : "no");
+	uint32_t* caps = (uint32_t*) &context->capabilities;
+	for (size_t i = 0; i < sizeof(jvmtiCapabilities) / sizeof(*caps); i++) {
+		DEBUG_PRINTF(
+			"    .capabilities[%03zu:%03zu] = %08x",
+			((i + 1) * 8 * sizeof(*caps) - 1), i * 8 * sizeof(*caps), caps[i]
+		);
+	}
+
+	DEBUG_PRINTF("}");
+}
+#else
+#define debug_ubench_jvmti_context_print(context, name) (void) 0
+#endif
 
 INTERNAL bool
 ubench_jvmti_context_init(jvmti_context_t* context, JavaVM* jvm) {
 	assert(context != NULL && jvm != NULL);
 
 	jvmtiEnv* jvmti;
+
+	debug_ubench_jvmti_context_print(context, NULL);
 
 	// Create a new JVMTI environment and store it in the context if successful.
 	jint env_error = (*jvm)->GetEnv(jvm, (void**) &jvmti, JVMTI_VERSION_1_2);

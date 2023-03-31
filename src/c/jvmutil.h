@@ -28,14 +28,22 @@
 typedef struct jvmti_context {
 	jvmtiEnv* jvmti;
 
-	bool has_capabilities;
-	jvmtiCapabilities capabilities;
-
 	jvmtiEventCallbacks callbacks;
 
 	// Zero-terminated array of JVMTI events.
 	// The zero element MUST be always present!
-	jvmtiEvent events[];
+	jvmtiEvent events[(JVMTI_MAX_EVENT_TYPE_VAL - JVMTI_MIN_EVENT_TYPE_VAL + 1) + 1];
+
+	bool has_capabilities;
+
+	// Keep this last. When using aggregate initializers, MSVC 19.0 does not
+	// calculate the size of the bitfield properly, which results in the values
+	// of the subsequent fields to be shifted (into the bitfield).
+	//
+	// This is why we also keep a safety pad at the end.
+	jvmtiCapabilities capabilities;
+
+	unsigned long __padding;
 } jvmti_context_t;
 
 extern bool ubench_jvmti_context_init(jvmti_context_t*, JavaVM*);
