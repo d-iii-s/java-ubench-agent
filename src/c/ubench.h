@@ -101,7 +101,7 @@ typedef int_fast64_t native_tid_t;
 #define UBENCH_SNAPSHOT_TYPE_START (-1)
 #define UBENCH_SNAPSHOT_TYPE_END (-2)
 
-typedef struct {
+typedef struct ubench_events_snapshot {
 	timestamp_t timestamp;
 	threadtime_t threadtime;
 #ifdef HAS_GETRUSAGE
@@ -132,7 +132,7 @@ struct ubench_event_info {
 	char* name;
 };
 
-typedef struct {
+typedef struct benchmark_configuration {
 	unsigned int used_backends;
 
 	ubench_event_info_t* used_events;
@@ -150,7 +150,7 @@ typedef struct {
 	size_t data_index;
 } benchmark_configuration_t;
 
-typedef struct {
+typedef struct jvmti_context {
 	jvmtiEnv* jvmti;
 
 	bool has_capabilities;
