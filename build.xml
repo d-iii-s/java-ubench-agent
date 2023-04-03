@@ -364,8 +364,8 @@
 		<antcall target="lib" />
 		<antcall target="javadoc" />
 		<antcall target="checkstyle" />
-		<antcall target="test-junit" />
 		<antcall target="test" />
+		<antcall target="test-junit" />
 		<antcall target="dist" />
 		<antcall target="list-events" />
 		<antcall target="demo" />
@@ -638,8 +638,9 @@
 		<attribute name="classname" default="mixed" />
 		<attribute name="jvmarg" default="-Xmixed" />
 		<attribute name="progarg" default="mixed" />
-			
+
 		<sequential>
+			<echo level="info" message="[run] java -agentpath:${agent.path} @{jvmarg} @{classname} @{progarg}" />
 			<java
 					classname="@{classname}"
 					fork="true"
@@ -668,9 +669,11 @@
 			jvmarg="-Xint"
 			progarg="int" />
 		<self-test
-			classname="cz.cuni.mff.d3s.perf.BenchmarkTest"
-			/>
-				
+			classname="cz.cuni.mff.d3s.perf.BenchmarkTest" />
+		<self-test
+			classname="cz.cuni.mff.d3s.perf.ThreadTimeTest"
+			progarg="4" />
+
 		<echo level="info" message="All tests passed." />
 	</target>
 	
