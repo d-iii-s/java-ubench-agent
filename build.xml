@@ -704,6 +704,7 @@
 			<batchtest fork="yes" todir="${test.results.dir}">
 				<fileset dir="${test.classes.build.dir}">
 					<include name="**/*Test.class"/>
+					<exclude name="${test.classes.excluded}" />
 				</fileset>
 			</batchtest>
 		</junit>
