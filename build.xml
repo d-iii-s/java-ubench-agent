@@ -356,6 +356,21 @@
 		>
 	</target>
 
+	<target name="gate" description="Gate: check everything.">
+		<antcall target="clean" />
+		<antcall target="print-properties" />
+		<antcall target="print-config" />
+		<antcall target="compile" />
+		<antcall target="lib" />
+		<antcall target="javadoc" />
+		<antcall target="checkstyle" />
+		<antcall target="test" />
+		<antcall target="test-junit" />
+		<antcall target="dist" />
+		<antcall target="list-events" />
+		<antcall target="demo" />
+	</target>
+	
 	<target name="compile"
 			depends="compile-java,compile-agent,compile-barrier"
 			description="Compile everything."
@@ -433,6 +448,7 @@
 			depends="compile-agent-prepare-headers"
 			if="agent.gcc.recompilation.necessary"
 		>
+		<echo level="info" message="[run] Running gcc on *.c" />
 		<apply
 				executable="${agent.cc}"
 				failonerror="true"
@@ -458,6 +474,7 @@
 			<fileset dir="${agent.src.dir}" includes="*.c" />
 			<mapper type="glob" from="*.c" to="*.o" />
 		</apply>
+		<echo level="info" message="[run] Running gcc on *.o" />
 		<apply
 				executable="${agent.cc}"
 				failonerror="true"
@@ -483,6 +500,7 @@
 			depends="compile-agent-prepare-headers"
 			if="agent.msvc.recompilation.necessary"
 		>
+		<echo level="info" message="[run] Running cl.exe on *.c" />
 		<apply
 				executable="cl.exe"
 				failonerror="true"
@@ -503,6 +521,7 @@
 			<fileset dir="${agent.src.dir}" includes="*.c" />
 			<mapper type="glob" from="*.c" to="*.obj" />
 		</apply>
+		<echo level="info" message="[run] Running link.exe on *.obj" />
 		<apply
 				executable="link.exe"
 				failonerror="true"
@@ -570,7 +589,8 @@
 			>
 		</jar>
 		<copy file="${agent.path}" todir="${lib.build.dir}" />
-		<copy file="${barrier.path}" todir="${lib.build.dir}" />
+		<!-- Barrier not compiled on Windows -->
+		<copy file="${barrier.path}" todir="${lib.build.dir}" failonerror="false" />
 		<!-- Because copy task ignores file mode -->
 		<chmod perm="+x">
 			<fileset dir="${lib.build.dir}">
@@ -619,8 +639,9 @@
 		<attribute name="classname" default="mixed" />
 		<attribute name="jvmarg" default="-Xmixed" />
 		<attribute name="progarg" default="mixed" />
-			
+
 		<sequential>
+			<echo level="info" message="[run] java -agentpath:${agent.path} @{jvmarg} @{classname} @{progarg}" />
 			<java
 					classname="@{classname}"
 					fork="true"
@@ -649,9 +670,11 @@
 			jvmarg="-Xint"
 			progarg="int" />
 		<self-test
-			classname="cz.cuni.mff.d3s.perf.BenchmarkTest"
-			/>
-				
+			classname="cz.cuni.mff.d3s.perf.BenchmarkTest" />
+		<self-test
+			classname="cz.cuni.mff.d3s.perf.ThreadTimeTest"
+			progarg="4" />
+
 		<echo level="info" message="All tests passed." />
 	</target>
 	
@@ -681,6 +704,7 @@
 			<batchtest fork="yes" todir="${test.results.dir}">
 				<fileset dir="${test.classes.build.dir}">
 					<include name="**/*Test.class"/>
+					<exclude name="${test.classes.excluded}" />
 				</fileset>
 			</batchtest>
 		</junit>
