@@ -17,13 +17,18 @@ private static final String[] EVENTS = {
 	/* Number of JIT compilation events. */
 	"JVM:compilations",
 	/* L1 cache misses (only Linux with PAPI). */
-	"PAPI_L1_DCM"
+	"PAPI:PAPI_L1_DCM"
 };
 
 public static void myBenchmark() {
-	/* We would have LOOPS measurements and we
-	   want to record these EVENTS. */
-	Benchmark.init(LOOPS, EVENTS);
+	/*
+	 * We would have LOOPS measurements and we want to record these EVENTS.
+	 *
+	 * But we limit ourselves to supported events (i.e. in this case it
+	 * would remove PAPI:PAPI_L1_DCM event if libpapi would not be available
+	 * on the system.
+	 */
+	Benchmark.init(LOOPS, Measurement.filterSupportedEvents(EVENTS));
 
 	for (int i = 0; i < LOOPS; i++) {
 		/* Start the measurement. */
