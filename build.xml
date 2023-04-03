@@ -448,6 +448,7 @@
 			depends="compile-agent-prepare-headers"
 			if="agent.gcc.recompilation.necessary"
 		>
+		<echo level="info" message="[run] Running gcc on *.c" />
 		<apply
 				executable="${agent.cc}"
 				failonerror="true"
@@ -473,6 +474,7 @@
 			<fileset dir="${agent.src.dir}" includes="*.c" />
 			<mapper type="glob" from="*.c" to="*.o" />
 		</apply>
+		<echo level="info" message="[run] Running gcc on *.o" />
 		<apply
 				executable="${agent.cc}"
 				failonerror="true"
@@ -498,6 +500,7 @@
 			depends="compile-agent-prepare-headers"
 			if="agent.msvc.recompilation.necessary"
 		>
+		<echo level="info" message="[run] Running cl.exe on *.c" />
 		<apply
 				executable="cl.exe"
 				failonerror="true"
@@ -518,6 +521,7 @@
 			<fileset dir="${agent.src.dir}" includes="*.c" />
 			<mapper type="glob" from="*.c" to="*.obj" />
 		</apply>
+		<echo level="info" message="[run] Running link.exe on *.obj" />
 		<apply
 				executable="link.exe"
 				failonerror="true"
