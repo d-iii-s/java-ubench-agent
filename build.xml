@@ -589,7 +589,8 @@
 			>
 		</jar>
 		<copy file="${agent.path}" todir="${lib.build.dir}" />
-		<copy file="${barrier.path}" todir="${lib.build.dir}" />
+		<!-- Barrier not compiled on Windows -->
+		<copy file="${barrier.path}" todir="${lib.build.dir}" failonerror="false" />
 		<!-- Because copy task ignores file mode -->
 		<chmod perm="+x">
 			<fileset dir="${lib.build.dir}">
