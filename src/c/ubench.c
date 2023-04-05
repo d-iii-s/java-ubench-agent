@@ -15,27 +15,30 @@
  * limitations under the License.
  */
 
+#include "compiler.h"
 #include "ubench.h"
 
 #pragma warning(push, 0)
 #include <stdio.h>
-#include <string.h>
+
+#include <jni.h>
+#include <jvmti.h>
 #pragma warning(pop)
 
 JNIEXPORT jint JNICALL
-Agent_OnLoad(JavaVM *vm, char *UNUSED_PARAMETER(options), void *UNUSED_PARAMETER(reserved)) {
+Agent_OnLoad(
+	JavaVM* jvm, char* UNUSED_PARAMETER(options), void* UNUSED_PARAMETER(reserved)
+) {
 	jint rc;
-	jvmtiEnv *env;
+	jvmtiEnv* jvmti;
 
-	rc = (*vm)->GetEnv(vm, (void **) &env, JVMTI_VERSION);
+	rc = (*jvm)->GetEnv(jvm, (void**) &jvmti, JVMTI_VERSION);
 	if (rc != JNI_OK) {
-		fprintf(stderr,
-				"Unable to create JVMTI environment, JavaVM->GetEnv failed, error %ld.\n",
-				(long) rc);
+		fprintf(stderr, "Unable to create JVMTI environment, JavaVM->GetEnv failed, error %ld.\n", (long) rc);
 		return JNI_ERR;
 	}
 
-	rc = ubench_counters_init(env);
+	rc = ubench_counters_init(jvmti);
 
 	if (rc != JNI_OK) {
 		return JNI_ERR;
@@ -47,11 +50,10 @@ Agent_OnLoad(JavaVM *vm, char *UNUSED_PARAMETER(options), void *UNUSED_PARAMETER
 	}
 
 	DEBUG_PRINTF("initialization completed successfully.");
-
 	return JNI_OK;
 }
 
 JNIEXPORT void JNICALL
-Agent_OnUnload(JavaVM *UNUSED_PARAMETER(vm)) {
+Agent_OnUnload(JavaVM* UNUSED_PARAMETER(jvm)) {
 	DEBUG_PRINTF("agent unloaded.");
 }

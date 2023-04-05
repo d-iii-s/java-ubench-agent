@@ -17,7 +17,7 @@
   -->
 <project basedir="." name="Microbenchmarking agent for Java" default="main" xmlns:if="ant:if" xmlns:unless="ant:unless">
 	<property file="local-settings.ini" />
-	
+
 	<property environment="env" />
 
 	<property name="dist.name" value="ubench-agent" />
@@ -48,9 +48,9 @@
 	<antversion property="ant.version.bare" />
 
 	<!--
-		Determine features (capabilities) of the agent based
-		on available libraries or on which platform we are
-		operating.
+	  Determine features (capabilities) of the agent based
+	  on available libraries or on which platform we are
+	  operating.
 	-->
 	<condition property="agent.feature.has.papi">
 		<and>
@@ -63,12 +63,15 @@
 			</or>
 		</and>
 	</condition>
+
 	<condition property="agent.feature.has.getrusage">
 		<os name="Linux" />
 	</condition>
+
 	<condition property="agent.feature.has.timespec">
 		<os family="unix" />
 	</condition>
+
 	<!-- Only MSVC on Windows -->
 	<condition property="agent.features.has.native.windows">
 		<and>
@@ -76,14 +79,15 @@
 			<equals arg1="${agent.cc}" arg2="msvc" />
 		</and>
 	</condition>
-	
-	
-	
+
+
 	<!--
-		Prepare some compiler/linker settings.
+	  Prepare some compiler/linker settings.
 	-->
 	<property name="agent.cc.warnings" value="diagnostic" />
+
 	<property name="agent.cc.extra.flags" value="" />
+
 	<!--
 	  4100 - unreferenced formal parameter
 	  4710 - function not inlined (had 'inline' directive)
@@ -92,25 +96,30 @@
 	  5045 - Spectre mitigation
 	-->
 	<property name="agent.cc.msvc.ignored.warnings" value="/wd4100 /wd4710 /wd4711 /wd4820 /wd5045" />
-	
+
+
 	<!-- Helper properties to check for compiler -->
 	<condition property="agent.cc.is.gcc">
 		<equals arg1="${agent.cc}" arg2="gcc" />
 	</condition>
+
 	<condition property="agent.cc.is.msvc">
 		<equals arg1="${agent.cc}" arg2="msvc" />
 	</condition>
-	
+
+
 	<!-- javah is deprecated since JDK 8 ... -->
 	<condition property="agent.generate.headers.javah">
 		<matches pattern="^1[.][678]" string="${java.version}" />
 	</condition>
+
 	<condition property="agent.generate.headers.javac">
 		<and>
 			<antversion atleast="1.10.2" />
 			<matches pattern="^(1[.]9)|9|(1[0-9])" string="${java.version}" />
 		</and>
 	</condition>
+
 	<condition property="agent.generate.headers.javac.manually">
 		<and>
 			<matches pattern="^(1[.]9)|9|(1[0-9])" string="${java.version}" />
@@ -119,53 +128,59 @@
 			</not>
 		</and>
 	</condition>
-	
+
+
 	<!-- Agent file naming -->
 	<condition property="agent.filename" value="libubench-agent.so">
 		<os family="unix" />
 	</condition>
+
 	<condition property="agent.filename" value="ubench-agent.dll">
 		<os family="windows" />
 	</condition>
+
 	<property name="agent.path"
 		location="${agent.build.dir}${file.separator}${agent.filename}" />
-	
+
+
 	<!-- Barrier file naming -->
-    <condition property="barrier.filename" value="ubench-barrier">
-        <os family="unix" />
-    </condition>
-    <condition property="barrier.filename" value="ubench-barrier.exe">
-        <os family="windows" />
-    </condition>
-    <property name="barrier.path"
-        location="${barrier.build.dir}${file.separator}${barrier.filename}" />
-    
-	
+	<condition property="barrier.filename" value="ubench-barrier">
+		<os family="unix" />
+	</condition>
+
+	<condition property="barrier.filename" value="ubench-barrier.exe">
+		<os family="windows" />
+	</condition>
+
+	<property name="barrier.path"
+		location="${barrier.build.dir}${file.separator}${barrier.filename}" />
+
+
 	<!-- Java include paths -->
 	<pathconvert property="agent.cc.java.jni.h.path" setonempty="false">
 		<!--
-			Try to find jni.h in known locations.
-			
-			We first try $JAVA_HOME (%JAVA_HOME%) if set (that
-			shall take care of custom locations or when the
-			user wants to compile with a specific version of JDK).
-			Then we try ${java.home} that usually points to JRE
-			that could be inside JDK. After that, we go through
-			list of typical locations in various distributions.
-			
-			If your distribution uses different location, feel
-			free to add it here (but preferably only directories
-			without build versions, such as/usr/java/jdk1.7 but
-			not /usr/java/jdk1.7.0_55/).
-			
-			If you have a custom location, use local-settings.ini
-			to specify the exact path as a value of the
-			agent.cc.java.include property.
+		  Try to find jni.h in known locations.
+
+		  We first try $JAVA_HOME (%JAVA_HOME%) if set (that
+		  should take care of custom locations or when the
+		  user wants to compile with a specific version of JDK).
+		  Then we try ${java.home} that usually points to JRE
+		  that could be inside JDK. After that, we go through
+		  list of typical locations in various distributions.
+		
+		  If your distribution uses different location, feel
+		  free to add it here (but preferably only directories
+		  without build versions, such as/usr/java/jdk1.7 but
+		  not /usr/java/jdk1.7.0_55/).
+
+		  If you have a custom location, use local-settings.ini
+		  to specify the exact path as a value of the
+		  agent.cc.java.include property.
 		-->
 		<first>
 			<restrict>
 				<exists />
-				<union>					
+				<union>
 					<filelist dir="${env.JAVA_HOME}${file.separator}include" files="jni.h" />
 					<filelist dir="${java.home}${file.separator}..${file.separator}include" files="jni.h" />
 					<filelist dir="/usr/lib/jvm/default/include/" files="jni.h" />
@@ -176,70 +191,87 @@
 			</restrict>
 		</first>
 	</pathconvert>
+
 	<fail unless="agent.cc.java.jni.h.path"
 		message="Failed to locate JDK directory with C headers (set JAVA_HOME)."/>
-	
+
 	<dirname property="agent.cc.java.include"
 		file="${agent.cc.java.jni.h.path}" />
-	
+
 	<condition property="agent.cc.java.os.include"
 			value="${agent.cc.java.include}${file.separator}linux">
 		<os name="Linux" />
 	</condition>
+
 	<condition property="agent.cc.java.os.include"
 			value="${agent.cc.java.include}${file.separator}win32">
 		<os family="windows" />
 	</condition>
+
 	<condition property="agent.cc.java.os.include"
 			value="${agent.cc.java.include}${file.separator}darwin">
 		<os family="mac" />
 	</condition>
-	
+
 	<!-- PAPI support and other has.* settings -->
 	<condition property="agent.link.papi" value="-lpapi" else="">
 		<isset property="agent.feature.has.papi" />
 	</condition>
+
 	<condition property="agent.cc.papi" value="-DHAS_PAPI" else="">
 		<isset property="agent.feature.has.papi" />
 	</condition>
+
 	<condition property="agent.cc.getrusage" value="-DHAS_GETRUSAGE" else="">
 		<isset property="agent.feature.has.getrusage" />
 	</condition>
+
 	<condition property="agent.cc.timespec" value="-DHAS_TIMESPEC" else="">
 		<isset property="agent.feature.has.timespec" />
 	</condition>
+
 	<condition property="agent.link.librt" value="-lrt" else="">
 		<os name="Linux" />
 	</condition>
+
 	<condition property="agent.cc.native.windows" value="-DHAS_QUERY_PERFORMANCE_COUNTER -DHAS_GET_THREAD_TIMES" else="">
 		<isset property="agent.features.has.native.windows" />
 	</condition>
-	
-	
-	<!-- Warning-related compiler flags -->
+
+
+	<!-- Warning-related compiler flags for GCC -->
 	<condition property="agent.gcc.warn.flags" value="-Wall -Wextra -Wno-unknown-pragmas">
 		<equals arg1="${agent.cc.warnings}" arg2="diagnostic" />
 	</condition>
+
 	<condition property="agent.gcc.warn.flags" value="-Wall -Wno-unknown-pragmas">
 		<equals arg1="${agent.cc.warnings}" arg2="default" />
 	</condition>
+
 	<condition property="agent.gcc.warn.flags" value="-Wall -Wextra -Werror -Wno-unknown-pragmas">
 		<equals arg1="${agent.cc.warnings}" arg2="aserror" />
 	</condition>
+
 	<property name="agent.gcc.warn.flags" value="" />
-	
+
+
+	<!-- Warning-related compiler flags for MSVC -->
 	<condition property="agent.msvc.warn.flags" value="/Wall ${agent.cc.msvc.ignored.warnings}">
 		<equals arg1="${agent.cc.warnings}" arg2="diagnostic" />
 	</condition>
+
 	<condition property="agent.msvc.warn.flags" value="/W3">
 		<equals arg1="${agent.cc.warnings}" arg2="default" />
 	</condition>
+
 	<condition property="agent.msvc.warn.flags" value="/Wall /WX ${agent.cc.msvc.ignored.warnings}">
 		<equals arg1="${agent.cc.warnings}" arg2="aserror" />
 	</condition>
+
 	<property name="agent.msvc.warn.flags" value="" />
-	
-	<!-- Determine when recompilation is necessary -->
+
+
+	<!-- Determine when agent recompilation is necessary for GCC -->
 	<condition property="agent.gcc.recompilation.necessary">
 		<or>
 			<and>
@@ -268,68 +300,74 @@
 			/>
 		</or>
 	</condition>
+
+
+	<!-- Determine when agent recompilation is necessary for MSVC -->
 	<condition property="agent.msvc.recompilation.necessary">
 		<or>
-    		<and>
-    			<isset property="agent.cc.is.msvc" />
-    			<not><and>
-    				<uptodate targetfile="${agent.path}">
-    					<srcfiles
-    						dir="${agent.build.dir}"
-    						includes="*.obj"
-    					/>
-    				</uptodate>
-    				<uptodate>
-    					<srcfiles
-    						dir="${agent.src.dir}"
-    						includes="*.c"
-    					/>
-    					<mapper type="glob"
-    						from="*.c"
-    						to="${agent.build.dir}${file.separator}*.obj" />
-    				</uptodate>
-    			</and></not>
-    		</and>
+			<and>
+				<isset property="agent.cc.is.msvc" />
+				<not><and>
+					<uptodate targetfile="${agent.path}">
+						<srcfiles
+							dir="${agent.build.dir}"
+							includes="*.obj"
+						/>
+					</uptodate>
+					<uptodate>
+						<srcfiles
+							dir="${agent.src.dir}"
+							includes="*.c"
+						/>
+						<mapper type="glob"
+							from="*.c"
+							to="${agent.build.dir}${file.separator}*.obj" />
+					</uptodate>
+				</and></not>
+			</and>
 			<contains
 				string="${ant.project.invoked-targets}"
 				substring="clean"
 			/>
 		</or>
 	</condition>
+
+
+	<!-- Determine when barrier recompilation is necessary for GCC -->
 	<condition property="barrier.gcc.recompilation.necessary">
-        <or>
-            <and>
-                <isset property="agent.cc.is.gcc" />
-                <not><and>
-                    <uptodate targetfile="${barrier.path}">
-                        <srcfiles
-                            dir="${barrier.build.dir}"
-                            includes="*.o"
-                        />
-                    </uptodate>
-                    <uptodate>
-                        <srcfiles
-                            dir="${barrier.src.dir}"
-                            includes="*.c"
-                        />
-                        <mapper type="glob"
-                            from="*.c"
-                            to="${barrier.build.dir}${file.separator}*.o" />
-                    </uptodate>
-                </and></not>
-            </and>
-            <contains
-                string="${ant.project.invoked-targets}"
-                substring="clean"
-            />
-        </or>
-    </condition>
-	
-	
-	
+		<or>
+			<and>
+				<isset property="agent.cc.is.gcc" />
+				<not><and>
+					<uptodate targetfile="${barrier.path}">
+						<srcfiles
+							dir="${barrier.build.dir}"
+							includes="*.o"
+						/>
+					</uptodate>
+					<uptodate>
+						<srcfiles
+							dir="${barrier.src.dir}"
+							includes="*.c"
+						/>
+						<mapper type="glob"
+							from="*.c"
+							to="${barrier.build.dir}${file.separator}*.o"
+						/>
+					</uptodate>
+				</and></not>
+			</and>
+			<contains
+				string="${ant.project.invoked-targets}"
+				substring="clean"
+			/>
+		</or>
+	</condition>
+
+
 	<target name="print-config"
-			description="Print current configuration (include paths, compiler, ...)."
-		>
+		description="Print current configuration (include paths, compiler, ...)."
+	>
 		<echo message="                 OS: ${os.name} ${os.version} (${os.arch})" />
 		<echo message="  Used Java version: ${ant.java.version}" />
 		<echo message="        JRE version: ${java.version}" />
@@ -345,16 +383,15 @@
 		<echo message="  getrusage support: on" if:set="agent.feature.has.getrusage" />
 		<echo message="  getrusage support: off" unless:set="agent.feature.has.getrusage" />
 	</target>
-	
+
 	<target name="print-properties">
 		<echoproperties format="text" />
 	</target>
-	
+
 	<target name="main"
-			depends="compile"
-			description="Default target: compile everything."
-		>
-	</target>
+		depends="compile"
+		description="Default target: compile everything."
+	/>
 
 	<target name="gate" description="Gate: check everything.">
 		<antcall target="clean" />
@@ -372,30 +409,30 @@
 	</target>
 	
 	<target name="compile"
-			depends="compile-java,compile-agent,compile-barrier"
-			description="Compile everything."
-		>
-	</target>
+		depends="compile-java,compile-agent,compile-barrier"
+		description="Compile everything."
+	/>
 
 	<target name="compile-java"
-			description="Compile Java sources."
-		>
+		description="Compile Java sources."
+	>
 		<mkdir dir="${classes.build.dir}" />
+
 		<javac 
-				destdir="${classes.build.dir}"
-				debug="true"
-				includeantruntime="false">
+			destdir="${classes.build.dir}"
+			debug="true"
+			includeantruntime="false"
+		>
 			<src path="${java.src.dir}" />
 			<compilerarg value="-Xlint:all"/>
 		</javac>
 	</target>
 
 	<target name="compile-agent"
-			depends="compile-agent-maybe-gcc,compile-agent-maybe-msvc"
-			description="Compile the C agent."
-		>
-	</target>
-	
+		depends="compile-agent-maybe-gcc,compile-agent-maybe-msvc"
+		description="Compile the C agent."
+	/>
+
 	<macrodef name="compile-header">
 		<attribute name="classname" />
 		<sequential>
@@ -405,6 +442,7 @@
 					classpath="${classes.build.dir}">
 				<class name="cz.cuni.mff.d3s.perf.@{classname}" />
 			</javah>
+
 			<javac if:set="agent.generate.headers.javac"
 					nativeheaderdir="${agent.build.dir}"
 					destdir="${classes.build.dir}"
@@ -415,6 +453,7 @@
 					<pathelement path="${classes.build.dir}" />
 				</classpath>
 			</javac>
+
 			<exec if:set="agent.generate.headers.javac.manually"
 					executable="javac">
 				<arg value="-cp" />
@@ -429,9 +468,9 @@
 	</macrodef>
 	
 	<target name="compile-agent-prepare-headers"
-			depends="compile-java"
-			description="Generate JNI headers."
-		>
+		depends="compile-java"
+		description="Generate JNI headers."
+	>
 		<mkdir dir="${agent.build.dir}" />
 		<compile-header classname="Barrier" />
 		<compile-header classname="CompilationCounter" />
@@ -439,22 +478,23 @@
 		<compile-header classname="Measurement" />
 		<compile-header classname="NativeThreads" />
 	</target>
-	
+
 	<target name="compile-agent-maybe-gcc" if="agent.cc.is.gcc">
 		<antcall target="compile-agent-gcc" />
 	</target>
-	
+
 	<target name="compile-agent-gcc"
-			depends="compile-agent-prepare-headers"
-			if="agent.gcc.recompilation.necessary"
-		>
+		depends="compile-agent-prepare-headers"
+		if="agent.gcc.recompilation.necessary"
+	>
 		<echo level="info" message="[run] Running gcc on *.c" />
 		<apply
-				executable="${agent.cc}"
-				failonerror="true"
-				dest="${agent.build.dir}"
-				parallel="false"
-				verbose="true">
+			executable="${agent.cc}"
+			failonerror="true"
+			dest="${agent.build.dir}"
+			parallel="false"
+			verbose="true"
+		>
 			<arg value="-c" />
 			<arg value="-I${agent.build.dir}" />
 			<arg value="-I${agent.cc.java.include}" />
@@ -474,12 +514,14 @@
 			<fileset dir="${agent.src.dir}" includes="*.c" />
 			<mapper type="glob" from="*.c" to="*.o" />
 		</apply>
+
 		<echo level="info" message="[run] Running gcc on *.o" />
 		<apply
-				executable="${agent.cc}"
-				failonerror="true"
-				parallel="true"
-				verbose="true">
+			executable="${agent.cc}"
+			failonerror="true"
+			parallel="true"
+			verbose="true"
+		>
 			<arg value="-shared" />
 			<arg value="-pthread" />
 			<arg value="-fPIC" />
@@ -491,22 +533,23 @@
 			<fileset dir="${agent.build.dir}" includes="*.o" />
 		</apply>
 	</target>
-	
+
 	<target name="compile-agent-maybe-msvc" if="agent.cc.is.msvc">
 		<antcall target="compile-agent-msvc" />
 	</target>
-	
+
 	<target name="compile-agent-msvc"
-			depends="compile-agent-prepare-headers"
-			if="agent.msvc.recompilation.necessary"
-		>
+		depends="compile-agent-prepare-headers"
+		if="agent.msvc.recompilation.necessary"
+	>
 		<echo level="info" message="[run] Running cl.exe on *.c" />
 		<apply
-				executable="cl.exe"
-				failonerror="true"
-				dest="${agent.build.dir}"
-				parallel="false"
-				verbose="true">
+			executable="cl.exe"
+			failonerror="true"
+			dest="${agent.build.dir}"
+			parallel="false"
+			verbose="true"
+		>
 			<arg value="/c" />
 			<arg value="/I${agent.build.dir}" />
 			<arg value="/I${agent.cc.java.include}" />
@@ -521,93 +564,101 @@
 			<fileset dir="${agent.src.dir}" includes="*.c" />
 			<mapper type="glob" from="*.c" to="*.obj" />
 		</apply>
+
 		<echo level="info" message="[run] Running link.exe on *.obj" />
 		<apply
-				executable="link.exe"
-				failonerror="true"
-				parallel="true"
-				verbose="true">
+			executable="link.exe"
+			failonerror="true"
+			parallel="true"
+			verbose="true"
+		>
 			<arg value="/DLL" />
 			<arg value="/OUT:${agent.path}" />
 			<srcfile />
 			<fileset dir="${agent.build.dir}" includes="*.obj" />
 		</apply>
 	</target>
-	
-   <target name="compile-barrier"
-           depends="compile-barrier-maybe-gcc"
-           description="Compile the barrier initialization tool."
-        >
-    </target>
-    
-    <target name="compile-barrier-maybe-gcc" if="agent.cc.is.gcc">
-        <antcall target="compile-barrier-gcc" />
-    </target>
-    
-    <target name="compile-barrier-gcc"
-            if="barrier.gcc.recompilation.necessary"
-        >
-    	<mkdir dir="${barrier.build.dir}" />
-    	<apply
-	                executable="${agent.cc}"
-	                failonerror="true"
-	                dest="${barrier.build.dir}"
-	                parallel="false"
-	                verbose="true">
-	            <arg value="-c" />
-	            <arg value="-pthread" />
-	            <arg value="-std=gnu99" />
-	            <arg line="${agent.gcc.warn.flags}" />
-	            <arg value="-o"/>
-	            <targetfile />
-	            <srcfile />
-	            <fileset dir="${barrier.src.dir}" includes="*.c" />
-	            <mapper type="glob" from="*.c" to="*.o" />
-	        </apply>
-        <apply
-                executable="${agent.cc}"
-                failonerror="true"
-                parallel="true"
-                verbose="true">
-            <arg value="-pthread" />
-            <arg value="-o" />
-            <arg file="${barrier.path}" />
-            <srcfile />
-            <arg line="${agent.link.librt}" />
-            <fileset dir="${barrier.build.dir}" includes="*.o" />
-        </apply>
-    </target>
-	
-	<target name="lib"
-			description="Create the library, that is JAR and C-agent."
-			depends="compile"
+
+
+	<target name="compile-barrier"
+		depends="compile-barrier-maybe-gcc"
+		description="Compile the barrier initialization tool."
+	/>
+
+	<target name="compile-barrier-maybe-gcc" if="agent.cc.is.gcc">
+		<antcall target="compile-barrier-gcc" />
+	</target>
+
+	<target name="compile-barrier-gcc"
+		if="barrier.gcc.recompilation.necessary"
+	>
+		<mkdir dir="${barrier.build.dir}" />
+		<apply
+			executable="${agent.cc}"
+			failonerror="true"
+			dest="${barrier.build.dir}"
+			parallel="false"
+			verbose="true"
 		>
+			<arg value="-c" />
+			<arg value="-pthread" />
+			<arg value="-std=gnu99" />
+			<arg line="${agent.gcc.warn.flags}" />
+			<arg value="-o"/>
+			<targetfile />
+			<srcfile />
+			<fileset dir="${barrier.src.dir}" includes="*.c" />
+			<mapper type="glob" from="*.c" to="*.o" />
+		</apply>
+		<apply
+			executable="${agent.cc}"
+			failonerror="true"
+			parallel="true"
+			verbose="true"
+		>
+			<arg value="-pthread" />
+			<arg value="-o" />
+			<arg file="${barrier.path}" />
+			<srcfile />
+			<arg line="${agent.link.librt}" />
+			<fileset dir="${barrier.build.dir}" includes="*.o" />
+		</apply>
+	</target>
+
+
+	<target name="lib"
+		description="Create the library, that is JAR and C-agent."
+		depends="compile"
+	>
 		<mkdir dir="${lib.build.dir}" />
 		<jar
-				destfile="${lib.build.dir}${file.separator}ubench-agent.jar"
-				basedir="${classes.build.dir}"
-			>
-		</jar>
+			destfile="${lib.build.dir}${file.separator}ubench-agent.jar"
+			basedir="${classes.build.dir}"
+		/>
+
 		<copy file="${agent.path}" todir="${lib.build.dir}" />
+
 		<!-- Barrier not compiled on Windows -->
 		<copy file="${barrier.path}" todir="${lib.build.dir}" failonerror="false" />
+
 		<!-- Because copy task ignores file mode -->
 		<chmod perm="+x">
 			<fileset dir="${lib.build.dir}">
-			    <exclude name="*.jar" />
+				<exclude name="*.jar" />
 			</fileset>
 		</chmod>
 	</target>
-	
+
 	<target name="compile-demo"
-			description="Compile all the demo code."
-			depends="compile"
-		>
+		description="Compile all the demo code."
+		depends="compile"
+	>
 		<mkdir dir="${demo.classes.build.dir}" />
-		<javac 
-				destdir="${demo.classes.build.dir}"
-				debug="true"
-				includeantruntime="false">
+		<javac
+			destdir="${demo.classes.build.dir}"
+			debug="true"
+			includeantruntime="false"
+		>
 			<src path="${demo.src.dir}" />
 			<classpath>
 				<pathelement path="${classes.build.dir}" />
@@ -617,14 +668,15 @@
 	</target>
 
 	<target name="compile-test"
-			description="Compile all the test code."
-			depends="compile"
-		>
+		description="Compile all the test code."
+		depends="compile"
+	>
 		<mkdir dir="${test.classes.build.dir}" />
-		<javac 
-				destdir="${test.classes.build.dir}"
-				debug="true"
-				includeantruntime="false">
+		<javac
+			destdir="${test.classes.build.dir}"
+			debug="true"
+			includeantruntime="false"
+		>
 			<src path="${java.test.src.dir}" />
 			<classpath>
 				<pathelement path="${classes.build.dir}" />
@@ -643,9 +695,10 @@
 		<sequential>
 			<echo level="info" message="[run] java -agentpath:${agent.path} @{jvmarg} @{classname} @{progarg}" />
 			<java
-					classname="@{classname}"
-					fork="true"
-					failonerror="true">
+				classname="@{classname}"
+				fork="true"
+				failonerror="true"
+			>
 				<classpath>
 					<pathelement path="${classes.build.dir}" />
 					<pathelement path="${test.classes.build.dir}" />
@@ -658,75 +711,85 @@
 	</macrodef>
 
 	<target name="test"
-			depends="compile,compile-test"
-			description="Run simple self-tests (obsoleted)."
-		>
+		depends="compile,compile-test"
+		description="Run simple self-tests (obsoleted)."
+	>
 		<self-test
 			classname="cz.cuni.mff.d3s.perf.CompilationCounterTest"
 			jvmarg="-Xmixed"
-			progarg="mixed" />
+			progarg="mixed"
+		/>
 		<self-test
 			classname="cz.cuni.mff.d3s.perf.CompilationCounterTest"
 			jvmarg="-Xint"
-			progarg="int" />
+			progarg="int"
+		/>
 		<self-test
-			classname="cz.cuni.mff.d3s.perf.BenchmarkTest" />
+			classname="cz.cuni.mff.d3s.perf.BenchmarkTest"
+		/>
 		<self-test
 			classname="cz.cuni.mff.d3s.perf.ThreadTimeTest"
-			progarg="4" />
+			progarg="4"
+		/>
+		<self-test
+			classname="cz.cuni.mff.d3s.perf.MeasurementSamplingTest"
+		/>
 
 		<echo level="info" message="All tests passed." />
 	</target>
-	
+
 	<target name="test-junit"
-			depends="compile,compile-test"
-			description="Run JUnit tests, generate HTML report."
-		>
+		depends="compile,compile-test"
+		description="Run JUnit tests, generate HTML report."
+	>
 		<mkdir dir="${test.results.dir}"/>
 		<junit printsummary="no" failureproperty="junit.failed" haltonfailure="no">
 			<classpath>
-				<pathelement path="${junit.jar.path}"/>
+				<pathelement path="${junit.jar.path}" />
 				<pathelement path="${hamcrest.jar.path}" />
-				<pathelement path="${test.classes.build.dir}"/>
-				<pathelement path="${classes.build.dir}"/>
+				<pathelement path="${test.classes.build.dir}" />
+				<pathelement path="${classes.build.dir}" />
 			</classpath>
+
 			<jvmarg value="-Dubench.classpath=${test.classes.build.dir}${path.separator}${classes.build.dir}" />
 			<jvmarg value="-Dubench.agent=${agent.path}" />
 			<jvmarg value="-agentpath:${agent.path}" />
-			
+
 			<assertions>
 				<enable/>
 			</assertions>
-			
+
 			<formatter type="brief" usefile="false" />
 			<formatter type="xml" />
 			
 			<batchtest fork="yes" todir="${test.results.dir}">
 				<fileset dir="${test.classes.build.dir}">
-					<include name="**/*Test.class"/>
+					<include name="**/*Test.class" />
 					<exclude name="${test.classes.excluded}" />
 				</fileset>
 			</batchtest>
 		</junit>
+
 		<junitreport todir="${test.results.dir}">
 			<fileset dir="${test.results.dir}">
-				<include name="TEST-*.xml"/>
+				<include name="TEST-*.xml" />
 			</fileset>
-			<report format="frames" todir="${test.results.dir}/html"/>
+			<report format="frames" todir="${test.results.dir}/html" />
 		</junitreport>
-		
+
 		<fail message="JUnit test(s) failed." if="junit.failed" />
 	</target>
-	
-	
+
+
 	<target name="demo"
 		depends="compile,compile-demo"
 		description="Run simple demo (measure md5 speed)."
-		>
+	>
 		<java
-				classname="cz.cuni.mff.d3s.perf.demo.MeasureHashing"
-				fork="true"
-				failonerror="true">
+			classname="cz.cuni.mff.d3s.perf.demo.MeasureHashing"
+			fork="true"
+			failonerror="true"
+		>
 			<classpath>
 				<pathelement path="${classes.build.dir}" />
 				<pathelement path="${demo.classes.build.dir}" />
@@ -735,15 +798,16 @@
 			<arg value="build.xml" />
 		</java>
 	</target>
-	
+
 	<target name="list-events"
 		depends="compile-demo"
 		description="List available events."
-		>
+	>
 		<java
-				classname="cz.cuni.mff.d3s.perf.demo.ListEvents"
-				fork="true"
-				failonerror="true">
+			classname="cz.cuni.mff.d3s.perf.demo.ListEvents"
+			fork="true"
+			failonerror="true"
+		>
 			<classpath>
 				<pathelement path="${classes.build.dir}" />
 				<pathelement path="${demo.classes.build.dir}" />
@@ -753,8 +817,8 @@
 	</target>
 
 	<target name="dist"
-			description="Create distributable ZIP with all sources."
-		>
+		description="Create distributable ZIP with all sources."
+	>
 		<mkdir dir="${build.dir}" />
 		<zip destfile="${build.dir}/${dist.name}.zip">
 			<zipfileset dir="src" prefix="${dist.name}/src" />
@@ -764,16 +828,17 @@
 			<zipfileset file="README.md" prefix="${dist.name}/" />
 		</zip>
 	</target>
-	
+
 	<target name="javadoc">
 		<mkdir dir="${javadoc.build.dir}" />
 		<javadoc
-				destdir="${javadoc.build.dir}"
-				author="true"
-				version="true"
-				use="true"
-				overview="${java.src.dir}/overview.html"
-				windowtitle="${ant.project.name}">
+			destdir="${javadoc.build.dir}"
+			author="true"
+			version="true"
+			use="true"
+			overview="${java.src.dir}/overview.html"
+			windowtitle="${ant.project.name}"
+		>
 			<packageset
 				dir="${java.src.dir}"
 				defaultexcludes="yes" />
@@ -785,18 +850,21 @@
 		<echo
 			append="false"
 			file="${java.src.dir}/overview.html"
-			message="&lt;html&gt;&lt;head&gt;&lt;title&gt;${ant.project.name}&lt;/title&gt;&lt;/head&gt;&lt;body&gt;${line.separator}" />
+			message="&lt;html&gt;&lt;head&gt;&lt;title&gt;${ant.project.name}&lt;/title&gt;&lt;/head&gt;&lt;body&gt;${line.separator}"
+		/>
 		<exec
-				executable="pandoc"
-				output="${java.src.dir}/overview.html"
-				input="README.md"
-				append="true">
+			executable="pandoc"
+			output="${java.src.dir}/overview.html"
+			input="README.md"
+			append="true"
+		>
 			<arg value="--no-highlight" />
 		</exec>
 		<echo
 			append="true"
 			file="${java.src.dir}/overview.html"
-			message="${line.separator}&lt;/body&gt;&lt;/html&gt;${line.separator}" />
+			message="${line.separator}&lt;/body&gt;&lt;/html&gt;${line.separator}"
+		/>
 	</target>
 
 	<target name="checkstyle">
@@ -808,8 +876,8 @@
 	</target>
 
 	<target name="clean"
-			description="Remove generated files."
-		>
+		description="Remove generated files."
+	>
 		<delete dir="${classes.build.dir}" />
 		<delete dir="${build.dir}" />
 	</target>

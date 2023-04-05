@@ -26,7 +26,7 @@ public final class NativeThreads {
     
     /** Prevent instantiation. */
     private NativeThreads() {}
-    
+
     /** Retrieve the native ID of given Java thread.
      *
      * @param thread Java thread.
@@ -41,14 +41,14 @@ public final class NativeThreads {
         }
         return res;
     }
-    
+
     /** Retrieve the native ID of given Java thread id.
      *
      * @param javaThreadId Java thread i.d
      * @return Native id of the given thread or INVALID_THREAD_ID when the thread is not known.
      */
     private static native long getNativeId(long javaThreadId);
-    
+
     /** Insert a mapping between Java thread and its native id.
      *
      * @param thread Java thread.
@@ -58,7 +58,7 @@ public final class NativeThreads {
     public static boolean registerJavaThread(final Thread thread, final long nativeId) {
         return registerJavaThread(thread.getId(), nativeId);
     }
-        
+
     /** Insert a mapping between Java thread and its native id.
      *
      * @param javaThreadId Java thread id.

@@ -20,8 +20,6 @@ import java.io.FileInputStream;
 import java.io.IOException;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
-import java.util.ArrayList;
-import java.util.List;
 
 import cz.cuni.mff.d3s.perf.Benchmark;
 import cz.cuni.mff.d3s.perf.BenchmarkResults;

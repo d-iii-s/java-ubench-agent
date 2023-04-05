@@ -15,29 +15,32 @@
  * limitations under the License.
  */
 
-#include "ubench.h"
+#include "compiler.h"
 
 #pragma warning(push, 0)
+/* Ensure compatibility of JNI function types. */
 #include "cz_cuni_mff_d3s_perf_OverheadEstimations.h"
-#include <stdlib.h>
-#include <time.h>
-#include <string.h>
+
 #ifdef HAS_GETRUSAGE
 #include <sys/resource.h>
 #endif
+
+#include <jni.h>
 #pragma warning(pop)
 
-DLL_EXPORT void JNICALL Java_cz_cuni_mff_d3s_perf_OverheadEstimations_emptyNativeCall(
-		JNIEnv *UNUSED_PARAMETER(env), jclass UNUSED_PARAMETER(klass)) {
+JNIEXPORT void JNICALL
+Java_cz_cuni_mff_d3s_perf_OverheadEstimations_emptyNativeCall(
+	JNIEnv* UNUSED_PARAMETER(jni), jclass UNUSED_PARAMETER(overhead_class)
+) {
 	return;
 }
 
-
-DLL_EXPORT void JNICALL Java_cz_cuni_mff_d3s_perf_OverheadEstimations_resourceUsageCall(
-		JNIEnv *UNUSED_PARAMETER(env), jclass UNUSED_PARAMETER(klass)) {
+JNIEXPORT void JNICALL
+Java_cz_cuni_mff_d3s_perf_OverheadEstimations_resourceUsageCall(
+	JNIEnv* UNUSED_PARAMETER(jni), jclass UNUSED_PARAMETER(overhead_class)
+) {
 #ifdef HAS_GETRUSAGE
 	struct rusage resource_usage;
 	getrusage(RUSAGE_SELF, &resource_usage);
 #endif
 }
-

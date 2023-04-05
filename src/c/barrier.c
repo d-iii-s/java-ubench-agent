@@ -15,32 +15,39 @@
  * limitations under the License.
  */
 
-#include "ubench.h"
+#define _POSIX_C_SOURCE 200809L // For pthreads to include pthread_barrier_t
+
+#include "compiler.h"
 
 #pragma warning(push, 0)
+/* Ensure compatibility of JNI function types. */
 #include "cz_cuni_mff_d3s_perf_Barrier.h"
+
 #ifdef __unix__
-#include <sys/mman.h>
-#include <sys/stat.h>
+#include <errno.h>
 #include <fcntl.h>
 #include <pthread.h>
-#include <errno.h>
+#include <sys/mman.h>
+#include <sys/stat.h>
 #endif
+
+#include <jni.h>
+#include <jvmti.h>
 #pragma warning(pop)
 
 #ifdef __unix__
 static int shared_mem_id = -1;
-static pthread_barrier_t *shared_mem_barrier = NULL;
+static pthread_barrier_t* shared_mem_barrier = NULL;
 #endif
 
-DLL_EXPORT void JNICALL
+JNIEXPORT void JNICALL
 Java_cz_cuni_mff_d3s_perf_Barrier_initNative(
-		JNIEnv *env, jclass UNUSED_PARAMETER(klass),
-		jstring jname) {
+	JNIEnv* jni, jclass UNUSED_PARAMETER(barrier_class), jstring jname
+) {
 #ifdef __unix__
-	const char *name = (*env)->GetStringUTFChars(env, jname, 0);
+	const char* name = (*jni)->GetStringUTFChars(jni, jname, 0);
 	shared_mem_id = shm_open(name, O_RDWR, 0600);
-	(*env)->ReleaseStringUTFChars(env, jname, name);
+	(*jni)->ReleaseStringUTFChars(jni, jname, name);
 	if (shared_mem_id == -1) {
 		// TODO: throw Java exception
 		fprintf(stderr, "Failed to create shared memory segment!\n");
@@ -55,8 +62,8 @@ Java_cz_cuni_mff_d3s_perf_Barrier_initNative(
 	}
 #else
 	// Silence the compiler (unused variables).
-	(void) env;
-	(void) jname;
+	UNUSED_VARIABLE(jni);
+	UNUSED_VARIABLE(jname);
 
 	fprintf(stderr, "Platform not yet supported.\n");
 	return;
@@ -64,9 +71,10 @@ Java_cz_cuni_mff_d3s_perf_Barrier_initNative(
 #endif
 }
 
-DLL_EXPORT void JNICALL
+JNIEXPORT void JNICALL
 Java_cz_cuni_mff_d3s_perf_Barrier_barrier(
-		JNIEnv *UNUSED_PARAMETER(env), jclass UNUSED_PARAMETER(klass)) {
+	JNIEnv* UNUSED_PARAMETER(jni), jclass UNUSED_PARAMETER(barrier_class)
+) {
 #ifdef __unix__
 	pthread_barrier_wait(shared_mem_barrier);
 #endif

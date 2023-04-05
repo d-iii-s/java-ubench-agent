@@ -20,12 +20,12 @@
 #include <stdio.h>
 #include <stdlib.h>
 #ifdef __unix__
-#include <sys/mman.h>
-#include <sys/stat.h>
+#include <errno.h>
 #include <fcntl.h>
 #include <pthread.h>
-#include <errno.h>
 #include <string.h>
+#include <sys/mman.h>
+#include <sys/stat.h>
 #include <unistd.h>
 #endif
 #pragma warning(pop)
@@ -33,23 +33,25 @@
 #define BARRIER_NAME_PREFIX "java-ubench-agent"
 
 #ifdef __unix__
-static void die(const char *message) {
+static void
+die(const char* message) {
 	perror(message);
 	exit(1);
 }
 #endif
 
-int main(int argc, char *argv[]) {
+int
+main(int argc, char* argv[]) {
 #ifdef __unix__
 	if (argc != 3) {
 		fprintf(stderr, "Usage: %s barrier-name barrier-size\n", argv[0]);
 		return 1;
 	}
 
-	const char *barrier_name_suffix = argv[1];
+	const char* barrier_name_suffix = argv[1];
 	unsigned int barrier_size = atoi(argv[2]);
 
-	char *barrier_name = malloc(strlen(barrier_name_suffix) + strlen(BARRIER_NAME_PREFIX) + 1);
+	char* barrier_name = malloc(strlen(barrier_name_suffix) + strlen(BARRIER_NAME_PREFIX) + 1);
 	strcpy(barrier_name, BARRIER_NAME_PREFIX);
 	strcat(barrier_name, barrier_name_suffix);
 
@@ -63,7 +65,9 @@ int main(int argc, char *argv[]) {
 		die("ftruncate");
 	}
 
-	pthread_barrier_t *barrier = (pthread_barrier_t*) mmap(0, sizeof(pthread_barrier_t), PROT_READ | PROT_WRITE, MAP_SHARED, shared_mem_fd, 0);
+	pthread_barrier_t* barrier = (pthread_barrier_t*) mmap(
+		0, sizeof(pthread_barrier_t), PROT_READ | PROT_WRITE, MAP_SHARED, shared_mem_fd, 0
+	);
 	if (barrier == MAP_FAILED) {
 		die("mmap of shared memory");
 	}
@@ -76,7 +80,7 @@ int main(int argc, char *argv[]) {
 	}
 #else
 	fprintf(stderr, "This program must be run on a Unix system.");
-	
+
 	// Silence the compiler (unused variables).
 	(void) argc;
 	(void) argv;

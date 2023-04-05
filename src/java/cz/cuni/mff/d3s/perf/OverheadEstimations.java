@@ -24,7 +24,7 @@ public final class OverheadEstimations {
 
     /** Native call with empty implementation. */
     public static native void emptyNativeCall();
-    
+
     /** Native call that only calls getrusage syscall. */ 
     public static native void resourceUsageCall();
 }
