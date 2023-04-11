@@ -76,7 +76,7 @@ public final class NativeThreads {
      * @return Whether registration was successful.
      */
     public static boolean registerCurrentJavaThread() {
-        return registerCurrentJavaThread(Thread.currentThread ().getId());
+        return registerCurrentJavaThread(Thread.currentThread().getId());
     }
 
     /** Insert a mapping between the current Java thread and its native id.
