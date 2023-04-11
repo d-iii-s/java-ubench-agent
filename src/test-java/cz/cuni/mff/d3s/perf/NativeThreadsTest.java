@@ -19,6 +19,7 @@ package cz.cuni.mff.d3s.perf;
 import org.junit.*;
 
 public class NativeThreadsTest {
+
     private static class SpinningWorker implements Runnable {
         public volatile boolean terminate = false;
         public volatile boolean started = false;
@@ -28,16 +29,22 @@ public class NativeThreadsTest {
             while (!terminate) {}
         }
     }
-    
+
     private SpinningWorker worker;
     private Thread thread;
-    
+
     @Before
     public void setup() {
+        // Make sure the agent library is loaded before creating new threads.
+        UbenchAgent.load();
+        
         worker = new SpinningWorker();
-        thread = new Thread(worker);
+        thread = new Thread(worker, "SpinningWorker");
+        
+        thread.start();
+        while (!worker.started) {}
     }
-    
+
     @After
     public void teardown() {
         if (thread.isAlive()) {
@@ -47,21 +54,23 @@ public class NativeThreadsTest {
             } catch (InterruptedException e) {}
         }
     }
-    
+
     @Test
     public void newThreadsAreAutomaticallyRegistered() {
-        thread.start();
-        while (!worker.started) {}
-        
         long id = NativeThreads.getNativeId(thread);
 
         // Getting here means the previous call has not thrown any
         // exception, thus the thread was registered.
         Assert.assertTrue(true);
     }
-    
+
     @Test
     public void impossibleToRegisterThreadTwice() {
-        Assert.assertFalse(NativeThreads.registerJavaThread(Thread.currentThread(), 0));
+        // If the agent was actually loaded through 'UBenchAgent.load()', the
+        // main thread is already running and its start will have been missed
+        // by the agent and will not be automatically registered.
+        //
+        // Try re-registering the worker thread instead.
+        Assert.assertFalse(NativeThreads.registerJavaThread(thread, 0));
     }
 }
