@@ -59,23 +59,23 @@ ubench_startup(JavaVM* jvm) {
 	// the native image). This will make some functionality unavailable, but
 	// will still allow using the agent e.g., to use PAPI.
 	//
-	DEBUG_PRINTF("initializing counters module");
+	DEBUG_PRINTF("initializing counters module.");
 	if (!ubench_counters_init(jvm)) {
 		WARN_PRINTF("failed to initialize event counter module.");
 	}
 
-	DEBUG_PRINTF("initializing threads module");
+	DEBUG_PRINTF("initializing threads module.");
 	if (!ubench_threads_init(jvm)) {
-		WARN_PRINTF("failed to initialize threads module.");
+		WARN_PRINTF("automatic thread registration not supported.");
 	}
 
-	DEBUG_PRINTF("initializing measurement module");
+	DEBUG_PRINTF("initializing measurement module.");
 	if (!ubench_measurement_init()) {
 		ERROR_PRINTF("failed to initialize measurement module.");
 		return false;
 	}
 
-	DEBUG_PRINTF("initializing event module");
+	DEBUG_PRINTF("initializing event module.");
 	if (!ubench_event_init()) {
 		ERROR_PRINTF("failed to initialize event module.");
 		return false;
@@ -115,7 +115,7 @@ JNIEXPORT jboolean JNICALL
 Java_cz_cuni_mff_d3s_perf_UbenchAgent_nativeIsLoaded(
 	JNIEnv* UNUSED_PARAMETER(jni), jclass UNUSED_PARAMETER(ubench_class)
 ) {
-	DEBUG_PRINTF("nativeIsLoaded called from Java");
+	DEBUG_PRINTF("UBenchAgent.nativeIsLoaded()");
 	return JNI_TRUE;
 }
 
