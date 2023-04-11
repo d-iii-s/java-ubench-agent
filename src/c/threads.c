@@ -278,10 +278,9 @@ ubench_get_current_thread_native_id(void) {
 //
 
 /*
- * Cached identifier of 'java.lang.Thread.getId()' method.
- * Initialized from the 'VM Init' callback, which is called before the
- * main thread is started. Allows the 'Thread Start' and 'Thread End'
- * callbacks get the Java thread identifier.
+ * Cached identifier of 'java.lang.Thread.getId()' method. Used by the
+ * 'Thread Start' and 'Thread End' callbacks get the Java thread identifier.
+ * Must be initialized before enabling the thread lifecycle JVMTI events.
  */
 static jmethodID thread_get_id_method;
 
@@ -351,69 +350,115 @@ jvmti_callback_on_thread_end(
 #endif
 }
 
-static jvmti_context_t threads_context = {
-	.callbacks = {
-		.ThreadStart = &jvmti_callback_on_thread_start,
-		.ThreadEnd = &jvmti_callback_on_thread_end,
-	},
-	.events = { JVMTI_EVENT_THREAD_START, JVMTI_EVENT_THREAD_END, 0 }
-};
 
-//
+static bool
+enable_automatic_threads_registration(JavaVM* jvm, JNIEnv* jni) {
+	assert (jvm != NULL);
+	assert (jni != NULL);
+
+	//
+	// Initialize the 'thread_get_id_method' variable for the thread
+	// registration callbacks. The error paths should not really happen.
+	//
+	jclass thread_class = (*jni)->FindClass(jni, "java/lang/Thread");
+	if (thread_class == NULL) {
+		ERROR_PRINTF("failed to find 'java.lang.Thread' class!");
+		return false;
+	}
+
+	thread_get_id_method = (*jni)->GetMethodID(jni, thread_class, "getId", "()J");
+	if (thread_get_id_method == NULL) {
+		ERROR_PRINTF("failed to find 'java.lang.Thread.getId()' method!");
+		return false;
+	}
+
+	//
+	// Enable thread lifecycle JVMTI events to automatically register newly
+	// created threads. This ensures that the thread registration methods
+	// will be called only after initializing the 'getId' method identifier.
+	//
+	static jvmti_context_t threads_context = {
+		.callbacks = {
+			.ThreadStart = &jvmti_callback_on_thread_start,
+			.ThreadEnd = &jvmti_callback_on_thread_end,
+		},
+		.events = { JVMTI_EVENT_THREAD_START, JVMTI_EVENT_THREAD_END, 0 }
+	};
+
+	if (!ubench_jvmti_context_init_and_enable(&threads_context, jvm)) {
+		DEBUG_PRINTF("failed to enable thread lifecycle JVMTI events.");
+		return false;
+	}
+
+	return true;
+}
+
 
 static void JNICALL
 jvmti_callback_on_vm_init(
 	jvmtiEnv* UNUSED_PARAMETER(jvmti), JNIEnv* jni, jthread UNUSED_PARAMETER(thread)
 ) {
-	//
-	// Initialize the 'thread_class' and 'thread_get_id_method' variables for
-	// the thread registration callbacks.
-	//
-	jclass thread_class = (*jni)->FindClass(jni, "java/lang/Thread");
-	if (thread_class == NULL) {
-		FATAL_PRINTF("failed to find 'java.lang.Thread' class, aborting!");
-		exit(1);
+	DEBUG_PRINTF("trying to enable automatic thread registration.");
+
+	JavaVM* jvm;
+
+	jint jvm_err = (*jni)->GetJavaVM(jni, &jvm);
+	if (jvm_err == JNI_OK) {
+		if (enable_automatic_threads_registration(jvm, jni)) {
+			return;
+		}
+
+		ERROR_PRINTF("failed to enable automatic thread registration.");
+	} else {
+		ERROR_PRINTF("failed to obtain JavaVM from JNI environment.");
 	}
 
-	thread_get_id_method = (*jni)->GetMethodID(jni, thread_class, "getId", "()J");
-	if (thread_get_id_method == NULL) {
-		FATAL_PRINTF("failed to find 'java.lang.Thread.getId()' method, aborting!\n");
-		exit(1);
-	}
-
-	//
-	// Enable the thread registration JVMTI context to automatically register
-	// newly created threads. This ensures that the thread registration methods
-	// will be called only after the variables have been initialized.
-	//
-	if (!ubench_jvmti_context_enable(&threads_context)) {
-		DEBUG_PRINTF("could not enable thread registration JVMTI context");
-	}
+	WARN_PRINTF("automatic thread registration not supported.");
 }
+
+//
 
 INTERNAL bool
 ubench_threads_init(JavaVM* jvm) {
 	assert(jvm != NULL);
 
-	static jvmti_context_t init_context = {
-		.callbacks = { .VMInit = &jvmti_callback_on_vm_init },
-		.events = { JVMTI_EVENT_VM_INIT, 0 }
-	};
+	//
+	// First try to get JNI environment. If it succeeds, we can initialize the
+	// cached JNI identifiers and enable the JVMTI thread events. If not, we can
+	// delay the initialization and complete it after receiving the 'VM Init'
+	// JVMTI event (which is when the JNI environment becomes available).
+	//
+	JNIEnv* jni;
+
+	jint env_error = (*jvm)->GetEnv(jvm, (void**) &jni, JNI_VERSION_1_8);
+	if (env_error == JNI_OK) {
+		if (enable_automatic_threads_registration(jvm, jni)) {
+			return true;
+		}
+
+		DEBUG_PRINTF("failed to enable automatic thread registration.");
+		return false;
+	}
+
+	DEBUG_PRINTF("JNI not available (error %ld), trying delayed initialization.", (long) env_error);
 
 	//
 	// Initialize the thread registration context. If it succeeds, initialize
 	// and enable the VM initialization context, which will enable the thread
 	// registration context upon receiving the 'VM Init' event.
 	//
-	if (ubench_jvmti_context_init(&threads_context, jvm)) {
-		if (ubench_jvmti_context_init_and_enable(&init_context, jvm)) {
-			return true;
-		}
 
-		ubench_jvmti_context_destroy(&threads_context);
+	static jvmti_context_t init_context = {
+		.callbacks = { .VMInit = &jvmti_callback_on_vm_init },
+		.events = { JVMTI_EVENT_VM_INIT, 0 }
+	};
+
+	if (!ubench_jvmti_context_init_and_enable(&init_context, jvm)) {
+		DEBUG_PRINTF("failed to enable VM lifecycle JVMTI events.");
+		return false;
 	}
 
-	return false;
+	return true;
 }
 
 INTERNAL native_tid_t
