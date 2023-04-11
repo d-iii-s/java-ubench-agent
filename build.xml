@@ -754,7 +754,7 @@
 
 			<jvmarg value="-Dubench.classpath=${test.classes.build.dir}${path.separator}${classes.build.dir}" />
 			<jvmarg value="-Dubench.agent=${agent.path}" />
-			<jvmarg value="-agentpath:${agent.path}" />
+			<jvmarg value="-Djava.library.path=${agent.build.dir}" />
 
 			<assertions>
 				<enable/>
