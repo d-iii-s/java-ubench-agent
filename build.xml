@@ -868,7 +868,7 @@
 	</target>
 
 	<target name="checkstyle">
-		<java jar="lib/checkstyle-8.10-all.jar" fork="true">
+		<java jar="lib/checkstyle-9.3-all.jar" fork="true">
 			<arg value="-c" />
 			<arg file="checkstyle.xml" />
 			<arg file="src/java" />
