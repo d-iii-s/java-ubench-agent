@@ -132,7 +132,19 @@
 
 	<!-- Agent file naming -->
 	<condition property="agent.filename" value="libubench-agent.so">
-		<os family="unix" />
+		<and>
+			<os family="unix" />
+			<not>
+				<os name="Mac OS X"/>
+			</not>
+		</and>
+	</condition>
+
+	<condition property="agent.filename" value="libubench-agent.jnilib">
+		<and>
+			<os family="unix" />
+			<os name="Mac OS X"/>
+		</and>
 	</condition>
 
 	<condition property="agent.filename" value="ubench-agent.dll">
@@ -378,6 +390,7 @@
 		<echo message="  Java C headers in: ${agent.cc.java.include}" />
 		<echo message="    Used C compiler: ${agent.cc}" />
 		<echo message="C compiler warnings: ${agent.cc.warnings}" />
+		<echo message="shared library name: ${agent.filename}" />
 		<echo message="       PAPI support: on" if:set="agent.feature.has.papi" />
 		<echo message="       PAPI support: off" unless:set="agent.feature.has.papi" />
 		<echo message="  getrusage support: on" if:set="agent.feature.has.getrusage" />
