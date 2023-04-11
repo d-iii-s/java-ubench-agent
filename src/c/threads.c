@@ -434,6 +434,8 @@ Java_cz_cuni_mff_d3s_perf_NativeThreads_getNativeId(
 	JNIEnv* UNUSED_PARAMETER(jni), jclass UNUSED_PARAMETER(threads_class),
 	java_tid_t java_thread_id
 ) {
+	DEBUG_PRINTF("NativeThreads.getNativeId(java_thread_id = %" PRId_JAVA_TID ")", java_thread_id);
+
 	native_tid_t native_thread_id = ubench_threads_get_native_id(java_thread_id);
 	if (native_thread_id == UBENCH_THREAD_ID_INVALID) {
 		// TODO Consider throwing an exception (-1 could be a valid id).
@@ -448,6 +450,11 @@ Java_cz_cuni_mff_d3s_perf_NativeThreads_registerJavaThread(
 	JNIEnv* UNUSED_PARAMETER(jni), jclass UNUSED_PARAMETER(threads_class),
 	java_tid_t java_thread_id, java_tid_t jnative_thread_id
 ) {
+	DEBUG_PRINTF(
+		"NativeThreads.registerJavaThread(java_thread_id = %" PRId_JAVA_TID ", jnative_thread_id = %" PRId_JAVA_TID ")",
+		java_thread_id, jnative_thread_id
+	);
+
 	// TODO Consider throwing an exception ('false' really means "already registered").
 	return ubench_register_java_thread(java_thread_id, (native_tid_t) jnative_thread_id);
 }
@@ -457,6 +464,8 @@ Java_cz_cuni_mff_d3s_perf_NativeThreads_registerCurrentJavaThread(
 	JNIEnv* UNUSED_PARAMETER(jni), jclass UNUSED_PARAMETER(threads_class),
 	java_tid_t java_thread_id
 ) {
+	DEBUG_PRINTF("NativeThreads.registerCurrentJavaThread(java_thread_id = %" PRId_JAVA_TID ")", java_thread_id);
+
 	// TODO Consider throwing an exception ('false' really means "already registered").
 	return ubench_register_java_thread(java_thread_id, ubench_get_current_thread_native_id());
 }
