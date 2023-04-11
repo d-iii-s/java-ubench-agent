@@ -75,10 +75,10 @@ typedef bool (*predicate_func_t)(const void* arg, const thread_map_entry_t* entr
 
 #ifdef UBENCH_DEBUG
 static void
-debug_thread_map_print_entries(const thread_map_t* map) {
+debug_thread_map_print_entries(const thread_map_t* map, const char* prefix) {
 	assert(map != NULL);
 
-	DEBUG_PRINTF("thread_map_t(%p) = {", map);
+	DEBUG_PRINTF("%sthread_map_t(%p) = {", (prefix != NULL) ? prefix : "", map);
 	DEBUG_PRINTF("    .length = %d", map->length);
 	DEBUG_PRINTF("    .capacity = %d", map->capacity);
 
@@ -102,7 +102,7 @@ debug_thread_map_print_entries(const thread_map_t* map) {
 	DEBUG_PRINTF("}");
 }
 #else
-#define debug_thread_map_print_entries(map) (void) 0
+#define debug_thread_map_print_entries(map, prefix) (void) 0
 #endif
 
 //
@@ -230,8 +230,9 @@ static bool
 ubench_register_java_thread(java_tid_t java_thread_id, native_tid_t native_thread_id) {
 	ubench_spinlock_lock(&thread_map_lock);
 
+	debug_thread_map_print_entries(&thread_map, "before adding: ");
 	int result = thread_map_put_java_thread(&thread_map, java_thread_id, native_thread_id);
-	debug_thread_map_print_entries(&thread_map);
+	debug_thread_map_print_entries(&thread_map, "after adding: ");
 
 	ubench_spinlock_unlock(&thread_map_lock);
 
@@ -248,8 +249,9 @@ static bool
 ubench_unregister_native_thread(native_tid_t native_thread_id) {
 	ubench_spinlock_lock(&thread_map_lock);
 
+	debug_thread_map_print_entries(&thread_map, "before removal: ");
 	int result = thread_map_remove_native_thread(&thread_map, native_thread_id);
-	debug_thread_map_print_entries(&thread_map);
+	debug_thread_map_print_entries(&thread_map, "after removal: ");
 
 	ubench_spinlock_unlock(&thread_map_lock);
 	return (result == 0);
