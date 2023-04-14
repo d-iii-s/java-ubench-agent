@@ -23,7 +23,11 @@ import java.util.NoSuchElementException;
 public final class NativeThreads {
     /** Invalid thread ID marker. */
     private static final long INVALID_THREAD_ID = -1;
-    
+
+    static {
+        UbenchAgent.load();
+    }
+
     /** Prevent instantiation. */
     private NativeThreads() {}
 
@@ -66,4 +70,19 @@ public final class NativeThreads {
      * @return Whether registration was successful.
      */
     private static native boolean registerJavaThread(long javaThreadId, long nativeId);
+
+    /** Insert a mapping between the current Java thread and its native id.
+     *
+     * @return Whether registration was successful.
+     */
+    public static boolean registerCurrentJavaThread() {
+        return registerCurrentJavaThread(Thread.currentThread().getId());
+    }
+
+    /** Insert a mapping between the current Java thread and its native id.
+     *
+     * @param javaThreadId Java thread id of the current thread.
+     * @return Whether registration was successful.
+     */
+    private static native boolean registerCurrentJavaThread(long javaThreadId);
 }

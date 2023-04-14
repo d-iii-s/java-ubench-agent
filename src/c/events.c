@@ -19,7 +19,9 @@
 #define _DEFAULT_SOURCE // For glibc 2.20 to include caddr_t
 #define _POSIX_C_SOURCE 200809L
 
+#include "compiler.h"
 #include "strutil.h"
+#include "myatomic.h"
 #include "ubench.h"
 
 #ifdef HAS_QUERY_PERFORMANCE_COUNTER
@@ -58,12 +60,12 @@ typedef struct {
 #define TIMESPEC_TO_NANOS(val) ((val).tv_sec * 1000 * 1000 * 1000 + (val).tv_nsec)
 #define TIMEVAL_TO_MICROS(val) ((val).tv_sec * 1000 * 1000 + (val).tv_usec)
 
-INTERNAL int
+INTERNAL bool
 ubench_event_init(void) {
 #ifdef HAS_QUERY_PERFORMANCE_COUNTER
 	QueryPerformanceFrequency(&windows_timer_frequency);
 #endif
-	return JNI_OK;
+	return true;
 }
 
 #ifdef HAS_TIMESPEC

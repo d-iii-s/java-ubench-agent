@@ -15,21 +15,26 @@
  * limitations under the License.
  */
 
-package cz.cuni.mff.d3s.perf;
+#ifndef LOGGING_H_GUARD
+#define LOGGING_H_GUARD
 
-/** Provides access to number of JIT compilations. */
-public final class CompilationCounter {
+#pragma warning(push, 0)
+#include <stdio.h>
+#pragma warning(pop)
 
-    static {
-        UbenchAgent.load();
-    }
+#define UBENCH_PREFIX "[ubench-agent]"
 
-    /** Prevent instantiation. */
-    private CompilationCounter() {}
+#define LEVEL_PRINTF(level, fmt, ...) fprintf(stderr, UBENCH_PREFIX ": " level "" fmt "\n", ##__VA_ARGS__)
 
-    /** Get number of compilation counts since last call and resets the counter.
-     *
-     * @return Number of JIT compilations since last call.
-     */
-    public static native int getCompilationCountAndReset();
-}
+#ifdef UBENCH_DEBUG
+#define DEBUG_PRINTF(fmt, ...) LEVEL_PRINTF("", fmt, ##__VA_ARGS__)
+#else
+#define DEBUG_PRINTF(fmt, ...) (void) 0
+#endif
+
+
+#define WARN_PRINTF(fmt, ...) LEVEL_PRINTF("WARNING: ", fmt, ##__VA_ARGS__)
+#define ERROR_PRINTF(fmt, ...) LEVEL_PRINTF("ERROR: ", fmt, ##__VA_ARGS__)
+#define FATAL_PRINTF(fmt, ...) LEVEL_PRINTF("FATAL: ", fmt, ##__VA_ARGS__)
+
+#endif

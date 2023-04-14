@@ -19,6 +19,11 @@ package cz.cuni.mff.d3s.perf;
 
 /** Process-wide barrier, Linux only now. */
 public final class Barrier {
+
+    static {
+        UbenchAgent.load();
+    }
+
     /** Prevent instantiation. */
     private Barrier() {}
 

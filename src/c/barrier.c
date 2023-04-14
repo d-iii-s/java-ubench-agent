@@ -18,6 +18,7 @@
 #define _POSIX_C_SOURCE 200809L // For pthreads to include pthread_barrier_t
 
 #include "compiler.h"
+#include "logging.h"
 
 #pragma warning(push, 0)
 /* Ensure compatibility of JNI function types. */
@@ -50,14 +51,14 @@ Java_cz_cuni_mff_d3s_perf_Barrier_initNative(
 	(*jni)->ReleaseStringUTFChars(jni, jname, name);
 	if (shared_mem_id == -1) {
 		// TODO: throw Java exception
-		fprintf(stderr, "Failed to create shared memory segment!\n");
+		ERROR_PRINTF("failed to create shared memory segment!");
 		return;
 	}
 
 	shared_mem_barrier = (pthread_barrier_t*) mmap(0, sizeof(pthread_barrier_t), PROT_READ | PROT_WRITE, MAP_SHARED, shared_mem_id, 0);
 	if (shared_mem_barrier == MAP_FAILED) {
 		// TODO: throw Java exception
-		fprintf(stderr, "Failed to mmap shared memory segment!\n");
+		ERROR_PRINTF("failed to mmap shared memory segment!");
 		return;
 	}
 #else
@@ -65,7 +66,7 @@ Java_cz_cuni_mff_d3s_perf_Barrier_initNative(
 	UNUSED_VARIABLE(jni);
 	UNUSED_VARIABLE(jname);
 
-	fprintf(stderr, "Platform not yet supported.\n");
+	ERROR_PRINTF("platform not yet supported.");
 	return;
 	// TODO: throw Java exception about unsupported platform
 #endif

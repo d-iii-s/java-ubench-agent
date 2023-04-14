@@ -19,6 +19,9 @@
 #define _DEFAULT_SOURCE // For glibc 2.20 to include caddr_t
 #define _POSIX_C_SOURCE 200809L
 
+#include "compiler.h"
+#include "logging.h"
+#include "myatomic.h"
 #include "ubench.h"
 
 #pragma warning(push, 0)
@@ -66,8 +69,8 @@ static jint all_eventset_count = 0;
 #ifdef HAS_PAPI
 static void
 __die_with_papi_error(int papi_error, const char* message) {
-	fprintf(
-		stderr, "error: %s: %s (%d)\n",
+	FATAL_PRINTF(
+		"%s: %s (%d), aborting!",
 		message, PAPI_strerror(papi_error), papi_error
 	);
 
@@ -88,13 +91,13 @@ get_thread_id(void) {
 }
 #endif
 
-INTERNAL jint
-ubench_benchmark_init(void) {
+INTERNAL bool
+ubench_measurement_init(void) {
 #ifdef HAS_PAPI
 	// TODO: check for errors
 	int lib_init_rc = PAPI_library_init(PAPI_VER_CURRENT);
 	if (lib_init_rc != PAPI_VER_CURRENT && lib_init_rc > 0) {
-		fprintf(stderr, "error: PAPI library version mismatch!\n");
+		FATAL_PRINTF("PAPI library version mismatch, aborting!");
 		exit(1);
 	}
 
@@ -106,16 +109,14 @@ ubench_benchmark_init(void) {
 	// PAPI_set_debug(PAPI_VERB_ECONT);
 #endif
 
-	ubench_event_init();
-
-	return JNI_OK;
+	return true;
 }
 
 static void
 do_throw(JNIEnv* jni, const char* message) {
 	jclass exClass = (*jni)->FindClass(jni, "cz/cuni/mff/d3s/perf/MeasurementException");
 	if (exClass == NULL) {
-		fprintf(stderr, "Unable to find MeasurementException class, aborting!\n");
+		FATAL_PRINTF("unable to find 'MeasurementException' class, aborting!");
 		exit(1);
 	}
 	(*jni)->ThrowNew(jni, exClass, message);
@@ -348,7 +349,7 @@ Java_cz_cuni_mff_d3s_perf_Measurement_createAttachedEventSetWithJavaThread(
 
 #ifdef HAS_PAPI
 	if ((all_eventsets[eventset_index].config.used_backends & UBENCH_EVENT_BACKEND_PAPI) > 0) {
-		native_tid_t native_id = ubench_get_native_thread_id(java_thread_id);
+		native_tid_t native_id = ubench_threads_get_native_id(java_thread_id);
 
 		if (native_id == UBENCH_THREAD_ID_INVALID) {
 			Java_cz_cuni_mff_d3s_perf_Measurement_destroyEventSet(jni, measurement_class, eventset_index);

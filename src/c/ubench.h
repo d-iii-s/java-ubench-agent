@@ -20,10 +20,10 @@
 
 #include "compiler.h"
 #include "myatomic.h"
-#include "mylock.h"
 
 #pragma warning(push, 0)
 #include <inttypes.h>
+#include <stdbool.h>
 #include <stdlib.h>
 #include <string.h>
 #include <time.h>
@@ -31,12 +31,6 @@
 #include <jni.h>
 #include <jvmti.h>
 #pragma warning(pop)
-
-#ifdef UBENCH_DEBUG
-#define DEBUG_PRINTF(fmt, ...) printf("[ubench-agent]: " fmt "\n", ##__VA_ARGS__)
-#else
-#define DEBUG_PRINTF(fmt, ...) (void) 0
-#endif
 
 #ifdef HAS_GETRUSAGE
 #include <sys/resource.h>
@@ -107,7 +101,7 @@ typedef int_fast64_t native_tid_t;
 #define UBENCH_SNAPSHOT_TYPE_START (-1)
 #define UBENCH_SNAPSHOT_TYPE_END (-2)
 
-typedef struct {
+typedef struct ubench_events_snapshot {
 	timestamp_t timestamp;
 	threadtime_t threadtime;
 #ifdef HAS_GETRUSAGE
@@ -138,7 +132,7 @@ struct ubench_event_info {
 	char* name;
 };
 
-typedef struct {
+typedef struct benchmark_configuration {
 	unsigned int used_backends;
 
 	ubench_event_info_t* used_events;
@@ -156,18 +150,13 @@ typedef struct {
 	size_t data_index;
 } benchmark_configuration_t;
 
-extern void ubench_jvm_callback_on_thread_start(jvmtiEnv*, JNIEnv*, jthread);
-extern void ubench_jvm_callback_on_thread_end(jvmtiEnv*, JNIEnv*, jthread);
+extern bool ubench_counters_init(JavaVM*);
+extern bool ubench_measurement_init(void);
 
-extern jint ubench_counters_init(jvmtiEnv*);
-extern void ubench_register_this_thread(jthread, JNIEnv*);
-extern void ubench_unregister_this_thread(jthread, JNIEnv*);
-extern int ubench_register_thread_id_mapping(java_tid_t, native_tid_t);
-extern int ubench_unregister_thread_id_mapping_by_native_id(native_tid_t);
-extern native_tid_t ubench_get_native_thread_id(java_tid_t);
-extern native_tid_t ubench_get_current_thread_native_id(void);
-extern jint ubench_benchmark_init(void);
-extern int ubench_event_init(void);
+extern bool ubench_threads_init(JavaVM*);
+extern native_tid_t ubench_threads_get_native_id(java_tid_t);
+
+extern bool ubench_event_init(void);
 extern int ubench_event_resolve(const char*, ubench_event_info_t*);
 extern void ubench_event_iterate(event_info_iterator_callback_t, void*);
 
