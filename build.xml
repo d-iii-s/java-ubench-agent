@@ -37,12 +37,12 @@
 	<property name="barrier.build.dir" location="${build.dir}/barrier/" />
 	<property name="lib.build.dir" location="${build.dir}/lib/" />
 	<property name="javadoc.build.dir" location="${build.dir}/javadoc/" />
-	
+
 	<property name="junit.jar.path" value="lib/junit-4.11.jar" />
 	<property name="hamcrest.jar.path" value="lib/hamcrest-core.jar" />
-	
+
 	<property name="agent.cc" value="gcc" />
-	
+
 	<property name="agent.feature.want.papi" value="true" />
 
 	<antversion property="ant.version.bare" />
@@ -155,6 +155,12 @@
 		location="${agent.build.dir}${file.separator}${agent.filename}" />
 
 
+	<!-- JVM arguments for loading the agent library. -->
+	<property name="agent.jvmarg.agent" value="-agentpath:${agent.path}" />
+	<property name="agent.jvmarg.library" value="-Djava.library.path=${agent.build.dir}" />
+	<property name="agent.jvmarg.default" value="${agent.jvmarg.agent}" />
+
+
 	<!-- Barrier file naming -->
 	<condition property="barrier.filename" value="ubench-barrier">
 		<os family="unix" />
@@ -179,7 +185,7 @@
 		  Then we try ${java.home} that usually points to JRE
 		  that could be inside JDK. After that, we go through
 		  list of typical locations in various distributions.
-		
+
 		  If your distribution uses different location, feel
 		  free to add it here (but preferably only directories
 		  without build versions, such as/usr/java/jdk1.7 but
@@ -390,7 +396,7 @@
 		<echo message="  Java C headers in: ${agent.cc.java.include}" />
 		<echo message="    Used C compiler: ${agent.cc}" />
 		<echo message="C compiler warnings: ${agent.cc.warnings}" />
-		<echo message="shared library name: ${agent.filename}" />
+		<echo message=" Agent library name: ${agent.filename}" />
 		<echo message="       PAPI support: on" if:set="agent.feature.has.papi" />
 		<echo message="       PAPI support: off" unless:set="agent.feature.has.papi" />
 		<echo message="  getrusage support: on" if:set="agent.feature.has.getrusage" />
@@ -411,16 +417,41 @@
 		<antcall target="print-properties" />
 		<antcall target="print-config" />
 		<antcall target="compile" />
+
+		<antcall target="test">
+			<param name="agent.jvmarg" value="${agent.jvmarg.agent}" />
+		</antcall>
+		<antcall target="test">
+			<param name="agent.jvmarg" value="${agent.jvmarg.library}" />
+		</antcall>
+
+		<antcall target="test-junit">
+			<param name="agent.jvmarg" value="${agent.jvmarg.agent}" />
+		</antcall>
+		<antcall target="test-junit">
+			<param name="agent.jvmarg" value="${agent.jvmarg.library}" />
+		</antcall>
+
+		<antcall target="list-events">
+			<param name="agent.jvmarg" value="${agent.jvmarg.agent}" />
+		</antcall>
+		<antcall target="list-events">
+			<param name="agent.jvmarg" value="${agent.jvmarg.library}" />
+		</antcall>
+
+		<antcall target="demo">
+			<param name="agent.jvmarg" value="${agent.jvmarg.agent}" />
+		</antcall>
+		<antcall target="demo">
+			<param name="agent.jvmarg" value="${agent.jvmarg.library}" />
+		</antcall>
+
 		<antcall target="lib" />
-		<antcall target="javadoc" />
 		<antcall target="checkstyle" />
-		<antcall target="test" />
-		<antcall target="test-junit" />
+		<antcall target="javadoc" />
 		<antcall target="dist" />
-		<antcall target="list-events" />
-		<antcall target="demo" />
 	</target>
-	
+
 	<target name="compile"
 		depends="compile-java,compile-agent,compile-barrier"
 		description="Compile everything."
@@ -707,7 +738,8 @@
 		<attribute name="progarg" default="mixed" />
 
 		<sequential>
-			<echo level="info" message="[run] java -agentpath:${agent.path} @{jvmarg} @{classname} @{progarg}" />
+			<fail unless="agent.jvmarg" message="The 'agent.jvmarg' property is not set, cannot load agent library!" />
+			<echo level="info" message="[run] java ${agent.jvmarg} @{jvmarg} @{classname} @{progarg}" />
 			<java
 				classname="@{classname}"
 				fork="true"
@@ -717,7 +749,7 @@
 					<pathelement path="${classes.build.dir}" />
 					<pathelement path="${test.classes.build.dir}" />
 				</classpath>
-				<jvmarg value="-agentpath:${agent.path}" />
+				<jvmarg value="${agent.jvmarg}" />
 				<jvmarg value="@{jvmarg}" />
 				<arg value="@{progarg}" />
 			</java>
@@ -728,6 +760,10 @@
 		depends="compile,compile-test"
 		description="Run simple self-tests (obsoleted)."
 	>
+		<!-- Use default JVM arguments to load the agent (unless overriden from outside). -->
+		<property name="agent.jvmarg" value="${agent.jvmarg.default}" />
+		<echo level="info" message="Agent loaded using ${agent.jvmarg}" />
+
 		<self-test
 			classname="cz.cuni.mff.d3s.perf.CompilationCounterTest"
 			jvmarg="-Xmixed"
@@ -756,6 +792,10 @@
 		depends="compile,compile-test"
 		description="Run JUnit tests, generate HTML report."
 	>
+		<!-- Use default JVM arguments to load the agent (unless overriden from outside). -->
+		<property name="agent.jvmarg" value="${agent.jvmarg.default}" />
+		<echo level="info" message="Agent loaded using ${agent.jvmarg}" />
+
 		<mkdir dir="${test.results.dir}"/>
 		<junit printsummary="no" failureproperty="junit.failed" haltonfailure="no">
 			<classpath>
@@ -767,7 +807,7 @@
 
 			<jvmarg value="-Dubench.classpath=${test.classes.build.dir}${path.separator}${classes.build.dir}" />
 			<jvmarg value="-Dubench.agent=${agent.path}" />
-			<jvmarg value="-Djava.library.path=${agent.build.dir}" />
+			<jvmarg value="${agent.jvmarg}" />
 
 			<assertions>
 				<enable/>
@@ -799,6 +839,10 @@
 		depends="compile,compile-demo"
 		description="Run simple demo (measure md5 speed)."
 	>
+		<!-- Use default JVM arguments to load the agent (unless overriden from outside). -->
+		<property name="agent.jvmarg" value="${agent.jvmarg.default}" />
+		<echo level="info" message="Agent loaded using ${agent.jvmarg}" />
+
 		<java
 			classname="cz.cuni.mff.d3s.perf.demo.MeasureHashing"
 			fork="true"
@@ -808,7 +852,7 @@
 				<pathelement path="${classes.build.dir}" />
 				<pathelement path="${demo.classes.build.dir}" />
 			</classpath>
-			<jvmarg value="-agentpath:${agent.path}" />
+			<jvmarg value="${agent.jvmarg}" />
 			<arg value="build.xml" />
 		</java>
 	</target>
@@ -817,6 +861,10 @@
 		depends="compile-demo"
 		description="List available events."
 	>
+		<!-- Use default JVM arguments to load the agent (unless overriden from outside). -->
+		<property name="agent.jvmarg" value="${agent.jvmarg.default}" />
+		<echo level="info" message="Agent loaded using ${agent.jvmarg}" />
+
 		<java
 			classname="cz.cuni.mff.d3s.perf.demo.ListEvents"
 			fork="true"
@@ -826,7 +874,7 @@
 				<pathelement path="${classes.build.dir}" />
 				<pathelement path="${demo.classes.build.dir}" />
 			</classpath>
-			<jvmarg value="-agentpath:${agent.path}" />
+			<jvmarg value="${agent.jvmarg}" />
 		</java>
 	</target>
 
