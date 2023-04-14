@@ -41,7 +41,8 @@ public final class Measurement {
     /** Create new event set.
      *
      * @param measurementCount How many measurements should the C agent remember.
-     * @param events An array of event names (use {@link #getSupportedEvents()} to get supported event names).
+     * @param events An array of event names (use {@link #getSupportedEvents()} to get
+     *     supported event names).
      * @param options Extra options (flags).
      * @return Event set number (opaque identifier).
      * @throws cz.cuni.mff.d3s.perf.MeasurementException On any failure when setting-up
